@@ -1,0 +1,33 @@
+// vim: syntax=c
+/**
+ * @file: cohort_tests.c
+ *
+ * @description: Unit tests for cohort.h.
+ *
+ * @author: Peter Mawhorter (pmawhorter@gmail.com)
+ */
+
+#include "cohort.h"
+
+int test_find_cohort() {
+  id i;
+  id my_cohort, cohort_index; 
+  id cohort_size = 10000;
+  id cohort_seed = 1728;
+  id reversed;
+  for (i = 0; i < 391029831; i += 290320) {
+    my_cohort = cohort(i, cohort_size, cohort_seed);
+    cohort_index = within_cohort(i, cohort_size, cohort_seed);
+    reversed = cohort_outer(my_cohort, cohort_index, cohort_size, cohort_seed);
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Cohort reversibility failed for %lu; %lu → %lu/%lu → %lu\n",
+        i, i, my_cohort, cohort_index, reversed
+      );
+      return (int) i;
+    }
+  }
+
+  return 0;
+}

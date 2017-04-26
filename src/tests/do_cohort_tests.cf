@@ -1,0 +1,10 @@
+// vim: syntax=c
+/**
+ * @file: do_cohort_tests.f
+ *
+ * @description: Code fragment for calling tests in tests/cohort_tests.c.
+ *
+ * @author: Peter Mawhorter (pmawhorter@gmail.com)
+ */
+
+unit_test("find_cohort", &test_find_cohort);

@@ -1,0 +1,18 @@
+// vim: syntax=c
+/**
+ * @file: do_unit_tests.f
+ *
+ * @description: Code fragment for calling tests in tests/unit_tests.c.
+ *
+ * @author: Peter Mawhorter (pmawhorter@gmail.com)
+ */
+
+unit_test("fold", &test_fold);
+
+unit_test("circular_shift", &test_circular_shift);
+
+unit_test("flop", &test_flop);
+
+unit_test("prng", &test_prng);
+
+unit_test("prng spew", &test_prng_spew);

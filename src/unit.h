@@ -6,12 +6,23 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
+#ifndef INCLUDE_UNIT_H
+#define INCLUDE_UNIT_H
+
 #include <stdint.h>
+
+/************************
+ * Types and Structures *
+ ************************/
 
 // An ID is 64 bits, unsigned so that shifts don't do sign extension
 #define ID_BITS 64ULL
 #define ID_BYTES 8ULL
 typedef uint64_t id;
+
+/********************
+ * Inline Functions *
+ ********************/
 
 static inline id mask(id bits) {
   return (1ULL << bits) - 1ULL;
@@ -94,3 +105,5 @@ static inline id rev_prng(id x, id seed) {
   x ^= seed;
   return x;
 }
+
+#endif // INCLUDE_UNIT_H
