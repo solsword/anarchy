@@ -20,3 +20,7 @@ unit_test("cohort_flop", &test_cohort_flop);
 unit_test("cohort_shuffle", &test_cohort_shuffle);
 
 unit_test("cohort_shuffle_visual", &test_cohort_shuffle_visual);
+
+unit_test("find_mixed_cohort", &test_find_mixed_cohort);
+
+unit_test("mixed_cohort_visual", &test_mixed_cohort_visual);

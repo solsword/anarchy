@@ -16,13 +16,13 @@
  ********************/
 
 // Picks out which cohort we're in.
-static inline id cohort(id continuous, id cohort_size, id cohort_seed) {
-  return (continuous / cohort_size) ^ cohort_seed;
+static inline id cohort(id outer, id cohort_size, id seed) {
+  return ((outer + seed) / cohort_size);
 }
 
 // Identifies our within-cohort id.
-static inline id cohort_inner(id continuous, id cohort_size, id cohort_seed) {
-  return continuous % cohort_size;
+static inline id cohort_inner(id outer, id cohort_size, id seed) {
+  return (outer + seed) % cohort_size;
 }
 
 // Find global ID from cohort & inner ID:
@@ -30,10 +30,10 @@ static inline id cohort_outer(
   id cohort,
   id inner,
   id cohort_size,
-  id cohort_seed
+  id seed
 ) {
-  id cohort_start = (cohort ^ cohort_seed) * cohort_size;
-  return cohort_start + inner;
+  id cohort_start = cohort * cohort_size;
+  return cohort_start + inner - seed;
 }
 
 // Interleaves cohort members by folding top half into bottom half.
@@ -152,6 +152,57 @@ static inline id rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
   r = rev_cohort_spin(r, cohort_size, seed + 1982);
   r = rev_cohort_interleave(r, cohort_size);
   return r;
+}
+
+// A cohort of the given size drawn from a double-wide segment of the outer
+// region with 50% representation.
+// TODO: Guarantee that size isn't off-by-one?
+static inline id mixed_cohort(id outer, id cohort_size, id seed) {
+  id strict_cohort = cohort(outer, cohort_size, seed);
+  id strict_inner = cohort_inner(outer, cohort_size, seed);
+
+  id shuf = cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
+  id lower = shuf < cohort_size/2;
+
+  return (
+     lower * (strict_cohort)
+  + !lower * (strict_cohort+1)
+  );
+}
+
+// Gets the inner id for a mixed cohort (see above)
+static inline id mixed_cohort_inner(id outer, id cohort_size, id seed) {
+  id strict_cohort = cohort(outer, cohort_size, seed);
+  id strict_inner = cohort_inner(outer, cohort_size, seed);
+
+  id shuf = cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
+  id lower = shuf < cohort_size/2;
+
+  id rsseed = (
+     lower * (seed + 19821 + strict_cohort)
+  + !lower * (seed + 19821 + (strict_cohort + 1))
+  );
+  id reshuf = cohort_shuffle(shuf, cohort_size, rsseed);
+
+  return reshuf;
+}
+
+// Reverse
+static inline id mixed_cohort_outer(
+  id cohort,
+  id inner,
+  id cohort_size,
+  id seed
+) {
+  id unshuf = rev_cohort_shuffle(inner, cohort_size, seed + 19821 + cohort);
+  id lower = unshuf < cohort_size/2;
+  id strict_cohort = (
+     lower * cohort
+  + !lower * (cohort - 1)
+  );
+
+  unshuf = rev_cohort_shuffle(unshuf, cohort_size, seed + strict_cohort);
+  return cohort_outer(strict_cohort, unshuf, cohort_size, seed);
 }
 
 #endif // INCLUDE_COHORT_H
