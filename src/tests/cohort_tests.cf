@@ -131,3 +131,22 @@ int test_cohort_shuffle() {
 
   return 0;
 }
+
+int test_cohort_shuffle_visual() {
+  id i;
+  id cohort_size = 52;
+  id s;
+  char results[cohort_size];
+  char *original = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  for (i = 0; i < cohort_size; ++i) {
+    s = cohort_shuffle(i, cohort_size, 17);
+    results[i] = original[s];
+    if (s > 51) {
+      fprintf(stdout, "I → S    %zu → %zu\n", i, s);
+    }
+  }
+  fprintf(stdout, "Original:         %s\n", original);
+  fprintf(stdout, "Shuffle result:   %s\n", results);
+
+  return 0;
+}

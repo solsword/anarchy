@@ -18,3 +18,5 @@ unit_test("cohort_spin", &test_cohort_spin);
 unit_test("cohort_flop", &test_cohort_flop);
 
 unit_test("cohort_shuffle", &test_cohort_shuffle);
+
+unit_test("cohort_shuffle_visual", &test_cohort_shuffle_visual);

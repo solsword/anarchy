@@ -40,16 +40,17 @@ static inline id cohort_outer(
 static inline id cohort_interleave(id inner, id cohort_size) {
   id bottom = (inner < (cohort_size/2));
   return (
-    bottom * (inner*2) // if
-  + (1-bottom) * ((cohort_size - inner) * 2 + 1) // else
-  ); }
+     bottom * (inner*2) // if
+  + !bottom * ((cohort_size - inner - 1) * 2 + 1) // else
+  );
+}
 
 // Reverse
 static inline id rev_cohort_interleave(id shuffled, id cohort_size) {
   id odd = (shuffled % 2);
   return (
-    odd * (cohort_size - shuffled/2) // if
-  + (1-odd) * (shuffled/2) // else
+     odd * (cohort_size - 1 - shuffled/2) // if
+  + !odd * (shuffled/2) // else
   );
 }
 
@@ -125,25 +126,27 @@ static inline id cohort_flop(id inner, id cohort_size, id seed) {
 
 // Uses the above functions to shuffle a cohort
 static inline id cohort_shuffle(id inner, id cohort_size, id seed) {
-  id r = cohort_flop(inner, cohort_size, seed + 53);
+  id r = inner;
+//  r = cohort_flop(r, cohort_size, seed + 53);
   r = cohort_interleave(r, cohort_size);
-  r = cohort_spin(r, cohort_size, seed + 1982);
+//  r = cohort_spin(r, cohort_size, seed + 1982);
   r = cohort_fold(r, cohort_size, seed + 837);
   r = cohort_interleave(r, cohort_size);
   r = cohort_flop(r, cohort_size, seed + 192);
-  r = cohort_spin(r, cohort_size, seed + 19);
+//  r = cohort_spin(r, cohort_size, seed + 19);
   return r;
 }
 
 // Reverse
 static inline id rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
-  id r = rev_cohort_spin(shuffled, cohort_size, seed + 19);
+  id r = shuffled;
+//  r = rev_cohort_spin(r, cohort_size, seed + 19);
   r = cohort_flop(r, cohort_size, seed + 192);
   r = rev_cohort_interleave(r, cohort_size);
   r = rev_cohort_fold(r, cohort_size, seed + 837);
-  r = rev_cohort_spin(r, cohort_size, seed + 1982);
+//  r = rev_cohort_spin(r, cohort_size, seed + 1982);
   r = rev_cohort_interleave(r, cohort_size);
-  r = cohort_flop(r, cohort_size, seed + 53);
+//  r = cohort_flop(r, cohort_size, seed + 53);
   return r;
 }
 
