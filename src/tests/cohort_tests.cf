@@ -7,7 +7,7 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-#include "cohort.h"
+#include "core/cohort.h"
 
 int test_find_cohort() {
   id i;
@@ -17,15 +17,115 @@ int test_find_cohort() {
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
     my_cohort = cohort(i, cohort_size, cohort_seed);
-    cohort_index = within_cohort(i, cohort_size, cohort_seed);
+    cohort_index = cohort_inner(i, cohort_size, cohort_seed);
     reversed = cohort_outer(my_cohort, cohort_index, cohort_size, cohort_seed);
     if (reversed != i) {
       fprintf(
         stderr,
-        "Cohort reversibility failed for %lu; %lu → %lu/%lu → %lu\n",
-        i, i, my_cohort, cohort_index, reversed
+        "Cohort reversibility failed: %lu → %lu/%lu → %lu\n",
+        i, my_cohort, cohort_index, reversed
       );
       return (int) i;
+    }
+  }
+
+  return 0;
+}
+
+int test_cohort_interleave() {
+  id i;
+  id cohort_size = 10000;
+  id interleaved, reversed;
+  for (i = 0; i < cohort_size; ++i) {
+    interleaved = cohort_interleave(i, cohort_size);
+    reversed = rev_cohort_interleave(interleaved, cohort_size);
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Cohort interleave reversibility failed: %lu → %lu → %lu\n",
+        i, interleaved, reversed
+      );
+      return (int) i+1;
+    }
+  }
+
+  return 0;
+}
+
+int test_cohort_fold() {
+  id i;
+  id cohort_size = 10000;
+  id folded, reversed;
+  for (i = 0; i < cohort_size; ++i) {
+    folded = cohort_fold(i, cohort_size, 17+i);
+    reversed = rev_cohort_fold(folded, cohort_size, 17+i);
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Cohort fold reversibility failed: %lu → %lu → %lu\n",
+        i, folded, reversed
+      );
+      return (int) i+1;
+    }
+  }
+
+  return 0;
+}
+
+int test_cohort_spin() {
+  id i;
+  id cohort_size = 10000;
+  id spun, reversed;
+  for (i = 0; i < cohort_size; ++i) {
+    spun = cohort_spin(i, cohort_size, 17+i);
+    reversed = rev_cohort_spin(spun, cohort_size, 17+i);
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Cohort spin reversibility failed: %lu → %lu → %lu\n",
+        i, spun, reversed
+      );
+      return (int) i+1;
+    }
+  }
+
+  return 0;
+}
+
+int test_cohort_flop() {
+  id i;
+  id cohort_size = 10000;
+  id flopped, reversed;
+  for (i = 0; i < cohort_size; ++i) {
+    flopped = cohort_flop(i, cohort_size, 17+i);
+    reversed = cohort_flop(flopped, cohort_size, 17+i);
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Cohort flop reversibility failed: %lu → %lu → %lu\n",
+        i, flopped, reversed
+      );
+      return (int) i+1;
+    }
+  }
+
+  return 0;
+}
+
+int test_cohort_shuffle() {
+  id i;
+  id cohort_size = 10000;
+  id shuffled, reversed;
+  for (i = 0; i < cohort_size; ++i) {
+    shuffled = cohort_shuffle(i, cohort_size, 17+i);
+    reversed = rev_cohort_shuffle(shuffled, cohort_size, 17+i);
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Cohort shuffle reversibility failed: %lu → %lu → %lu\n",
+        i, shuffled, reversed
+      );
+      return (int) i+1;
     }
   }
 

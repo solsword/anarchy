@@ -8,3 +8,13 @@
  */
 
 unit_test("find_cohort", &test_find_cohort);
+
+unit_test("cohort_interleave", &test_cohort_interleave);
+
+unit_test("cohort_fold", &test_cohort_fold);
+
+unit_test("cohort_spin", &test_cohort_spin);
+
+unit_test("cohort_flop", &test_cohort_flop);
+
+unit_test("cohort_shuffle", &test_cohort_shuffle);

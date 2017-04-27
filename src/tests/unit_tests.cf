@@ -7,7 +7,7 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-#include "unit.h"
+#include "core/unit.h"
 #include <stdio.h>
 
 #define TEST_ITERATIONS 256
@@ -118,7 +118,7 @@ int test_prng_spew() {
   int i;
   id x = 65;
   fprintf(stdout, "Spew test:\n");
-  for (int line = 0; line < 30; ++line) {
+  for (int line = 0; line < 10; ++line) {
     for (i = 0; i < 80; ++i) {
       x = prng(x, 45);
       fputc((char) (32 + (x % 10)), stdout);
