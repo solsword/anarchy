@@ -41,7 +41,7 @@ static inline id cohort_interleave(id inner, id cohort_size) {
   id bottom = (inner < (cohort_size/2));
   return (
      bottom * (inner*2) // if
-  + !bottom * ((cohort_size - inner - 1) * 2 + 1) // else
+  + !bottom * ((cohort_size - 1 - inner) * 2 + 1) // else
   );
 }
 
@@ -116,7 +116,7 @@ static inline id cohort_flop(id inner, id cohort_size, id seed) {
     !odd * ((which + 1)*size + local)
   +  odd * ((which - 1)*size + local)
   );
-  id out = result > cohort_size;
+  id out = result >= cohort_size;
   return (
      out * inner
   + !out * result
@@ -127,26 +127,30 @@ static inline id cohort_flop(id inner, id cohort_size, id seed) {
 // Uses the above functions to shuffle a cohort
 static inline id cohort_shuffle(id inner, id cohort_size, id seed) {
   id r = inner;
-//  r = cohort_flop(r, cohort_size, seed + 53);
   r = cohort_interleave(r, cohort_size);
-//  r = cohort_spin(r, cohort_size, seed + 1982);
+  r = cohort_spin(r, cohort_size, seed + 1982);
   r = cohort_fold(r, cohort_size, seed + 837);
   r = cohort_interleave(r, cohort_size);
+  r = cohort_flop(r, cohort_size, seed + 53);
+  r = cohort_fold(r, cohort_size, seed + 201);
+  r = cohort_interleave(r, cohort_size);
   r = cohort_flop(r, cohort_size, seed + 192);
-//  r = cohort_spin(r, cohort_size, seed + 19);
+  r = cohort_spin(r, cohort_size, seed + 19);
   return r;
 }
 
 // Reverse
 static inline id rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
   id r = shuffled;
-//  r = rev_cohort_spin(r, cohort_size, seed + 19);
+  r = rev_cohort_spin(r, cohort_size, seed + 19);
   r = cohort_flop(r, cohort_size, seed + 192);
   r = rev_cohort_interleave(r, cohort_size);
-  r = rev_cohort_fold(r, cohort_size, seed + 837);
-//  r = rev_cohort_spin(r, cohort_size, seed + 1982);
+  r = rev_cohort_fold(r, cohort_size, seed + 201);
+  r = cohort_flop(r, cohort_size, seed + 53);
   r = rev_cohort_interleave(r, cohort_size);
-//  r = cohort_flop(r, cohort_size, seed + 53);
+  r = rev_cohort_fold(r, cohort_size, seed + 837);
+  r = rev_cohort_spin(r, cohort_size, seed + 1982);
+  r = rev_cohort_interleave(r, cohort_size);
   return r;
 }
 
