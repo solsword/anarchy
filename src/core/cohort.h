@@ -9,6 +9,9 @@
 #ifndef INCLUDE_COHORT_H
 #define INCLUDE_COHORT_H
 
+#include <assert.h>
+#include <math.h> // for roundf
+
 #include "core/unit.h" // for "id" and unit operations
 
 /********************
@@ -23,6 +26,19 @@ static inline id cohort(id outer, id cohort_size, id seed) {
 // Identifies our within-cohort id.
 static inline id cohort_inner(id outer, id cohort_size, id seed) {
   return (outer + seed) % cohort_size;
+}
+
+// Combines cohort and cohort_inner, returning both values via return
+// parameters.
+static inline void cohort_and_inner(
+  id outer,
+  id cohort_size,
+  id seed,
+  id *r_cohort,
+  id *r_inner
+) {
+  *r_cohort = cohort(outer, cohort_size, seed);
+  *r_inner = cohort_inner(outer, cohort_size, seed);
 }
 
 // Find global ID from cohort & inner ID:
@@ -155,7 +171,10 @@ static inline id rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
 }
 
 // A cohort of the given size drawn from a double-wide segment of the outer
-// region with 50% representation.
+// region with 50% representation. Note that the inner indices of mixed cohorts
+// are shuffled, but the bottom 1/2 indices always come earlier than the top
+// 1/2 indices. Simply re-shuffle the inner results if you wish to have mixed
+// indices (the biased indices are useful for some purposes).
 // TODO: Guarantee that size isn't off-by-one?
 static inline id mixed_cohort(id outer, id cohort_size, id seed) {
   id strict_cohort = cohort(outer, cohort_size, seed);
@@ -165,8 +184,8 @@ static inline id mixed_cohort(id outer, id cohort_size, id seed) {
   id lower = shuf < cohort_size/2;
 
   return (
-     lower * (strict_cohort)
-  + !lower * (strict_cohort+1)
+     lower * (strict_cohort + 1)
+  + !lower * (strict_cohort)
   );
 }
 
@@ -176,15 +195,31 @@ static inline id mixed_cohort_inner(id outer, id cohort_size, id seed) {
   id strict_inner = cohort_inner(outer, cohort_size, seed);
 
   id shuf = cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
+
+  return shuf;
+}
+
+// Combines mixed_cohort and mixed_cohort_inner, returning both values via
+// return parameters. More efficient if you need both values.
+static inline void mixed_cohort_and_inner(
+  id outer,
+  id cohort_size,
+  id seed,
+  id *r_cohort,
+  id *r_inner
+) {
+  id strict_cohort = cohort(outer, cohort_size, seed);
+  id strict_inner = cohort_inner(outer, cohort_size, seed);
+
+  id shuf = cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
   id lower = shuf < cohort_size/2;
 
-  id rsseed = (
-     lower * (seed + 19821 + strict_cohort)
-  + !lower * (seed + 19821 + (strict_cohort + 1))
+  *r_cohort = (
+     lower * (strict_cohort + 1)
+  + !lower * (strict_cohort)
   );
-  id reshuf = cohort_shuffle(shuf, cohort_size, rsseed);
 
-  return reshuf;
+  *r_inner = shuf;
 }
 
 // Reverse
@@ -194,15 +229,82 @@ static inline id mixed_cohort_outer(
   id cohort_size,
   id seed
 ) {
-  id unshuf = rev_cohort_shuffle(inner, cohort_size, seed + 19821 + cohort);
-  id lower = unshuf < cohort_size/2;
+  id lower = inner < cohort_size/2;
   id strict_cohort = (
-     lower * cohort
-  + !lower * (cohort - 1)
+     lower * (cohort - 1)
+  + !lower * cohort
   );
 
-  unshuf = rev_cohort_shuffle(unshuf, cohort_size, seed + strict_cohort);
+  id unshuf = rev_cohort_shuffle(inner, cohort_size, seed + strict_cohort);
   return cohort_outer(strict_cohort, unshuf, cohort_size, seed);
+}
+
+// A special kind of mixed cohort that's biased towards one direction on the
+// base continuum. The bias value must be between 1 and MAX_BIAS, where a value
+// of MID_BIAS combines evenly. Returns via the two return parameters r_cohort
+// and r_inner.
+#define MAX_BIAS 32
+#define MID_BIAS 16
+static inline void biased_cohort_and_inner(
+  id outer,
+  id bias,
+  id cohort_size,
+  id seed,
+  id *r_cohort,
+  id *r_inner
+) {
+  assert(bias > 0);
+  assert(bias < MAX_BIAS);
+
+  id strict_cohort = cohort(outer, cohort_size, seed);
+  id strict_inner = cohort_inner(outer, cohort_size, seed);
+
+  id shuf = cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
+  id split = (cohort_size * (MAX_BIAS - bias)) / MAX_BIAS;
+  id lower = shuf < split;
+
+  *r_cohort = (
+     lower * (strict_cohort + 1)
+  + !lower * strict_cohort
+  );
+  *r_inner = shuf;
+}
+
+// Reverse
+static inline id biased_cohort_outer(
+  id cohort,
+  id inner,
+  id bias,
+  id cohort_size,
+  id seed
+) {
+  assert(bias > 0);
+  assert(bias < MAX_BIAS);
+
+  id split = (cohort_size * (MAX_BIAS - bias)) / MAX_BIAS;
+
+  id lower = inner < split;
+
+  id strict_cohort = (
+     lower * (cohort - 1)
+  + !lower * cohort
+  );
+
+  id unshuf = rev_cohort_shuffle(inner, cohort_size, seed + strict_cohort);
+  return cohort_outer(strict_cohort, unshuf, cohort_size, seed);
+}
+
+// Takes a float (should be between 0 and 1) and returns the nearest
+// corresponding bias value, according to the resolution established by
+// the definition of MAX_BIAS.
+static inline id nearest_bias(float f) {
+  id result = (id) roundf(MAX_BIAS * f);
+  if (result < 1) {
+    return 1;
+  } else if (result >= MAX_BIAS) {
+    return MAX_BIAS - 1;
+  }
+  return result;
 }
 
 #endif // INCLUDE_COHORT_H

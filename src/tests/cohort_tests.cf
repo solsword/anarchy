@@ -11,21 +11,43 @@
 
 int test_find_cohort() {
   id i;
-  id my_cohort, cohort_index; 
+  id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
     my_cohort = cohort(i, cohort_size, cohort_seed);
-    cohort_index = cohort_inner(i, cohort_size, cohort_seed);
-    reversed = cohort_outer(my_cohort, cohort_index, cohort_size, cohort_seed);
+    inner = cohort_inner(i, cohort_size, cohort_seed);
+    reversed = cohort_outer(my_cohort, inner, cohort_size, cohort_seed);
     if (reversed != i) {
       fprintf(
         stderr,
         "Cohort reversibility failed: %lu → %lu/%lu → %lu\n",
-        i, my_cohort, cohort_index, reversed
+        i, my_cohort, inner, reversed
       );
-      return (int) i;
+      return (int) i+1;
+    }
+  }
+
+  return 0;
+}
+
+int test_find_cohort_and_inner() {
+  id i;
+  id my_cohort, inner; 
+  id cohort_size = 10000;
+  id cohort_seed = 1728;
+  id reversed;
+  for (i = 0; i < 391029831; i += 290320) {
+    cohort_and_inner(i, cohort_size, cohort_seed, &my_cohort, &inner);
+    reversed = cohort_outer(my_cohort, inner, cohort_size, cohort_seed);
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Cohort reversibility failed: %lu → %lu/%lu → %lu\n",
+        i, my_cohort, inner, reversed
+      );
+      return (int) i+1;
     }
   }
 
@@ -153,26 +175,53 @@ int test_cohort_shuffle_visual() {
 
 int test_find_mixed_cohort() {
   id i;
-  id my_cohort, cohort_index; 
+  id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
     my_cohort = mixed_cohort(i, cohort_size, cohort_seed);
-    cohort_index = mixed_cohort_inner(i, cohort_size, cohort_seed);
+    inner = mixed_cohort_inner(i, cohort_size, cohort_seed);
     reversed = mixed_cohort_outer(
       my_cohort,
-      cohort_index,
+      inner,
       cohort_size,
       cohort_seed
     );
     if (reversed != i) {
       fprintf(
         stderr,
-        "Cohort reversibility failed: %lu → %lu/%lu → %lu\n",
-        i, my_cohort, cohort_index, reversed
+        "Mixed cohort reversibility failed: %lu → %lu/%lu → %lu\n",
+        i, my_cohort, inner, reversed
       );
-      return (int) i;
+      return (int) i+1;
+    }
+  }
+
+  return 0;
+}
+
+int test_find_mixed_cohort_and_inner() {
+  id i;
+  id my_cohort, inner; 
+  id cohort_size = 10000;
+  id cohort_seed = 1728;
+  id reversed;
+  for (i = 0; i < 391029831; i += 290320) {
+    mixed_cohort_and_inner(i, cohort_size, cohort_seed, &my_cohort, &inner);
+    reversed = mixed_cohort_outer(
+      my_cohort,
+      inner,
+      cohort_size,
+      cohort_seed
+    );
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Mixed cohort reversibility failed: %lu → %lu/%lu → %lu\n",
+        i, my_cohort, inner, reversed
+      );
+      return (int) i+1;
     }
   }
 
@@ -212,6 +261,73 @@ int test_mixed_cohort_visual() {
     cohorts[length-1] = '\0';
     inners[length-1] = '\0';
     fprintf(stdout, "Inners:    %s\n", inners);
+  }
+
+  return 0;
+}
+
+int test_find_biased_cohort_and_inner() {
+  id i;
+  id my_cohort, inner; 
+  id cohort_size = 10000;
+  id cohort_seed = 1728;
+  id bias = nearest_bias(0.8);
+  id reversed;
+  for (i = 0; i < 391029831; i += 290320) {
+    biased_cohort_and_inner(
+      i,
+      bias,
+      cohort_size,
+      cohort_seed,
+      &my_cohort,
+      &inner
+    );
+    reversed = biased_cohort_outer(
+      my_cohort,
+      inner,
+      bias,
+      cohort_size,
+      cohort_seed
+    );
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Biased cohort reversibility failed: %lu → %lu/%lu → %lu\n",
+        i, my_cohort, inner, reversed
+      );
+      return (int) i+1;
+    }
+  }
+
+  return 0;
+}
+
+int test_biased_cohort_visual() {
+  id i;
+  id cohort_size = 20;
+  id cohort_seed = 1;
+  id bias;
+  id mxc, mxi;
+  size_t length = 60;
+  char cohorts[3*length];
+  char inners[3*length];
+  id first_mxc = 0;
+  for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
+    bias = nearest_bias(0.3 * cohort_seed);
+    for (i = 0; i < length; ++i) {
+      biased_cohort_and_inner(i, bias, cohort_size, cohort_seed, &mxc, &mxi);
+      if (first_mxc == 0) { first_mxc = mxc; }
+      cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
+      inners[length*cohort_seed + i] = (char) (0x41 + mxi);
+    }
+    cohorts[length*cohort_seed + (length-1)] = '\0';
+    inners[length*cohort_seed + (length-1)] = '\0';
+  }
+  for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
+    fprintf(stdout, "Cohorts:   %s\n", cohorts + length*cohort_seed);
+  }
+  for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
+    fprintf(stdout, "Inners:    %s\n", inners + length*cohort_seed);
   }
 
   return 0;

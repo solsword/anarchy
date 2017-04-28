@@ -9,6 +9,8 @@
 
 unit_test("find_cohort", &test_find_cohort);
 
+unit_test("find_cohort_and_inner", &test_find_cohort_and_inner);
+
 unit_test("cohort_interleave", &test_cohort_interleave);
 
 unit_test("cohort_fold", &test_cohort_fold);
@@ -23,4 +25,10 @@ unit_test("cohort_shuffle_visual", &test_cohort_shuffle_visual);
 
 unit_test("find_mixed_cohort", &test_find_mixed_cohort);
 
+unit_test("find_mixed_cohort_and_inner", &test_find_mixed_cohort_and_inner);
+
 unit_test("mixed_cohort_visual", &test_mixed_cohort_visual);
+
+unit_test("find_biased_cohort_and_inner", &test_find_biased_cohort_and_inner);
+
+unit_test("biased_cohort_visual", &test_biased_cohort_visual);

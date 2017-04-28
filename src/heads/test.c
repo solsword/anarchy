@@ -17,9 +17,9 @@ void unit_test(char const * const name, int (*test)(void)) {
   // TODO: Record failures in a summary.
   int result = test();
   if (result) {
-    fprintf(stdout, "%s ... failed [%d]\n", name, result);
+    fprintf(stdout, "%40s ... failed [%d]\n", name, result);
   } else {
-    fprintf(stdout, "%s ... passed\n", name);
+    fprintf(stdout, "%40s ... passed\n", name);
   }
 }
 
