@@ -121,6 +121,7 @@ static inline id rev_cohort_spin(id spun, id cohort_size, id seed) {
 // Flops cohort sections with their neighbors.
 static inline id cohort_flop(id inner, id cohort_size, id seed) {
   id limit = cohort_size >> 3;
+  limit += (limit < 4) * 4;
   id size = (seed % limit) + 2;
 
   id which = inner / size;
@@ -305,6 +306,100 @@ static inline id nearest_bias(float f) {
     return MAX_BIAS - 1;
   }
   return result;
+}
+
+// Computes the cutoff for cohort flopping for exponential cohorts. Arguments
+// are:
+// 
+//   shape controls how steeply exponential the distribution is. Values between
+//   1 (essentially no cutoffs) and 0.00000000001 (almost all cutoff except in
+//   the first few sections) make sense, with a few sensible ones being:
+//
+//     0.00001: gives ~75% full cutoff
+//     0.001: gives ~50% full cutoff
+//     0.01: gives ~25% full cutoff
+//     0.05: leaves ~1 item in the last bin
+//     0.25: leaves 25% in the last bin (only slightly curvy)
+//     0.5: leaves 50% in the last bin (starts seeming linear)
+//     0.75: leaves 75% in the last bin (pretty much linear)
+//
+//   Negative values for shape simply reverse the cutoff position within the
+//   section width.
+//
+//   sections indicates how many sections there are in total.
+//
+//   which indicates which section's cutoff we're interested in.
+//
+//   section_width indicates how wide each section is.
+//
+static inline id exp_split(
+  float shape,
+  id sections,
+  id which,
+  id section_width
+) {
+  if (shape > 0) {
+    return (id) (section_width * exp(-(which/(float)sections)*-log(shape)));
+  } else {
+    return (
+      section_width
+    - (id) (section_width * exp(-(which/(float)sections)*-log(-shape)))
+    );
+  }
+}
+
+// Divides a cohort into sections and then sends proportionally more items from
+// each section to the next cohort, forming cohorts with round asymptotic
+// bottoms and long tail tops (or vice versa if shape < 0; see exp_split above).
+#define EXP_SECTION_RESOLUTION 32
+#define MIN_SECTION_COUNT 8
+#define MIN_SECTION_RESOLUTION 4
+static inline void exp_cohort_and_inner(
+  id outer,
+  float shape,
+  id cohort_size,
+  id seed,
+  id *r_cohort,
+  id *r_inner
+) {
+  id resolution = EXP_SECTION_RESOLUTION;
+  id section_count = cohort_size / resolution;
+  if (section_count < MIN_SECTION_COUNT) {
+    resolution = cohort_size / MIN_SECTION_COUNT;
+    if (resolution < MIN_SECTION_RESOLUTION) {
+      resolution = MIN_SECTION_RESOLUTION;
+    }
+    section_count = cohort_size / resolution;
+  }
+
+  id strict_cohort = cohort(outer, cohort_size, seed);
+  id strict_inner = cohort_inner(outer, cohort_size, seed);
+
+  id section = strict_inner / resolution;
+  id in_section = strict_inner % resolution;
+  // TODO: ID coherency between cohorts!
+  id shuf = cohort_shuffle(
+    in_section,
+    resolution,
+    seed + strict_cohort + section
+  );
+  id split = exp_split(shape, section_count, section, resolution);
+  id lower = shuf < split;
+
+  if (shape > 0) {
+    if (lower) {
+      *r_cohort = strict_cohort;
+    } else {
+      *r_cohort = strict_cohort + 1;
+    }
+  } else {
+    if (lower) {
+      *r_cohort = strict_cohort;
+    } else {
+      *r_cohort = strict_cohort - 1;
+    }
+  }
+  *r_inner = strict_inner; // TODO: What here?
 }
 
 #endif // INCLUDE_COHORT_H

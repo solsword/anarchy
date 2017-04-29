@@ -231,36 +231,41 @@ int test_find_mixed_cohort_and_inner() {
 int test_mixed_cohort_visual() {
   id i;
   id cohort_size = 10;
-  //id cohort_seed = 172;
   id cohort_seed = 1;
   id mxc, mxi;
   size_t length = 60;
-  char cohorts[length];
-  char inners[length];
+  char cohorts[3*length];
+  char inners[3*length];
   id first_mxc = 0;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
     for (i = 0; i < length; ++i) {
-      mxc = mixed_cohort(i, cohort_size, cohort_seed);
+      mixed_cohort_and_inner(i, cohort_size, cohort_seed, &mxc, &mxi);
       if (first_mxc == 0) { first_mxc = mxc; }
-      mxi = mixed_cohort_inner(i, cohort_size, cohort_seed);
-      cohorts[i] = (char) (0x30 + mxc - first_mxc);
-      inners[i] = (char) (0x30 + mxi);
+      cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
+      inners[length*cohort_seed + i] = (char) (0x30 + mxi);
     }
-    cohorts[length-1] = '\0';
-    inners[length-1] = '\0';
-    fprintf(stdout, "Cohorts:   %s\n", cohorts);
+    cohorts[length*cohort_seed + (length-1)] = '\0';
+    inners[length*cohort_seed + (length-1)] = '\0';
   }
+  fputc('\n', stdout);
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
-    for (i = 0; i < length; ++i) {
-      mxc = mixed_cohort(i, cohort_size, cohort_seed);
-      if (first_mxc == 0) { first_mxc = mxc; }
-      mxi = mixed_cohort_inner(i, cohort_size, cohort_seed);
-      cohorts[i] = (char) (0x30 + mxc - first_mxc);
-      inners[i] = (char) (0x30 + mxi);
+    fprintf(stdout, "Cohorts:   ");
+    for (i = 0; i < 6; ++i) {
+      for (int j = 0; j < 10; ++j) {
+        fputc(cohorts[length*cohort_seed + i*10 + j], stdout);
+      }
+      fputc(' ', stdout);
     }
-    cohorts[length-1] = '\0';
-    inners[length-1] = '\0';
-    fprintf(stdout, "Inners:    %s\n", inners);
+    fputc('\n', stdout);
+    fprintf(stdout, "Inners:    ");
+    for (i = 0; i < 6; ++i) {
+      for (int j = 0; j < 10; ++j) {
+        fputc(inners[length*cohort_seed + i*10 + j], stdout);
+      }
+      fputc(' ', stdout);
+    }
+    fputc('\n', stdout);
+    fputc('\n', stdout);
   }
 
   return 0;
@@ -304,7 +309,7 @@ int test_find_biased_cohort_and_inner() {
 
 int test_biased_cohort_visual() {
   id i;
-  id cohort_size = 20;
+  id cohort_size = 30;
   id cohort_seed = 1;
   id bias;
   id mxc, mxi;
@@ -313,7 +318,7 @@ int test_biased_cohort_visual() {
   char inners[3*length];
   id first_mxc = 0;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
-    bias = nearest_bias(0.3 * cohort_seed);
+    bias = nearest_bias(0.25 * cohort_seed);
     for (i = 0; i < length; ++i) {
       biased_cohort_and_inner(i, bias, cohort_size, cohort_seed, &mxc, &mxi);
       if (first_mxc == 0) { first_mxc = mxc; }
@@ -323,11 +328,106 @@ int test_biased_cohort_visual() {
     cohorts[length*cohort_seed + (length-1)] = '\0';
     inners[length*cohort_seed + (length-1)] = '\0';
   }
+  fputc('\n', stdout);
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
-    fprintf(stdout, "Cohorts:   %s\n", cohorts + length*cohort_seed);
+    fprintf(stdout, "Cohorts:   ");
+    for (i = 0; i < 6; ++i) {
+      for (int j = 0; j < 10; ++j) {
+        fputc(cohorts[length*cohort_seed + i*10 + j], stdout);
+      }
+      fputc(' ', stdout);
+    }
+    fputc('\n', stdout);
+    fprintf(stdout, "Inners:    ");
+    for (i = 0; i < 6; ++i) {
+      for (int j = 0; j < 10; ++j) {
+        fputc(inners[length*cohort_seed + i*10 + j], stdout);
+      }
+      fputc(' ', stdout);
+    }
+    fputc('\n', stdout);
+    fputc('\n', stdout);
   }
+
+  return 0;
+}
+
+int test_exp_split_visual() {
+  fputc('\n', stdout);
+  id sections = 20;
+  id section_width = 32;
+  for (id i = 0; i < sections; ++i) {
+    id result = exp_split(0.05, sections, i, section_width);
+    for (id j = 0; j < section_width; ++j) {
+      if (j < result) {
+        fputc('#', stdout);
+      } else {
+        fputc('-', stdout);
+      }
+    }
+    fprintf(stdout, " :%02lu", result);
+    fputs("    ", stdout);
+    result = exp_split(-0.05, sections, i, section_width);
+    for (id j = 0; j < section_width; ++j) {
+      if (j < result) {
+        fputc('#', stdout);
+      } else {
+        fputc('-', stdout);
+      }
+    }
+    fprintf(stdout, " :%02lu", result);
+    fputc('\n', stdout);
+  }
+  fputc('\n', stdout);
+  return 0;
+}
+
+int test_exp_cohort_visual() {
+  id i;
+  id cohort_size = 30;
+  id cohort_seed = 1;
+  float shape;
+  id mxc, mxi;
+  size_t length = 60;
+  char cohorts[3*length];
+  char inners[3*length];
+  id first_mxc = 0;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
-    fprintf(stdout, "Inners:    %s\n", inners + length*cohort_seed);
+    if (cohort_seed == 0) {
+      shape = 0.05;
+    } else if (cohort_seed == 1) {
+      shape = -0.05;
+    } else {
+      shape = 0.5;
+    }
+    for (i = 0; i < length; ++i) {
+      exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
+      if (first_mxc == 0) { first_mxc = mxc; }
+      cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
+      inners[length*cohort_seed + i] = (char) (0x41 + mxi);
+    }
+    cohorts[length*cohort_seed + (length-1)] = '\0';
+    inners[length*cohort_seed + (length-1)] = '\0';
+  }
+  fputc('\n', stdout);
+  for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
+    fprintf(stdout, "Cohorts:   ");
+    for (i = 0; i < 6; ++i) {
+      for (int j = 0; j < 10; ++j) {
+        fputc(cohorts[length*cohort_seed + i*10 + j], stdout);
+      }
+      fputc(' ', stdout);
+    }
+    fputc('\n', stdout);
+    fprintf(stdout, "Inners:    ");
+    for (i = 0; i < 6; ++i) {
+      for (int j = 0; j < 10; ++j) {
+        fputc(inners[length*cohort_seed + i*10 + j], stdout);
+      }
+      fputc(' ', stdout);
+    }
+    fputc('\n', stdout);
+    fputc('\n', stdout);
   }
 
   return 0;
