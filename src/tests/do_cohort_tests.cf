@@ -35,4 +35,10 @@ unit_test("biased_cohort_visual", &test_biased_cohort_visual);
 
 unit_test("test_exp_split_visual", &test_exp_split_visual);
 
+unit_test("exp_cohort_sections_visual", &test_exp_cohort_sections_visual);
+
 unit_test("exp_cohort_visual", &test_exp_cohort_visual);
+
+unit_test("exp_cohort_inners", &test_exp_cohort_inners);
+
+unit_test("find_exp_cohort_and_inner", &test_find_exp_cohort_and_inner);

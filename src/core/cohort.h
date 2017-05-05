@@ -323,8 +323,8 @@ static inline id nearest_bias(float f) {
 //     0.5: leaves 50% in the last bin (starts seeming linear)
 //     0.75: leaves 75% in the last bin (pretty much linear)
 //
-//   Negative values for shape simply reverse the cutoff position within the
-//   section width.
+//   Negative values for shape simply reverse the section position within the
+//   number of sections, so that the result is symmetric to positive values.
 //
 //   sections indicates how many sections there are in total.
 //
@@ -338,14 +338,11 @@ static inline id exp_split(
   id which,
   id section_width
 ) {
-  if (shape > 0) {
-    return (id) (section_width * exp(-(which/(float)sections)*-log(shape)));
-  } else {
-    return (
-      section_width
-    - (id) (section_width * exp(-(which/(float)sections)*-log(-shape)))
-    );
+  if (shape < 0) {
+    which = sections - which - 1;
+    shape = -shape;
   }
+  return (id) (section_width * exp(-(which/(float)sections)*-log(shape)));
 }
 
 // Divides a cohort into sections and then sends proportionally more items from
@@ -381,25 +378,49 @@ static inline void exp_cohort_and_inner(
   id shuf = cohort_shuffle(
     in_section,
     resolution,
-    seed + strict_cohort + section
+    seed + section
   );
   id split = exp_split(shape, section_count, section, resolution);
   id lower = shuf < split;
 
-  if (shape > 0) {
-    if (lower) {
-      *r_cohort = strict_cohort;
-    } else {
-      *r_cohort = strict_cohort + 1;
+  int adjust = !lower * (-1 + 2*(shape > 0));
+
+  *r_cohort = strict_cohort + adjust;
+  *r_inner = shuf + (section * resolution);
+}
+
+static inline id exp_cohort_outer(
+  id cohort,
+  id inner,
+  float shape,
+  id cohort_size,
+  id seed
+) {
+  id resolution = EXP_SECTION_RESOLUTION;
+  id section_count = cohort_size / resolution;
+  if (section_count < MIN_SECTION_COUNT) {
+    resolution = cohort_size / MIN_SECTION_COUNT;
+    if (resolution < MIN_SECTION_RESOLUTION) {
+      resolution = MIN_SECTION_RESOLUTION;
     }
-  } else {
-    if (lower) {
-      *r_cohort = strict_cohort;
-    } else {
-      *r_cohort = strict_cohort - 1;
-    }
+    section_count = cohort_size / resolution;
   }
-  *r_inner = strict_inner; // TODO: What here?
+
+  id in_section = inner % resolution;
+  id section = inner / resolution;
+
+  id split = exp_split(shape, section_count, section, resolution);
+  id lower = in_section < split;
+
+  int adjust = !lower * (-1 + 2*(shape > 0));
+
+  id strict_cohort = cohort - adjust;
+
+  id unshuf = rev_cohort_shuffle(in_section, resolution, seed + section);
+
+  id strict_inner = (section * resolution) + unshuf;
+
+  return cohort_outer(strict_cohort, strict_inner, cohort_size, seed);
 }
 
 #endif // INCLUDE_COHORT_H

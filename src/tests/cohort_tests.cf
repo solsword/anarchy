@@ -228,6 +228,7 @@ int test_find_mixed_cohort_and_inner() {
   return 0;
 }
 
+#define UNLIKELY 102901211
 int test_mixed_cohort_visual() {
   id i;
   id cohort_size = 10;
@@ -236,11 +237,11 @@ int test_mixed_cohort_visual() {
   size_t length = 60;
   char cohorts[3*length];
   char inners[3*length];
-  id first_mxc = 0;
+  id first_mxc = UNLIKELY;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
     for (i = 0; i < length; ++i) {
       mixed_cohort_and_inner(i, cohort_size, cohort_seed, &mxc, &mxi);
-      if (first_mxc == 0) { first_mxc = mxc; }
+      if (first_mxc == UNLIKELY) { first_mxc = mxc; }
       cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
       inners[length*cohort_seed + i] = (char) (0x30 + mxi);
     }
@@ -316,12 +317,12 @@ int test_biased_cohort_visual() {
   size_t length = 60;
   char cohorts[3*length];
   char inners[3*length];
-  id first_mxc = 0;
+  id first_mxc = UNLIKELY;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
     bias = nearest_bias(0.25 * cohort_seed);
     for (i = 0; i < length; ++i) {
       biased_cohort_and_inner(i, bias, cohort_size, cohort_seed, &mxc, &mxi);
-      if (first_mxc == 0) { first_mxc = mxc; }
+      if (first_mxc == UNLIKELY) { first_mxc = mxc; }
       cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
       inners[length*cohort_seed + i] = (char) (0x41 + mxi);
     }
@@ -382,6 +383,43 @@ int test_exp_split_visual() {
   return 0;
 }
 
+int test_exp_cohort_sections_visual() {
+  id i;
+  id sections = 20;
+  id section_width = EXP_SECTION_RESOLUTION;
+  id cohort_size = sections * section_width;
+  id cohort_seed = 1;
+  float shape = -0.05;
+  id mxc, mxi;
+  size_t lines = cohort_size*2 / section_width;
+  char cohorts[lines*section_width+1];
+  char inners[lines*section_width+1];
+  id first_mxc = UNLIKELY;
+  for (i = 0; i < cohort_size*2; ++i) {
+    exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
+    if (first_mxc == UNLIKELY) { first_mxc = mxc; }
+    cohorts[i] = (char) (0x30 + mxc - first_mxc);
+    inners[i] = (char) (0x41 + (mxi % 26) + ((mxc - first_mxc)%2)*0x20);
+  }
+  cohorts[lines*section_width] = '\0';
+  inners[lines*section_width] = '\0';
+  fputc('\n', stdout);
+  for (i = 0; i < lines; ++i) {
+    fputs("    ", stdout);
+    for (int j = 0; j < section_width; ++j) {
+      fputc(cohorts[j + section_width*i], stdout);
+    }
+    fputs("    ", stdout);
+    for (int j = 0; j < section_width; ++j) {
+      fputc(inners[j + section_width*i], stdout);
+    }
+    fputc('\n', stdout);
+  }
+  fputc('\n', stdout);
+
+  return 0;
+}
+
 int test_exp_cohort_visual() {
   id i;
   id cohort_size = 30;
@@ -391,7 +429,7 @@ int test_exp_cohort_visual() {
   size_t length = 60;
   char cohorts[3*length];
   char inners[3*length];
-  id first_mxc = 0;
+  id first_mxc = UNLIKELY;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
     if (cohort_seed == 0) {
       shape = 0.05;
@@ -402,7 +440,7 @@ int test_exp_cohort_visual() {
     }
     for (i = 0; i < length; ++i) {
       exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
-      if (first_mxc == 0) { first_mxc = mxc; }
+      if (first_mxc == UNLIKELY) { first_mxc = mxc; }
       cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
       inners[length*cohort_seed + i] = (char) (0x41 + mxi);
     }
@@ -428,6 +466,94 @@ int test_exp_cohort_visual() {
     }
     fputc('\n', stdout);
     fputc('\n', stdout);
+  }
+
+  return 0;
+}
+
+int test_exp_cohort_inners() {
+  id i;
+  id sections = 10;
+  id section_width = EXP_SECTION_RESOLUTION;
+  id cohort_size = sections * section_width;
+  id cohort_seed = 752812;
+  float shape = 0.05;
+  id mxc, mxi;
+  id cohorts[cohort_size*3];
+  id inners[cohort_size*3];
+  id min_mxc = (id) -1;
+
+  // Now fill in the cohorts/inners arrays:
+  for (i = 0; i < cohort_size*3; ++i) {
+    exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
+    if (mxi >= cohort_size) {
+      fprintf(stderr, "Error: out-of-range cohort inner %zu!\n", mxi);
+    } else {
+      cohorts[i] = mxc;
+      inners[i] = mxi;
+    }
+    if (mxc < min_mxc) {
+      min_mxc = mxc;
+    }
+  }
+
+  char observed[cohort_size*4];
+  // Zero-out the observed array:
+  for (i = 0; i < cohort_size*4; ++i) {
+    observed[i] = 0;
+  }
+  for (i = 0; i < cohort_size*3; ++i) {
+    mxc = cohorts[i];
+    mxi = inners[i];
+    observed[mxi + (cohort_size * (mxc - min_mxc))] += 1;
+  }
+  fputc('\n', stdout);
+  fprintf(stdout, "Cohort size: %zu\n", cohort_size);
+  fputc('\n', stdout);
+  // Observed counts for min cohort:
+  for (mxc = min_mxc; mxc < min_mxc + 4; ++mxc) {
+    fprintf(stdout, "Observations of inner indices for cohort %zu:\n\n", mxc);
+    for (i = 0; i < cohort_size; ++i) {
+      fprintf(stdout, "%d ", observed[i + (mxc - min_mxc)*cohort_size]);
+    }
+    fputc('\n', stdout);
+    fputc('\n', stdout);
+  }
+
+  return 0;
+}
+
+int test_find_exp_cohort_and_inner() {
+  id i;
+  id my_cohort, inner; 
+  id cohort_size = 10000;
+  id cohort_seed = 1728;
+  float shape = 0.25;
+  id reversed;
+  for (i = 0; i < 391831; i += 12817) {
+    exp_cohort_and_inner(
+      i,
+      shape,
+      cohort_size,
+      cohort_seed,
+      &my_cohort,
+      &inner
+    );
+    reversed = exp_cohort_outer(
+      my_cohort,
+      inner,
+      shape,
+      cohort_size,
+      cohort_seed
+    );
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Exponential cohort reversibility failed: %lu → %lu/%lu → %lu\n",
+        i, my_cohort, inner, reversed
+      );
+      return (int) i+1;
+    }
   }
 
   return 0;
