@@ -15,7 +15,7 @@ int test_parent_child_selection() {
   id avg_arity = 4;
   id seed = 46571;
   id result;
-  for (id tin = 102012; tin < 1928012; tin += 98331) {
+  for (id tin = 102012; tin < 1928012; tin += 331) {
     select_parent_and_index(tin, avg_arity, max_arity, seed, &parent, &index);
     result = select_nth_child(parent, index, avg_arity, max_arity, seed);
     if (result != tin) {

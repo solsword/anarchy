@@ -73,8 +73,8 @@ void select_parent_and_index(
       from_lower += divide_at;
       from_upper += half_remaining;
     } else {
-      to_lower = divide_at;
-      // to_upper = half_remaining; // would update here
+      to_lower -= (children_left - divide_at);
+      // to_upper -= half_remaining; // would update here
     }
     parents_left = half_remaining;
     children_left = to_lower - from_lower;
@@ -134,10 +134,10 @@ id select_nth_child(
     if (shuf >= half_remaining) {
       shuf -= half_remaining;
       from_lower += divide_at;
-      // from_upper = half_remaining; // would update here
+      // from_upper += half_remaining; // would update here
     } else {
-      to_lower = divide_at;
-      // to_upper = half_remaining; // would update here
+      to_lower -= (children_left - divide_at);
+      // to_upper -= half_remaining; // would update here
     }
     parents_left = half_remaining;
     children_left = to_lower - from_lower;
