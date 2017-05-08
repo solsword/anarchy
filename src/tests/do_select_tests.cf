@@ -8,3 +8,5 @@
  */
 
 unit_test("select_nth/parent", &test_parent_child_selection);
+
+unit_test("selection_visual", &test_parent_child_visual);

@@ -37,3 +37,31 @@ int test_parent_child_selection() {
   }
   return 0;
 }
+
+int test_parent_child_visual() {
+  id avg_arity = 4, max_arity = 32;
+  id parent = 7182;
+  id seed = 191284;
+  id nth = 0;
+  id child = NONE;
+  fprintf(stdout, "\n  %lu", parent);
+  for (id i = 0; i < 7; ++i) {
+      nth = 0;
+      fprintf(stdout, "\n    |\n  ");
+      while(1) {
+        child = select_nth_child(parent, nth, avg_arity, max_arity, seed);
+        if (child == NONE) {
+          fprintf(stdout, "|", child);
+          break;
+        }
+        fprintf(stdout, "%lu---", child);
+        nth += 1;
+      }
+      parent = select_nth_child(parent, 0, avg_arity, max_arity, seed);
+      if (parent == NONE) {
+        break;
+      }
+  }
+  fprintf(stdout, "\n\n");
+  return 0;
+}
