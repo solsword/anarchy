@@ -36,6 +36,14 @@ static inline id byte_mask(id byte) {
   return (0xffULL) << (byte * 8ULL);
 }
 
+static inline id min(id A, id B) {
+  return (A < B ? A : B);
+}
+
+static inline id max(id A, id B) {
+  return (A > B ? A : B);
+}
+
 // A circular bit shift; distance is capped at 3/4 of ID_BITS
 static inline id circular_shift(id x, id distance) {
   distance %= ((ID_BITS << 1) + ID_BITS) >> 2; // 3/4 of ID_BITS

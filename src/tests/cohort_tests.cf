@@ -1,6 +1,6 @@
 // vim: syntax=c
 /**
- * @file: cohort_tests.c
+ * @file: cohort_tests.cf
  *
  * @description: Unit tests for cohort.h.
  *

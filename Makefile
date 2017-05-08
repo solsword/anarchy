@@ -11,16 +11,23 @@ FRAGMENTS:=$(shell find src -path "src/heads" -prune -o -name "*.[ch]f" -print)
 ALL_SOURCES:=$(SOURCES) $(FRAGMENTS)
 HEADS:=$(shell find src/heads -name "*.c" -print)
 
+OBJS:=$(shell find src -path "src/heads" -prune -o -name "*.c" -print | sed "s/\.c/.o/g" | sed "s/^src/obj/")
+
 .PHONY: list
 list:
 	@echo $(ALL_SOURCES)
 	@echo $(HEADS)
+	@echo $(OBJS)
 
-bin/test: $(ALL_SOURCES) src/heads/test.c
-	$(COMPILE) src/heads/test.c -o $@
+obj/%.o: src/%.c
+	mkdir -p $(@D)
+	$(COMPILE) -c $< -o $@
 
-bin/rng: $(ALL_SOURCES) src/heads/rng.c
-	$(COMPILE) src/heads/rng.c -o $@
+bin/test: $(ALL_SOURCES) $(OBJS) src/heads/test.c
+	$(COMPILE) $(OBJS) src/heads/test.c -o $@
+
+bin/rng: $(ALL_SOURCES) $(OBJS) src/heads/rng.c
+	$(COMPILE) $(OBJS) src/heads/rng.c -o $@
 
 .PHONY: test
 test: bin/test
@@ -32,4 +39,5 @@ rng: bin/rng
 
 .PHONY: clean
 clean:
+	rm -R obj/*
 	rm bin/*

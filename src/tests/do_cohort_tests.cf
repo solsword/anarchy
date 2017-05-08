@@ -1,8 +1,8 @@
 // vim: syntax=c
 /**
- * @file: do_cohort_tests.f
+ * @file: do_cohort_tests.cf
  *
- * @description: Code fragment for calling tests in tests/cohort_tests.c.
+ * @description: Code fragment for calling tests in tests/cohort_tests.cf.
  *
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */

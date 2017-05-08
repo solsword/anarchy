@@ -1,0 +1,10 @@
+// vim: syntax=c
+/**
+ * @file: do_select_tests.cf
+ *
+ * @description: Code fragment for calling tests in tests/select_tests.cf.
+ *
+ * @author: Peter Mawhorter (pmawhorter@gmail.com)
+ */
+
+unit_test("select_nth/parent", &test_parent_child_selection);

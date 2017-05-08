@@ -1,0 +1,39 @@
+// vim: syntax=c
+/**
+ * @file: select_tests.cf
+ *
+ * @description: Unit tests for select.h/c.
+ *
+ * @author: Peter Mawhorter (pmawhorter@gmail.com)
+ */
+
+#include "core/select.h"
+
+int test_parent_child_selection() {
+  id parent, index;
+  id max_arity = 16;
+  id avg_arity = 4;
+  id seed = 46571;
+  id result;
+  for (id tin = 102012; tin < 1928012; tin += 98331) {
+    select_parent_and_index(tin, avg_arity, max_arity, seed, &parent, &index);
+    result = select_nth_child(parent, index, avg_arity, max_arity, seed);
+    if (result != tin) {
+      fprintf(
+        stderr,
+        "Selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        tin, parent, index, parent, index, result
+      );
+      fprintf(stderr, "All children of %lu:\n", parent);
+      id nth = 0;
+      id child = NONE;
+      do {
+        child = select_nth_child(parent, nth, avg_arity, max_arity, seed);
+        fprintf(stderr, "  #%lu: %lu\n", nth, child);
+        nth += 1;
+      } while (child != NONE);
+      return tin;
+    }
+  }
+  return 0;
+}
