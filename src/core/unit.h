@@ -20,6 +20,10 @@
 #define ID_BYTES 8ULL
 typedef uint64_t id;
 
+// An ID to be used for out-of-band purposes. Note that it's often not strictly
+// out-of-band, however.
+#define NONE 0
+
 /********************
  * Inline Functions *
  ********************/
@@ -104,6 +108,22 @@ static inline id rev_prng(id x, id seed) {
   x = flop(x);
   x ^= seed;
   return x;
+}
+
+// A smoothed prng with an integer limit. This is non-reversible for several
+// reasons, including the modulus to fit within the limit and the averaging. If
+// smoothness is set to zero, this is the same as just prng with a modulus.
+// Note that if the modulus is too large, integer overflow during addition
+// before averaging will destroy the smooth property of results.
+static inline id irrev_smooth_prng(id x, id limit, id smoothness, id seed) {
+  id random = prng(x, seed);
+  id result = random % limit;
+  for (id i = 0; i < smoothness; ++i) {
+    random = prng(random, seed);
+    result += random % limit;
+  }
+  result /= (smoothness + 1);
+  return result;
 }
 
 #endif // INCLUDE_UNIT_H
