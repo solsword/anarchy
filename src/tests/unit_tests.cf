@@ -12,18 +12,18 @@
 
 #define TEST_ITERATIONS 256
 
-int test_fold() {
+int myc_test_fold() {
   int i;
   id results[TEST_ITERATIONS];
 
   results[0] = 10290192;
 
   for (i = 1; i < TEST_ITERATIONS; ++i) {
-    results[i] = fold(results[i-1], 17 + i);
+    results[i] = myc_fold(results[i-1], 17 + i);
   }
 
   for (i = TEST_ITERATIONS - 1; i > 0; --i) {
-    id x = fold(results[i], 17 + i);
+    id x = myc_fold(results[i], 17 + i);
     if (x != results[i-1]) {
       fprintf(
         stderr,
@@ -37,18 +37,18 @@ int test_fold() {
   return 0;
 }
 
-int test_circular_shift() {
+int myc_test_circular_shift() {
   int i;
   id results[TEST_ITERATIONS];
 
   results[0] = 10290192;
 
   for (i = 1; i < TEST_ITERATIONS; ++i) {
-    results[i] = circular_shift(results[i-1], 17 + i);
+    results[i] = myc_circular_shift(results[i-1], 17 + i);
   }
 
   for (i = TEST_ITERATIONS - 1; i > 0; --i) {
-    id x = rev_circular_shift(results[i], 17 + i);
+    id x = myc_rev_circular_shift(results[i], 17 + i);
     if (x != results[i-1]) {
       fprintf(
         stderr,
@@ -64,18 +64,18 @@ int test_circular_shift() {
 
 #define FLOP_TESTS 4
 
-int test_flop() {
+int myc_test_flop() {
   int i;
   id results[FLOP_TESTS];
 
   results[0] = 10290192;
 
   for (i = 1; i < FLOP_TESTS; ++i) {
-    results[i] = flop(results[i-1]);
+    results[i] = myc_flop(results[i-1]);
   }
 
   for (i = FLOP_TESTS - 1; i > 0; --i) {
-    id x = flop(results[i]);
+    id x = myc_flop(results[i]);
     if (x != results[i-1]) {
       fprintf(
         stderr,
@@ -89,18 +89,18 @@ int test_flop() {
   return 0;
 }
 
-int test_prng() {
+int myc_test_prng() {
   int i;
   id results[TEST_ITERATIONS];
 
   results[0] = 10290192;
 
   for (i = 1; i < TEST_ITERATIONS; ++i) {
-    results[i] = prng(results[i-1], 17 + i);
+    results[i] = myc_prng(results[i-1], 17 + i);
   }
 
   for (i = TEST_ITERATIONS - 1; i > 0; --i) {
-    id x = rev_prng(results[i], 17 + i);
+    id x = myc_rev_prng(results[i], 17 + i);
     if (x != results[i-1]) {
       fprintf(
         stderr,
@@ -114,13 +114,13 @@ int test_prng() {
   return 0;
 }
 
-int test_prng_spew() {
+int myc_test_prng_spew() {
   int i;
   id x = 65;
   fprintf(stdout, "Spew test:\n");
   for (int line = 0; line < 10; ++line) {
     for (i = 0; i < 80; ++i) {
-      x = prng(x, 45);
+      x = myc_prng(x, 45);
       fputc((char) (32 + (x % 10)), stdout);
     }
     fputc('\n', stdout);

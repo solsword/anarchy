@@ -9,15 +9,22 @@
 
 #include "core/select.h"
 
-int test_parent_child_selection() {
+int myc_test_parent_child_selection() {
   id parent, index;
   id max_arity = 16;
   id avg_arity = 4;
   id seed = 46571;
   id result;
   for (id tin = 102012; tin < 1928012; tin += 331) {
-    select_parent_and_index(tin, avg_arity, max_arity, seed, &parent, &index);
-    result = select_nth_child(parent, index, avg_arity, max_arity, seed);
+    myc_select_parent_and_index(
+      tin,
+      avg_arity,
+      max_arity,
+      seed,
+      &parent,
+      &index
+    );
+    result = myc_select_nth_child(parent, index, avg_arity, max_arity, seed);
     if (result != tin) {
       fprintf(
         stderr,
@@ -28,7 +35,7 @@ int test_parent_child_selection() {
       id nth = 0;
       id child = NONE;
       do {
-        child = select_nth_child(parent, nth, avg_arity, max_arity, seed);
+        child = myc_select_nth_child(parent, nth, avg_arity, max_arity, seed);
         fprintf(stderr, "  #%lu: %lu\n", nth, child);
         nth += 1;
       } while (child != NONE);
@@ -38,7 +45,7 @@ int test_parent_child_selection() {
   return 0;
 }
 
-int test_parent_child_visual() {
+int myc_test_parent_child_visual() {
   id avg_arity = 4, max_arity = 32;
   id parent = 7182;
   id seed = 191284;
@@ -49,15 +56,15 @@ int test_parent_child_visual() {
       nth = 0;
       fprintf(stdout, "\n    |\n  ");
       while(1) {
-        child = select_nth_child(parent, nth, avg_arity, max_arity, seed);
+        child = myc_select_nth_child(parent, nth, avg_arity, max_arity, seed);
         if (child == NONE) {
-          fprintf(stdout, "|", child);
+          fprintf(stdout, "|");
           break;
         }
         fprintf(stdout, "%lu---", child);
         nth += 1;
       }
-      parent = select_nth_child(parent, 0, avg_arity, max_arity, seed);
+      parent = myc_select_nth_child(parent, 0, avg_arity, max_arity, seed);
       if (parent == NONE) {
         break;
       }

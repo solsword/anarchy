@@ -9,16 +9,16 @@
 
 #include "core/cohort.h"
 
-int test_find_cohort() {
+int myc_test_find_cohort() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
-    my_cohort = cohort(i, cohort_size, cohort_seed);
-    inner = cohort_inner(i, cohort_size, cohort_seed);
-    reversed = cohort_outer(my_cohort, inner, cohort_size, cohort_seed);
+    my_cohort = myc_cohort(i, cohort_size, cohort_seed);
+    inner = myc_cohort_inner(i, cohort_size, cohort_seed);
+    reversed = myc_cohort_outer(my_cohort, inner, cohort_size, cohort_seed);
     if (reversed != i) {
       fprintf(
         stderr,
@@ -32,15 +32,15 @@ int test_find_cohort() {
   return 0;
 }
 
-int test_find_cohort_and_inner() {
+int myc_test_find_cohort_and_inner() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
-    cohort_and_inner(i, cohort_size, cohort_seed, &my_cohort, &inner);
-    reversed = cohort_outer(my_cohort, inner, cohort_size, cohort_seed);
+    myc_cohort_and_inner(i, cohort_size, cohort_seed, &my_cohort, &inner);
+    reversed = myc_cohort_outer(my_cohort, inner, cohort_size, cohort_seed);
     if (reversed != i) {
       fprintf(
         stderr,
@@ -54,13 +54,13 @@ int test_find_cohort_and_inner() {
   return 0;
 }
 
-int test_cohort_interleave() {
+int myc_test_cohort_interleave() {
   id i;
   id cohort_size = 10000;
   id interleaved, reversed;
   for (i = 0; i < cohort_size; ++i) {
-    interleaved = cohort_interleave(i, cohort_size);
-    reversed = rev_cohort_interleave(interleaved, cohort_size);
+    interleaved = myc_cohort_interleave(i, cohort_size);
+    reversed = myc_rev_cohort_interleave(interleaved, cohort_size);
     if (reversed != i) {
       fprintf(
         stderr,
@@ -74,13 +74,13 @@ int test_cohort_interleave() {
   return 0;
 }
 
-int test_cohort_fold() {
+int myc_test_cohort_fold() {
   id i;
   id cohort_size = 10000;
   id folded, reversed;
   for (i = 0; i < cohort_size; ++i) {
-    folded = cohort_fold(i, cohort_size, 17+i);
-    reversed = rev_cohort_fold(folded, cohort_size, 17+i);
+    folded = myc_cohort_fold(i, cohort_size, 17+i);
+    reversed = myc_rev_cohort_fold(folded, cohort_size, 17+i);
     if (reversed != i) {
       fprintf(
         stderr,
@@ -94,13 +94,13 @@ int test_cohort_fold() {
   return 0;
 }
 
-int test_cohort_spin() {
+int myc_test_cohort_spin() {
   id i;
   id cohort_size = 10000;
   id spun, reversed;
   for (i = 0; i < cohort_size; ++i) {
-    spun = cohort_spin(i, cohort_size, 17+i);
-    reversed = rev_cohort_spin(spun, cohort_size, 17+i);
+    spun = myc_cohort_spin(i, cohort_size, 17+i);
+    reversed = myc_rev_cohort_spin(spun, cohort_size, 17+i);
     if (reversed != i) {
       fprintf(
         stderr,
@@ -114,13 +114,13 @@ int test_cohort_spin() {
   return 0;
 }
 
-int test_cohort_flop() {
+int myc_test_cohort_flop() {
   id i;
   id cohort_size = 10000;
   id flopped, reversed;
   for (i = 0; i < cohort_size; ++i) {
-    flopped = cohort_flop(i, cohort_size, 17+i);
-    reversed = cohort_flop(flopped, cohort_size, 17+i);
+    flopped = myc_cohort_flop(i, cohort_size, 17+i);
+    reversed = myc_cohort_flop(flopped, cohort_size, 17+i);
     if (reversed != i) {
       fprintf(
         stderr,
@@ -134,13 +134,13 @@ int test_cohort_flop() {
   return 0;
 }
 
-int test_cohort_shuffle() {
+int myc_test_cohort_shuffle() {
   id i;
   id cohort_size = 10000;
   id shuffled, reversed;
   for (i = 0; i < cohort_size; ++i) {
-    shuffled = cohort_shuffle(i, cohort_size, 17+i);
-    reversed = rev_cohort_shuffle(shuffled, cohort_size, 17+i);
+    shuffled = myc_cohort_shuffle(i, cohort_size, 17+i);
+    reversed = myc_rev_cohort_shuffle(shuffled, cohort_size, 17+i);
     if (reversed != i) {
       fprintf(
         stderr,
@@ -154,14 +154,14 @@ int test_cohort_shuffle() {
   return 0;
 }
 
-int test_cohort_shuffle_visual() {
+int myc_test_cohort_shuffle_visual() {
   id i;
   id cohort_size = 52;
   id s;
   char results[cohort_size];
   char *original = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   for (i = 0; i < cohort_size; ++i) {
-    s = cohort_shuffle(i, cohort_size, 17);
+    s = myc_cohort_shuffle(i, cohort_size, 17);
     results[i] = original[s];
     if (s > 51) {
       fprintf(stdout, "I → S    %zu → %zu\n", i, s);
@@ -173,16 +173,16 @@ int test_cohort_shuffle_visual() {
   return 0;
 }
 
-int test_find_mixed_cohort() {
+int myc_test_find_mixed_cohort() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
-    my_cohort = mixed_cohort(i, cohort_size, cohort_seed);
-    inner = mixed_cohort_inner(i, cohort_size, cohort_seed);
-    reversed = mixed_cohort_outer(
+    my_cohort = myc_mixed_cohort(i, cohort_size, cohort_seed);
+    inner = myc_mixed_cohort_inner(i, cohort_size, cohort_seed);
+    reversed = myc_mixed_cohort_outer(
       my_cohort,
       inner,
       cohort_size,
@@ -201,15 +201,15 @@ int test_find_mixed_cohort() {
   return 0;
 }
 
-int test_find_mixed_cohort_and_inner() {
+int myc_test_find_mixed_cohort_and_inner() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
-    mixed_cohort_and_inner(i, cohort_size, cohort_seed, &my_cohort, &inner);
-    reversed = mixed_cohort_outer(
+    myc_mixed_cohort_and_inner(i, cohort_size, cohort_seed, &my_cohort, &inner);
+    reversed = myc_mixed_cohort_outer(
       my_cohort,
       inner,
       cohort_size,
@@ -229,7 +229,7 @@ int test_find_mixed_cohort_and_inner() {
 }
 
 #define UNLIKELY 102901211
-int test_mixed_cohort_visual() {
+int myc_test_mixed_cohort_visual() {
   id i;
   id cohort_size = 10;
   id cohort_seed = 1;
@@ -240,7 +240,7 @@ int test_mixed_cohort_visual() {
   id first_mxc = UNLIKELY;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
     for (i = 0; i < length; ++i) {
-      mixed_cohort_and_inner(i, cohort_size, cohort_seed, &mxc, &mxi);
+      myc_mixed_cohort_and_inner(i, cohort_size, cohort_seed, &mxc, &mxi);
       if (first_mxc == UNLIKELY) { first_mxc = mxc; }
       cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
       inners[length*cohort_seed + i] = (char) (0x30 + mxi);
@@ -272,15 +272,15 @@ int test_mixed_cohort_visual() {
   return 0;
 }
 
-int test_find_biased_cohort_and_inner() {
+int myc_test_find_biased_cohort_and_inner() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
-  id bias = nearest_bias(0.8);
+  id bias = myc_nearest_bias(0.8);
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
-    biased_cohort_and_inner(
+    myc_biased_cohort_and_inner(
       i,
       bias,
       cohort_size,
@@ -288,7 +288,7 @@ int test_find_biased_cohort_and_inner() {
       &my_cohort,
       &inner
     );
-    reversed = biased_cohort_outer(
+    reversed = myc_biased_cohort_outer(
       my_cohort,
       inner,
       bias,
@@ -308,7 +308,7 @@ int test_find_biased_cohort_and_inner() {
   return 0;
 }
 
-int test_biased_cohort_visual() {
+int myc_test_biased_cohort_visual() {
   id i;
   id cohort_size = 30;
   id cohort_seed = 1;
@@ -319,9 +319,16 @@ int test_biased_cohort_visual() {
   char inners[3*length];
   id first_mxc = UNLIKELY;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
-    bias = nearest_bias(0.25 * cohort_seed);
+    bias = myc_nearest_bias(0.25 * cohort_seed);
     for (i = 0; i < length; ++i) {
-      biased_cohort_and_inner(i, bias, cohort_size, cohort_seed, &mxc, &mxi);
+      myc_biased_cohort_and_inner(
+        i,
+        bias,
+        cohort_size,
+        cohort_seed,
+        &mxc,
+        &mxi
+      );
       if (first_mxc == UNLIKELY) { first_mxc = mxc; }
       cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
       inners[length*cohort_seed + i] = (char) (0x41 + mxi);
@@ -353,12 +360,12 @@ int test_biased_cohort_visual() {
   return 0;
 }
 
-int test_exp_split_visual() {
+int myc_test_exp_split_visual() {
   fputc('\n', stdout);
   id sections = 20;
   id section_width = 32;
   for (id i = 0; i < sections; ++i) {
-    id result = exp_split(0.05, sections, i, section_width);
+    id result = myc_exp_split(0.05, sections, i, section_width);
     for (id j = 0; j < section_width; ++j) {
       if (j < result) {
         fputc('#', stdout);
@@ -368,7 +375,7 @@ int test_exp_split_visual() {
     }
     fprintf(stdout, " :%02lu", result);
     fputs("    ", stdout);
-    result = exp_split(-0.05, sections, i, section_width);
+    result = myc_exp_split(-0.05, sections, i, section_width);
     for (id j = 0; j < section_width; ++j) {
       if (j < result) {
         fputc('#', stdout);
@@ -383,7 +390,7 @@ int test_exp_split_visual() {
   return 0;
 }
 
-int test_exp_cohort_sections_visual() {
+int myc_test_exp_cohort_sections_visual() {
   id i;
   id sections = 20;
   id section_width = EXP_SECTION_RESOLUTION;
@@ -396,7 +403,7 @@ int test_exp_cohort_sections_visual() {
   char inners[lines*section_width+1];
   id first_mxc = UNLIKELY;
   for (i = 0; i < cohort_size*2; ++i) {
-    exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
+    myc_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
     if (first_mxc == UNLIKELY) { first_mxc = mxc; }
     cohorts[i] = (char) (0x30 + mxc - first_mxc);
     inners[i] = (char) (0x41 + (mxi % 26) + ((mxc - first_mxc)%2)*0x20);
@@ -420,7 +427,7 @@ int test_exp_cohort_sections_visual() {
   return 0;
 }
 
-int test_exp_cohort_visual() {
+int myc_test_exp_cohort_visual() {
   id i;
   id cohort_size = 30;
   id cohort_seed = 1;
@@ -439,7 +446,7 @@ int test_exp_cohort_visual() {
       shape = 0.5;
     }
     for (i = 0; i < length; ++i) {
-      exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
+      myc_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
       if (first_mxc == UNLIKELY) { first_mxc = mxc; }
       cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
       inners[length*cohort_seed + i] = (char) (0x41 + mxi);
@@ -471,7 +478,7 @@ int test_exp_cohort_visual() {
   return 0;
 }
 
-int test_exp_cohort_inners() {
+int myc_test_exp_cohort_inners() {
   id i;
   id sections = 10;
   id section_width = EXP_SECTION_RESOLUTION;
@@ -485,7 +492,7 @@ int test_exp_cohort_inners() {
 
   // Now fill in the cohorts/inners arrays:
   for (i = 0; i < cohort_size*3; ++i) {
-    exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
+    myc_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
     if (mxi >= cohort_size) {
       fprintf(stderr, "Error: out-of-range cohort inner %zu!\n", mxi);
     } else {
@@ -523,7 +530,7 @@ int test_exp_cohort_inners() {
   return 0;
 }
 
-int test_find_exp_cohort_and_inner() {
+int myc_test_find_exp_cohort_and_inner() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
@@ -531,7 +538,7 @@ int test_find_exp_cohort_and_inner() {
   float shape = 0.25;
   id reversed;
   for (i = 0; i < 391831; i += 12817) {
-    exp_cohort_and_inner(
+    myc_exp_cohort_and_inner(
       i,
       shape,
       cohort_size,
@@ -539,7 +546,7 @@ int test_find_exp_cohort_and_inner() {
       &my_cohort,
       &inner
     );
-    reversed = exp_cohort_outer(
+    reversed = myc_exp_cohort_outer(
       my_cohort,
       inner,
       shape,

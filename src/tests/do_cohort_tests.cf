@@ -7,38 +7,47 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-unit_test("find_cohort", &test_find_cohort);
+myc_unit_test("find_cohort", &myc_test_find_cohort);
 
-unit_test("find_cohort_and_inner", &test_find_cohort_and_inner);
+myc_unit_test("find_cohort_and_inner", &myc_test_find_cohort_and_inner);
 
-unit_test("cohort_interleave", &test_cohort_interleave);
+myc_unit_test("cohort_interleave", &myc_test_cohort_interleave);
 
-unit_test("cohort_fold", &test_cohort_fold);
+myc_unit_test("cohort_fold", &myc_test_cohort_fold);
 
-unit_test("cohort_spin", &test_cohort_spin);
+myc_unit_test("cohort_spin", &myc_test_cohort_spin);
 
-unit_test("cohort_flop", &test_cohort_flop);
+myc_unit_test("cohort_flop", &myc_test_cohort_flop);
 
-unit_test("cohort_shuffle", &test_cohort_shuffle);
+myc_unit_test("cohort_shuffle", &myc_test_cohort_shuffle);
 
-unit_test("cohort_shuffle_visual", &test_cohort_shuffle_visual);
+myc_unit_test("cohort_shuffle_visual", &myc_test_cohort_shuffle_visual);
 
-unit_test("find_mixed_cohort", &test_find_mixed_cohort);
+myc_unit_test("find_mixed_cohort", &myc_test_find_mixed_cohort);
 
-unit_test("find_mixed_cohort_and_inner", &test_find_mixed_cohort_and_inner);
+myc_unit_test(
+  "find_mixed_cohort_and_inner",
+  &myc_test_find_mixed_cohort_and_inner
+);
 
-unit_test("mixed_cohort_visual", &test_mixed_cohort_visual);
+myc_unit_test("mixed_cohort_visual", &myc_test_mixed_cohort_visual);
 
-unit_test("find_biased_cohort_and_inner", &test_find_biased_cohort_and_inner);
+myc_unit_test(
+  "find_biased_cohort_and_inner",
+  &myc_test_find_biased_cohort_and_inner
+);
 
-unit_test("biased_cohort_visual", &test_biased_cohort_visual);
+myc_unit_test("biased_cohort_visual", &myc_test_biased_cohort_visual);
 
-unit_test("test_exp_split_visual", &test_exp_split_visual);
+myc_unit_test("test_exp_split_visual", &myc_test_exp_split_visual);
 
-unit_test("exp_cohort_sections_visual", &test_exp_cohort_sections_visual);
+myc_unit_test(
+  "exp_cohort_sections_visual",
+  &myc_test_exp_cohort_sections_visual
+);
 
-unit_test("exp_cohort_visual", &test_exp_cohort_visual);
+myc_unit_test("exp_cohort_visual", &myc_test_exp_cohort_visual);
 
-unit_test("exp_cohort_inners", &test_exp_cohort_inners);
+myc_unit_test("exp_cohort_inners", &myc_test_exp_cohort_inners);
 
-unit_test("find_exp_cohort_and_inner", &test_find_exp_cohort_and_inner);
+myc_unit_test("find_exp_cohort_and_inner", &myc_test_find_exp_cohort_and_inner);

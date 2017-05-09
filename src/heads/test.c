@@ -14,7 +14,7 @@
 #include "tests/cohort_tests.cf"
 #include "tests/select_tests.cf"
 
-void unit_test(char const * const name, int (*test)(void)) {
+void myc_unit_test(char const * const name, int (*test)(void)) {
   // TODO: Record failures in a summary.
   int result = test();
   if (result) {

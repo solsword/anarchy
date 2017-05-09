@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
   id seed = 1092809123;
   size_t count = 0;
   while (limit == 0 || count < limit) {
-    x = prng(x, seed);
+    x = myc_prng(x, seed);
     char * byte = (char*) &x;
     for (size_t i = 0; i < sizeof(id); ++i) {
       fputc(*byte, stdout);

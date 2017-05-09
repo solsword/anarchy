@@ -18,7 +18,7 @@
 
 // Identifies a parent, as well as which child of that parent the child is.
 // Returns these values via the r_parent and r_index parameters.
-void select_parent_and_index(
+void myc_select_parent_and_index(
   id child,
   id avg_arity,
   id max_arity,
@@ -32,7 +32,7 @@ void select_parent_and_index(
 // cohort of children to be divided between a number of parents such that on
 // average each parent with have avg_arity children, but integer divisions mean
 // that avg_arity is only roughly respected.
-id select_nth_child(
+id myc_select_nth_child(
   id parent,
   id nth,
   id avg_arity,

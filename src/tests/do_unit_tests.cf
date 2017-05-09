@@ -7,12 +7,12 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-unit_test("fold", &test_fold);
+myc_unit_test("fold", &myc_test_fold);
 
-unit_test("circular_shift", &test_circular_shift);
+myc_unit_test("circular_shift", &myc_test_circular_shift);
 
-unit_test("flop", &test_flop);
+myc_unit_test("flop", &myc_test_flop);
 
-unit_test("prng", &test_prng);
+myc_unit_test("prng", &myc_test_prng);
 
-unit_test("prng spew", &test_prng_spew);
+myc_unit_test("prng spew", &myc_test_prng_spew);

@@ -7,6 +7,6 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-unit_test("select_nth/parent", &test_parent_child_selection);
+myc_unit_test("select_nth/parent", &myc_test_parent_child_selection);
 
-unit_test("selection_visual", &test_parent_child_visual);
+myc_unit_test("selection_visual", &myc_test_parent_child_visual);
