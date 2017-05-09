@@ -10,3 +10,15 @@
 myc_unit_test("select_nth/parent", &myc_test_parent_child_selection);
 
 myc_unit_test("selection_visual", &myc_test_parent_child_visual);
+
+myc_unit_test(
+  "select_exponential_nth/parent",
+  &myc_test_exp_parent_child_selection
+);
+
+myc_unit_test(
+  "exponential_selection_visual",
+  &myc_test_exp_parent_child_visual
+);
+
+myc_unit_test("exponential_selection_grahpviz", &myc_test_exp_select_graphviz);

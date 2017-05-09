@@ -7,6 +7,8 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
+#include <stdio.h>
+
 #include "core/select.h"
 
 int myc_test_parent_child_selection() {
@@ -70,5 +72,191 @@ int myc_test_parent_child_visual() {
       }
   }
   fprintf(stdout, "\n\n");
+  return 0;
+}
+
+int myc_test_exp_parent_child_selection() {
+  id parent, index;
+  id max_arity = 32;
+  id avg_arity = 1;
+  id seed = 798513546;
+  float exp_shape = 0.2;
+  id exp_size = 1024;
+  id result;
+  for (id tin = 54646; tin < 9464135; tin += 5167) {
+    myc_select_exp_parent_and_index(
+      tin,
+      avg_arity,
+      max_arity,
+      exp_shape,
+      exp_size,
+      seed,
+      &parent,
+      &index
+    );
+    result = myc_select_exp_nth_child(
+      parent,
+      index,
+      avg_arity,
+      max_arity,
+      exp_shape,
+      exp_size,
+      seed
+    );
+    if (result != tin) {
+      fprintf(
+        stderr,
+        "Selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        tin, parent, index, parent, index, result
+      );
+      fprintf(stderr, "All children of %lu:\n", parent);
+      id nth = 0;
+      id child = NONE;
+      do {
+        child = myc_select_exp_nth_child(
+          parent,
+          nth,
+          avg_arity,
+          max_arity,
+          exp_shape,
+          exp_size,
+          seed
+        );
+        fprintf(stderr, "  #%lu: %lu\n", nth, child);
+        nth += 1;
+      } while (child != NONE);
+      return tin;
+    }
+  }
+  return 0;
+}
+
+int myc_test_exp_parent_child_visual() {
+  id avg_arity = 3, max_arity = 32;
+  id parent = 46548464;
+  id seed = 172911;
+  id nth = 0;
+  id child = NONE;
+  float exp_cohort_shape = 0.02;
+  id exp_cohort_size = 512;
+  fprintf(stdout, "\n  %lu", parent);
+  for (id i = 0; i < 7; ++i) {
+      nth = 0;
+      fprintf(stdout, "\n    |\n  ");
+      while(1) {
+        child = myc_select_exp_nth_child(
+          parent,
+          nth,
+          avg_arity,
+          max_arity,
+          exp_cohort_shape,
+          exp_cohort_size,
+          seed
+        );
+        if (child == NONE) {
+          fprintf(stdout, "|");
+          break;
+        }
+        fprintf(stdout, "%lu---", child);
+        nth += 1;
+      }
+      parent = myc_select_exp_nth_child(
+        parent,
+        0,
+        avg_arity,
+        max_arity,
+        exp_cohort_shape,
+        exp_cohort_size,
+        seed
+      );
+      if (parent == NONE) {
+        break;
+      }
+  }
+  fprintf(stdout, "\n\n");
+  return 0;
+}
+
+void print_edges_recursively(
+  FILE* stream,
+  id parent,
+  id avg_arity,
+  id max_arity,
+  id seed,
+  float exp_cohort_shape,
+  id exp_cohort_size,
+  id depth_limit
+) {
+  id nth = 0;
+  id child;
+  while(1) {
+    child = myc_select_exp_nth_child(
+      parent,
+      nth,
+      avg_arity,
+      max_arity,
+      exp_cohort_shape,
+      exp_cohort_size,
+      seed
+    );
+    if (child == NONE) {
+      break;
+    }
+    fprintf(stream, "  %lu -> %lu;\n", parent, child);
+    nth += 1;
+    if (depth_limit > 0) {
+      print_edges_recursively(
+        stream,
+        child,
+        avg_arity,
+        max_arity,
+        seed,
+        exp_cohort_shape,
+        exp_cohort_size,
+        depth_limit - 1
+      );
+    }
+  }
+}
+
+int myc_test_exp_select_graphviz() {
+  id avg_arity = 1, max_arity = 32;
+  id parent;
+  id index = 0;
+  float exp_cohort_shape = 0.02;
+  id exp_cohort_size = 512;
+  char filename[1024];
+  for (id seed = 172741; seed < 172746; seed += 1) {
+    parent = 10000000;
+    // find the great-grandparent:
+    for (id i = 0; i < 3; ++i) {
+      myc_select_exp_parent_and_index(
+        parent,
+        avg_arity,
+        max_arity,
+        exp_cohort_shape,
+        exp_cohort_size,
+        seed,
+        &parent,
+        &index
+      );
+    }
+
+    snprintf(filename, 1024, "test/select/exp_select-graph-%lu.gv", seed);
+    FILE *fout = fopen(filename, "w");
+    // print edges
+    fprintf(fout, "digraph G {\n");
+    print_edges_recursively(
+      fout,
+      parent,
+      avg_arity,
+      max_arity,
+      seed,
+      exp_cohort_shape,
+      exp_cohort_size,
+      5
+    );
+    fprintf(fout, "}\n");
+  }
   return 0;
 }

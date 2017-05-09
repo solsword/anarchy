@@ -1,3 +1,4 @@
 # Build output
 obj/*
 bin/*
+test/*

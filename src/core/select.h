@@ -40,4 +40,31 @@ id myc_select_nth_child(
   id seed
 );
 
+// Works like myc_select_parent_and_index, but uses an exponential cohort for
+// child selection. The exp_cohort_size parameter controls how large this
+// exponential cohort is, in terms of multiples of max_arity. Returns values
+// via the r_parent and r_index parameters.
+void myc_select_exp_parent_and_index(
+  id child,
+  id avg_arity,
+  id max_arity,
+  float exp_cohort_shape,
+  id exp_cohort_size,
+  id seed,
+  id *r_parent,
+  id *r_index
+);
+
+// Works like myc_select_nth_child, but uses an exponential cohort for
+// children. Note that avg_arity is only roughly respected.
+id myc_select_exp_nth_child(
+  id parent,
+  id nth,
+  id avg_arity,
+  id max_arity,
+  float exp_cohort_shape,
+  id exp_cohort_size,
+  id seed
+);
+
 #endif // INCLUDE_SELECT_H
