@@ -202,8 +202,8 @@ static inline id myc_mixed_cohort_inner(id outer, id cohort_size, id seed) {
   return shuf;
 }
 
-// Combines mixed_cohort and mixed_cohort_inner, returning both values via
-// return parameters. More efficient if you need both values.
+// Combines myc_mixed_cohort and myc_mixed_cohort_inner, returning both values
+// via return parameters. More efficient if you need both values.
 static inline void myc_mixed_cohort_and_inner(
   id outer,
   id cohort_size,

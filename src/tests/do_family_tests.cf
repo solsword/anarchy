@@ -1,0 +1,12 @@
+// vim: syntax=c
+/**
+ * @file: do_family_tests.cf
+ *
+ * @description: Code fragment for calling tests in tests/family_tests.cf.
+ *
+ * @author: Peter Mawhorter (pmawhorter@gmail.com)
+ */
+
+myc_unit_test("mothers_&_children", &myc_test_mothers);
+
+myc_unit_test("mothers_tree_viz", &myc_test_mothers_tree_graphviz);

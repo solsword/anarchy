@@ -2,7 +2,7 @@
 /**
  * @file: select_tests.cf
  *
- * @description: Unit tests for select.h/c.
+ * @description: Unit tests for core/select.h/c.
  *
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */

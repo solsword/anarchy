@@ -1,0 +1,121 @@
+// vim: syntax=c
+/**
+ * @file: family_tests.cf
+ *
+ * @description: Unit tests for family/family.h/c.
+ *
+ * @author: Peter Mawhorter (pmawhorter@gmail.com)
+ */
+
+#include <stdio.h>
+
+#include "family/family.h"
+
+int myc_test_mothers() {
+  id test_generations = 7;
+  id parents[test_generations]; 
+  id indices[test_generations];
+  for (id child = 781312; child < 1288912; child += 19821) {
+    parents[0] = child;
+    // find the parent:
+    for (id i = 1; i < test_generations; ++i) {
+      myc_mother_and_index(
+        parents[i-1],
+        &DEFAULT_FAMILY_INFO,
+        &parents[i],
+        &indices[i-1]
+      );
+    }
+    for (id i = 0; i < test_generations - 1; ++i) {
+      if (myc_child(
+           parents[i+1],
+           indices[i],
+           &DEFAULT_FAMILY_INFO
+         ) != parents[i]
+      ) {
+        fprintf(
+          stderr,
+          "Family parent/child broken %lu → %lu/%lu | %lu/%lu → %lu\n",
+          parents[i],
+          parents[i+1], indices[i],
+          parents[i+1], indices[i],
+          myc_child(
+            parents[i+1],
+            indices[i],
+            &DEFAULT_FAMILY_INFO
+          )
+        );
+        return child + i+1;
+      }
+    }
+  }
+  return 0;
+}
+
+
+void myc_print_mothers_recursively(
+  FILE* stream,
+  id parent,
+  myc_family_info const * const info,
+  id depth_limit
+) {
+  id nth = 0;
+  id child;
+  id mbd, cbd;
+  while(1) {
+    child = myc_child(parent, nth, info);
+    if (child == NONE) {
+      break;
+    }
+    mbd = myc_birthdate(parent, info);
+    cbd = myc_birthdate(child, info);
+    fprintf(
+      stream,
+      "  %lu -> %lu [ label=\"%d\" ];\n",
+      parent,
+      child,
+      ((int) cbd - (int) mbd) / (int) ONE_EARTH_YEAR
+    );
+    nth += 1;
+    if (depth_limit > 0) {
+      myc_print_mothers_recursively(
+        stream,
+        child,
+        info,
+        depth_limit - 1
+      );
+    }
+  }
+}
+
+int myc_test_mothers_tree_graphviz() {
+  id parent;
+  char filename[1024];
+  myc_family_info *tinfo = myc_create_family_info();
+  myc_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
+  for (id seed = 78138917; seed < 78138917 + 3; ++seed) {
+    myc_set_info_seed(tinfo, seed);
+    parent = 1000000;
+    // find the great-grandmother:
+    for (id i = 0; i < 3; ++i) {
+      parent = myc_mother(parent, tinfo);
+    }
+
+    // Print the graph:
+    snprintf(filename, 1024, "test/family/mothers-graph-%lu.gv", seed);
+    FILE *fout = fopen(filename, "w");
+    // print edges
+    fprintf(fout, "digraph G {\n");
+    myc_print_mothers_recursively(
+      fout,
+      parent,
+      tinfo,
+      4 // stop at grandchildren of initial person
+    );
+    fprintf(fout, "}\n");
+  }
+
+  myc_destroy_family_info(tinfo);
+
+  return 0;
+}

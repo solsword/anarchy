@@ -13,6 +13,7 @@
 #include "tests/unit_tests.cf"
 #include "tests/cohort_tests.cf"
 #include "tests/select_tests.cf"
+#include "tests/family_tests.cf"
 
 void myc_unit_test(char const * const name, int (*test)(void)) {
   // TODO: Record failures in a summary.
@@ -33,6 +34,8 @@ int main(int argc, char** argv) {
   #include "tests/do_cohort_tests.cf"
 
   #include "tests/do_select_tests.cf"
+
+  #include "tests/do_family_tests.cf"
 
   fprintf(stdout, "... all tests completed.\n");
 
