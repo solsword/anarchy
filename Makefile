@@ -29,7 +29,8 @@ bin/test: $(ALL_SOURCES) $(OBJS) src/heads/test.c
 bin/rng: $(ALL_SOURCES) $(OBJS) src/heads/rng.c
 	$(COMPILE) $(OBJS) src/heads/rng.c -o $@
 
-test/%.gv: test
+test/%.gv: bin/test
+	./bin/test
 
 test/%.svg: test/%.gv
 	dot -Tsvg $< > $@
@@ -37,7 +38,7 @@ test/%.svg: test/%.gv
 SVGS:=$(shell find test -name "*.gv" | sed -e "s/\.gv$$/.svg/")
 
 .PHONY: graphviz
-graphviz: test $(SVGS)
+graphviz: $(SVGS)
 
 .PHONY: test
 test: bin/test

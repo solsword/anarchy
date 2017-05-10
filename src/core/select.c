@@ -9,7 +9,6 @@
 
 #include <assert.h> // for assert
 #include <math.h> // for log2
-#include <stdio.h> // DEBUG TODO: Remove
 
 #include "core/cohort.h" // for cohort operations
 
@@ -47,8 +46,7 @@ void myc_select_parent_and_index(
   id shuf = myc_cohort_shuffle(inner, max_arity, seed);
 
   id from_upper = 0;
-  // We don't actually care about the end of the upper range
-  // id to_upper = upper_cohort_size;
+  id to_upper = upper_cohort_size;
   id parents_left = upper_cohort_size;
   id half_remaining;
 
@@ -59,6 +57,7 @@ void myc_select_parent_and_index(
   id divide_at = cohort + seed;
 
   while (parents_left > 1) {
+
     half_remaining = parents_left/2;
     divide_at = myc_irrev_smooth_prng(
       divide_at,
@@ -73,9 +72,9 @@ void myc_select_parent_and_index(
       from_upper += half_remaining;
     } else {
       to_lower -= (children_left - divide_at);
-      // to_upper -= half_remaining; // would update here
+      to_upper -= (parents_left - half_remaining);
     }
-    parents_left = half_remaining;
+    parents_left = to_upper - from_upper;
     children_left = to_lower - from_lower;
   }
 
@@ -101,12 +100,13 @@ id myc_select_nth_child(
   id cohort;
   id inner;
   id upper_cohort_size = max_arity / avg_arity; // at least 2, ideally 8+ or so
+
   myc_cohort_and_inner(parent, upper_cohort_size, seed, &cohort, &inner);
+
   id shuf = myc_cohort_shuffle(inner, upper_cohort_size, seed);
 
-  // We don't actually care about these values:
-  // id from_upper = 0;
-  // id to_upper = upper_cohort_size;
+  id from_upper = 0;
+  id to_upper = upper_cohort_size;
   id parents_left = upper_cohort_size;
   id half_remaining;
 
@@ -117,6 +117,7 @@ id myc_select_nth_child(
   id divide_at = cohort + seed;
 
   while (parents_left > 1 && children_left > 0) {
+
     half_remaining = parents_left/2;
     divide_at = myc_irrev_smooth_prng(
       divide_at,
@@ -128,20 +129,22 @@ id myc_select_nth_child(
     if (shuf >= half_remaining) {
       shuf -= half_remaining;
       from_lower += divide_at;
-      // from_upper += half_remaining; // would update here
+      from_upper += half_remaining;
     } else {
       to_lower -= (children_left - divide_at);
-      // to_upper -= half_remaining; // would update here
+      to_upper -= (parents_left - half_remaining);
     }
-    parents_left = half_remaining;
+    parents_left = to_upper - from_upper;
     children_left = to_lower - from_lower;
   }
 
   if (nth >= children_left) {
     return NONE;
   }
+
   // Unshuffle child ID within children cohort:
   id unshuf = myc_rev_cohort_shuffle(from_lower + nth, max_arity, seed);
+
   // Get back from child-within-cohort to absolute-child. Note that children of
   // parents in the xth parent cohort are assigned to the xth child cohort.
   return myc_cohort_outer(cohort, unshuf, max_arity, seed);
@@ -196,8 +199,7 @@ void myc_select_exp_parent_and_index(
   id shuf = myc_cohort_shuffle(inner, max_arity, seed);
 
   id from_upper = 0;
-  // We don't actually care about the end of the upper range
-  // id to_upper = upper_cohort_size;
+  id to_upper = upper_cohort_size;
   id parents_left = upper_cohort_size;
   id half_remaining;
 
@@ -222,9 +224,9 @@ void myc_select_exp_parent_and_index(
       from_upper += half_remaining;
     } else {
       to_lower -= (children_left - divide_at);
-      // to_upper -= half_remaining; // would update here
+      to_upper -= (parents_left - half_remaining);
     }
-    parents_left = half_remaining;
+    parents_left = to_upper - from_upper;
     children_left = to_lower - from_lower;
   }
 
@@ -256,9 +258,8 @@ id myc_select_exp_nth_child(
   myc_cohort_and_inner(parent, upper_cohort_size, seed, &parent_cohort, &inner);
   id shuf = myc_cohort_shuffle(inner, upper_cohort_size, seed);
 
-  // We don't actually care about these values:
-  // id from_upper = 0;
-  // id to_upper = upper_cohort_size;
+  id from_upper = 0;
+  id to_upper = upper_cohort_size;
   id parents_left = upper_cohort_size;
   id half_remaining;
 
@@ -280,12 +281,12 @@ id myc_select_exp_nth_child(
     if (shuf >= half_remaining) {
       shuf -= half_remaining;
       from_lower += divide_at;
-      // from_upper += half_remaining; // would update here
+      from_upper += half_remaining;
     } else {
       to_lower -= (children_left - divide_at);
-      // to_upper -= half_remaining; // would update here
+      to_upper -= (parents_left - half_remaining);
     }
-    parents_left = half_remaining;
+    parents_left = to_upper - from_upper;
     children_left = to_lower - from_lower;
   }
 

@@ -47,6 +47,42 @@ int myc_test_parent_child_selection() {
   return 0;
 }
 
+int myc_test_odd_parent_child_selection() {
+  id parent, index;
+  id max_arity = 23;
+  id avg_arity = 3;
+  id seed = 1028101;
+  id result;
+  for (id tin = 40192; tin < 524011; tin += 1873) {
+    myc_select_parent_and_index(
+      tin,
+      avg_arity,
+      max_arity,
+      seed,
+      &parent,
+      &index
+    );
+    result = myc_select_nth_child(parent, index, avg_arity, max_arity, seed);
+    if (result != tin) {
+      fprintf(
+        stderr,
+        "Selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        tin, parent, index, parent, index, result
+      );
+      fprintf(stderr, "All children of %lu:\n", parent);
+      id nth = 0;
+      id child = NONE;
+      do {
+        child = myc_select_nth_child(parent, nth, avg_arity, max_arity, seed);
+        fprintf(stderr, "  #%lu: %lu\n", nth, child);
+        nth += 1;
+      } while (child != NONE);
+      return tin;
+    }
+  }
+  return 0;
+}
+
 int myc_test_parent_child_visual() {
   id avg_arity = 4, max_arity = 32;
   id parent = 7182;
@@ -84,6 +120,62 @@ int myc_test_exp_parent_child_selection() {
   id exp_size = 1024;
   id result;
   for (id tin = 54646; tin < 9464135; tin += 5167) {
+    myc_select_exp_parent_and_index(
+      tin,
+      avg_arity,
+      max_arity,
+      exp_shape,
+      exp_size,
+      seed,
+      &parent,
+      &index
+    );
+    result = myc_select_exp_nth_child(
+      parent,
+      index,
+      avg_arity,
+      max_arity,
+      exp_shape,
+      exp_size,
+      seed
+    );
+    if (result != tin) {
+      fprintf(
+        stderr,
+        "Selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        tin, parent, index, parent, index, result
+      );
+      fprintf(stderr, "All children of %lu:\n", parent);
+      id nth = 0;
+      id child = NONE;
+      do {
+        child = myc_select_exp_nth_child(
+          parent,
+          nth,
+          avg_arity,
+          max_arity,
+          exp_shape,
+          exp_size,
+          seed
+        );
+        fprintf(stderr, "  #%lu: %lu\n", nth, child);
+        nth += 1;
+      } while (child != NONE);
+      return tin;
+    }
+  }
+  return 0;
+}
+
+int myc_test_odd_exp_parent_child_selection() {
+  id parent, index;
+  id max_arity = 37;
+  id avg_arity = 3;
+  id seed = 17219;
+  float exp_shape = 0.3;
+  id exp_size = 45;
+  id result;
+  for (id tin = 389238; tin < 581201; tin += 8756) {
     myc_select_exp_parent_and_index(
       tin,
       avg_arity,
@@ -177,7 +269,7 @@ int myc_test_exp_parent_child_visual() {
   return 0;
 }
 
-void print_edges_recursively(
+void myc_print_edges_recursively(
   FILE* stream,
   id parent,
   id avg_arity,
@@ -205,7 +297,7 @@ void print_edges_recursively(
     fprintf(stream, "  %lu -> %lu;\n", parent, child);
     nth += 1;
     if (depth_limit > 0) {
-      print_edges_recursively(
+      myc_print_edges_recursively(
         stream,
         child,
         avg_arity,
@@ -246,7 +338,7 @@ int myc_test_exp_select_graphviz() {
     FILE *fout = fopen(filename, "w");
     // print edges
     fprintf(fout, "digraph G {\n");
-    print_edges_recursively(
+    myc_print_edges_recursively(
       fout,
       parent,
       avg_arity,

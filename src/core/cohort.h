@@ -54,7 +54,7 @@ static inline id myc_cohort_outer(
 
 // Interleaves cohort members by folding top half into bottom half.
 static inline id myc_cohort_interleave(id inner, id cohort_size) {
-  id bottom = (inner < (cohort_size/2));
+  id bottom = (inner < ((cohort_size+1)/2));
   return (
      bottom * (inner*2) // if
   + !bottom * ((cohort_size - 1 - inner) * 2 + 1) // else
@@ -133,7 +133,9 @@ static inline id myc_cohort_flop(id inner, id cohort_size, id seed) {
     !odd * ((which + 1)*size + local)
   +  odd * ((which - 1)*size + local)
   );
+
   id out = result >= cohort_size;
+
   return (
      out * inner
   + !out * result
