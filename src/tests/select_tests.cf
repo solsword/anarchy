@@ -352,3 +352,189 @@ int myc_test_exp_select_graphviz() {
   }
   return 0;
 }
+
+int myc_test_avg_parent_child_gap() {
+  id parent, index, child;
+  id max_arity = 32;
+  id avg_arity = 1;
+  double avg_parent_distance = 0; 
+  double avg_child_distance = 0; 
+  id parent_dist_count = 0;
+  id child_dist_count = 0;
+  id n_samples = 100000;
+  int64_t parent_distances[n_samples];
+  int64_t child_distances[n_samples];
+  int64_t dist;
+  id seeds_to_check = 3;
+  for (id seed = 301910239812; seed < 301910239812 + seeds_to_check; ++seed) {
+    avg_parent_distance = 0; 
+    avg_child_distance = 0; 
+    parent_dist_count = 0;
+    child_dist_count = 0;
+    for (id here = 5646461354679; here < 5646461354679 + n_samples; ++here) {
+      myc_select_parent_and_index(
+        here,
+        avg_arity,
+        max_arity,
+        seed,
+        &parent,
+        &index
+      );
+      dist = (int64_t) here - (int64_t) parent;
+      parent_distances[parent_dist_count] = dist;
+      avg_parent_distance += dist; parent_dist_count += 1;
+      child = myc_select_nth_child(
+        here,
+        0,
+        avg_arity,
+        max_arity,
+        seed
+      );
+      if (child != NONE) {
+        dist = (int64_t) child - (int64_t) here;
+        child_distances[child_dist_count] = dist;
+        avg_child_distance += dist;
+        child_dist_count += 1;
+      }
+    }
+    fprintf(
+      stdout,
+      "\nAverage parent/child distances [%lu]: %.2f/%.2f\n",
+      seed,
+      avg_parent_distance / (double) parent_dist_count,
+      avg_child_distance / (double) child_dist_count
+    );
+    fprintf(
+      stdout,
+      "Sampled %lu parent distances and %lu child distances.\n",
+      parent_dist_count,
+      child_dist_count
+    );
+    int64_t min_parent_dist = parent_distances[0];
+    int64_t max_parent_dist = parent_distances[0];
+    int64_t min_child_dist = child_distances[0];
+    int64_t max_child_dist = child_distances[0];
+    for (id i = 0; i < parent_dist_count; ++i) {
+      if (parent_distances[i] < min_parent_dist) {
+        min_parent_dist = parent_distances[i];
+      }
+      if (parent_distances[i] > max_parent_dist) {
+        max_parent_dist = parent_distances[i];
+      }
+    }
+    for (id i = 0; i < child_dist_count; ++i) {
+      if (child_distances[i] < min_child_dist) {
+        min_child_dist = child_distances[i];
+      }
+      if (child_distances[i] > max_child_dist) {
+        max_child_dist = child_distances[i];
+      }
+    }
+    fprintf(
+      stdout,
+      "Min--max parent/child distances [%lu]: %ld--%ld / %ld--%ld\n\n",
+      seed,
+      min_parent_dist,
+      max_parent_dist,
+      min_child_dist,
+      max_child_dist
+    );
+  }
+  return 0;
+}
+
+int myc_test_avg_exp_parent_child_gap() {
+  id parent, index, child;
+  id max_arity = 32;
+  id avg_arity = 1;
+  float cohort_shape = 0.01;
+  id cohort_size = 1024;
+  double avg_parent_distance = 0; 
+  double avg_child_distance = 0; 
+  id parent_dist_count = 0;
+  id child_dist_count = 0;
+  id n_samples = 10000;
+  int64_t parent_distances[n_samples];
+  int64_t child_distances[n_samples];
+  int64_t dist;
+  id seeds_to_check = 3;
+  for (id seed = 301910239812; seed < 301910239812 + seeds_to_check; ++seed) {
+    avg_parent_distance = 0; 
+    avg_child_distance = 0; 
+    parent_dist_count = 0;
+    child_dist_count = 0;
+    for (id here = 5646461354679; here < 5646461354679 + n_samples; ++here) {
+      myc_select_exp_parent_and_index(
+        here,
+        avg_arity,
+        max_arity,
+        cohort_shape,
+        cohort_size,
+        seed,
+        &parent,
+        &index
+      );
+      dist = (int64_t) here - (int64_t) parent;
+      parent_distances[parent_dist_count] = dist;
+      avg_parent_distance += dist; parent_dist_count += 1;
+      child = myc_select_exp_nth_child(
+        here,
+        0,
+        avg_arity,
+        max_arity,
+        cohort_shape,
+        cohort_size,
+        seed
+      );
+      if (child != NONE) {
+        dist = (int64_t) child - (int64_t) here;
+        child_distances[child_dist_count] = dist;
+        avg_child_distance += dist;
+        child_dist_count += 1;
+      }
+    }
+    fprintf(
+      stdout,
+      "\nSampled %lu parent distances and %lu child distances.\n",
+      parent_dist_count,
+      child_dist_count
+    );
+    fprintf(
+      stdout,
+      "Average parent/child distances [%lu]: %.2f/%.2f\n",
+      seed,
+      avg_parent_distance / (double) parent_dist_count,
+      avg_child_distance / (double) child_dist_count
+    );
+    int64_t min_parent_dist = parent_distances[0];
+    int64_t max_parent_dist = parent_distances[0];
+    int64_t min_child_dist = child_distances[0];
+    int64_t max_child_dist = child_distances[0];
+    for (id i = 0; i < parent_dist_count; ++i) {
+      if (parent_distances[i] < min_parent_dist) {
+        min_parent_dist = parent_distances[i];
+      }
+      if (parent_distances[i] > max_parent_dist) {
+        max_parent_dist = parent_distances[i];
+      }
+    }
+    for (id i = 0; i < child_dist_count; ++i) {
+      if (child_distances[i] < min_child_dist) {
+        min_child_dist = child_distances[i];
+      }
+      if (child_distances[i] > max_child_dist) {
+        max_child_dist = child_distances[i];
+      }
+    }
+    fprintf(
+      stdout,
+      "Min--max parent/child distances [%lu]: %ld--%ld / %ld--%ld\n\n",
+      seed,
+      min_parent_dist,
+      max_parent_dist,
+      min_child_dist,
+      max_child_dist
+    );
+  }
+  return 0;
+}

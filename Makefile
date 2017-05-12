@@ -44,6 +44,10 @@ graphviz: $(SVGS)
 test: bin/test
 	./bin/test
 
+.PHONY: test_quiet
+test_quiet: bin/test
+	./bin/test | grep "\.\.\."
+
 .PHONY: rng
 rng: bin/rng
 	./bin/rng 1000

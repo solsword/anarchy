@@ -13,20 +13,29 @@
 
 int myc_test_mothers() {
   id test_generations = 7;
+  id valid_generations = 0;
   id parents[test_generations]; 
   id indices[test_generations];
-  for (id child = 781312; child < 1288912; child += 19821) {
+  for (id child = 781312757; child < 1288912891; child += 19842411) {
+    valid_generations = 0;
     parents[0] = child;
     // find the parent:
-    for (id i = 1; i < test_generations; ++i) {
+    for (
+      valid_generations = 1;
+      valid_generations < test_generations;
+      ++valid_generations
+    ) {
       myc_mother_and_index(
-        parents[i-1],
+        parents[valid_generations-1],
         &DEFAULT_FAMILY_INFO,
-        &parents[i],
-        &indices[i-1]
+        &parents[valid_generations],
+        &indices[valid_generations-1]
       );
+      if (parents[valid_generations] == NONE) {
+        break;
+      }
     }
-    for (id i = 0; i < test_generations - 1; ++i) {
+    for (id i = 0; i < valid_generations - 1; ++i) {
       if (myc_child(
            parents[i+1],
            indices[i],
@@ -35,7 +44,8 @@ int myc_test_mothers() {
       ) {
         fprintf(
           stderr,
-          "Family parent/child broken %lu → %lu/%lu | %lu/%lu → %lu\n",
+          "Family parent/child broken [%lu] %lu → %lu/%lu | %lu/%lu → %lu\n",
+          i,
           parents[i],
           parents[i+1], indices[i],
           parents[i+1], indices[i],
@@ -95,7 +105,7 @@ int myc_test_mothers_tree_graphviz() {
   myc_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
   for (id seed = 78138917; seed < 78138917 + 3; ++seed) {
     myc_set_info_seed(tinfo, seed);
-    parent = 1000000;
+    parent = 1000000000;
     // find the great-grandmother:
     for (id i = 0; i < 3; ++i) {
       parent = myc_mother(parent, tinfo);

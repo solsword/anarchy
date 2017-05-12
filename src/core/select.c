@@ -9,6 +9,9 @@
 
 #include <assert.h> // for assert
 #include <math.h> // for log2
+#ifdef DEBUG_SELECT
+  #include <stdio.h>
+#endif
 
 #include "core/cohort.h" // for cohort operations
 
@@ -33,6 +36,9 @@ void myc_select_parent_and_index(
     return;
   }
 
+  // Un-correct child indices since they're >= parent indices:
+  child -= max_arity;
+
   // Otherwise we have just one parent per child cohort
   assert(avg_arity < (max_arity/2));
   id upper_cohort_size = max_arity / avg_arity; // at least 2, ideally 8+ or so
@@ -40,7 +46,7 @@ void myc_select_parent_and_index(
   // Get from absolute-child to child-within-cohort. Note that children in xth
   // child cohort have parents in the xth parent cohort.
   id cohort, inner;
-  myc_cohort_and_inner(child, max_arity, seed, &cohort, &inner);
+  myc_cohort_and_inner(child, max_arity, &cohort, &inner);
 
   // Shuffle child ID within children cohort:
   id shuf = myc_cohort_shuffle(inner, max_arity, seed);
@@ -85,7 +91,7 @@ void myc_select_parent_and_index(
   id unshuf = myc_rev_cohort_shuffle(from_upper, upper_cohort_size, seed);
 
   // Escape the cohort to get the parent:
-  *r_parent = myc_cohort_outer(cohort, unshuf, upper_cohort_size, seed);
+  *r_parent = myc_cohort_outer(cohort, unshuf, upper_cohort_size);
 }
 
 id myc_select_nth_child(
@@ -101,7 +107,7 @@ id myc_select_nth_child(
   id inner;
   id upper_cohort_size = max_arity / avg_arity; // at least 2, ideally 8+ or so
 
-  myc_cohort_and_inner(parent, upper_cohort_size, seed, &cohort, &inner);
+  myc_cohort_and_inner(parent, upper_cohort_size, &cohort, &inner);
 
   id shuf = myc_cohort_shuffle(inner, upper_cohort_size, seed);
 
@@ -147,7 +153,10 @@ id myc_select_nth_child(
 
   // Get back from child-within-cohort to absolute-child. Note that children of
   // parents in the xth parent cohort are assigned to the xth child cohort.
-  return myc_cohort_outer(cohort, unshuf, max_arity, seed);
+  id child = myc_cohort_outer(cohort, unshuf, max_arity);
+
+  // Correct child indices so that they're >= parent indices:
+  return child + max_arity;
 }
 
 void myc_select_exp_parent_and_index(
@@ -167,9 +176,25 @@ void myc_select_exp_parent_and_index(
     return;
   }
 
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "\nselect_exp_parent_and_index::child/avg/max/shape/size::%lu/%lu/%lu/%.3f/%lu\n",
+    child, avg_arity, max_arity, exp_cohort_shape, exp_cohort_size
+  );
+#endif
+
   // Otherwise we have just one parent per child cohort
   assert(avg_arity < (max_arity/2));
   id upper_cohort_size = max_arity / avg_arity; // at least 2, ideally 8+ or so
+  id lower_cohort_size = max_arity * exp_cohort_size;
+
+  // Account for child being adjusted to be >= parent:
+  child -= lower_cohort_size*2;
+
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_exp_parent_and_index::ucs/lcs::%lu/%lu\n", upper_cohort_size, lower_cohort_size);
+#endif
 
   // Get from absolute-child to child-within-cohort. For exponential child
   // super-cohorts, parents in the xth cohort have children drawn from the
@@ -180,23 +205,43 @@ void myc_select_exp_parent_and_index(
   myc_exp_cohort_and_inner(
     child,
     exp_cohort_shape,
-    max_arity * exp_cohort_size,
+    lower_cohort_size,
     seed,
     &super_cohort,
     &inner
   );
 
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_exp_parent_and_index::super/inner/super_first::%lu/%lu/%lu\n", super_cohort, inner, super_cohort * lower_cohort_size);
+#endif
+
   // shuffle within the exponential cohort:
-  inner = myc_cohort_shuffle(inner, max_arity * exp_cohort_size, seed);
+  inner = myc_cohort_shuffle(inner, lower_cohort_size, seed);
+
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_exp_parent_and_index::shuffled_inner::%lu\n", inner);
+#endif
 
   // Find sub-cohort:
-  myc_cohort_and_inner(inner, max_arity, 0, &sub_cohort, &inner);
+  myc_cohort_and_inner(inner, max_arity, &sub_cohort, &inner);
+
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_exp_parent_and_index::sub/inner::%lu/%lu\n", sub_cohort, inner);
+#endif
 
   // Compute parent cohort:
   id parent_cohort = super_cohort * exp_cohort_size + sub_cohort;
 
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_exp_parent_and_index::parent_cohort::%lu\n", parent_cohort);
+#endif
+
   // Shuffle child ID within children cohort:
   id shuf = myc_cohort_shuffle(inner, max_arity, seed);
+
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_exp_parent_and_index::child_shuf::%lu\n", shuf);
+#endif
 
   id from_upper = 0;
   id to_upper = upper_cohort_size;
@@ -230,14 +275,26 @@ void myc_select_exp_parent_and_index(
     children_left = to_lower - from_lower;
   }
 
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_exp_parent_and_index::divided_shuf::%lu\n", shuf);
+#endif
+
   // At this point, we know the child's index within its parent's children:
   *r_index = shuf;
 
   // Unshuffle the parent's index (from_upper)
   id unshuf = myc_rev_cohort_shuffle(from_upper, upper_cohort_size, seed);
 
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_exp_parent_and_index::parent_unshuf::%lu\n", unshuf);
+#endif
+
   // Escape the cohort to get the parent:
-  *r_parent = myc_cohort_outer(parent_cohort, unshuf, upper_cohort_size, seed);
+  *r_parent = myc_cohort_outer(parent_cohort, unshuf, upper_cohort_size);
+
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_exp_parent_and_index::parent::%lu\n\n", *r_parent);
+#endif
 }
 
 id myc_select_exp_nth_child(
@@ -255,7 +312,9 @@ id myc_select_exp_nth_child(
   id parent_cohort;
   id inner;
   id upper_cohort_size = max_arity / avg_arity; // at least 2, ideally 8+ or so
-  myc_cohort_and_inner(parent, upper_cohort_size, seed, &parent_cohort, &inner);
+  id lower_cohort_size = max_arity * exp_cohort_size;
+
+  myc_cohort_and_inner(parent, upper_cohort_size, &parent_cohort, &inner);
   id shuf = myc_cohort_shuffle(inner, upper_cohort_size, seed);
 
   id from_upper = 0;
@@ -304,19 +363,21 @@ id myc_select_exp_nth_child(
   id outer = myc_cohort_outer(
     parent_cohort % exp_cohort_size,
     unshuf,
-    max_arity,
-    0
+    max_arity
   );
 
   // Unshuffle within exponential cohort
-  unshuf = myc_rev_cohort_shuffle(outer, max_arity * exp_cohort_size, seed);
+  unshuf = myc_rev_cohort_shuffle(outer, lower_cohort_size, seed);
 
   // Escape from exponential cohort
-  return myc_exp_cohort_outer(
+  id child = myc_exp_cohort_outer(
     parent_cohort / exp_cohort_size,
     unshuf,
     exp_cohort_shape,
-    max_arity * exp_cohort_size,
+    lower_cohort_size,
     seed
   );
+
+  // Adjust index to be >= parent:
+  return child + lower_cohort_size*2;
 }

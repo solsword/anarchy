@@ -71,27 +71,19 @@ void myc_set_info_seed(myc_family_info *info, id seed) {
 
 id myc_birthdate(id person, myc_family_info const * const info) {
   return myc_mixed_cohort(person, info->birth_rate_per_day, 0);
+  // TODO: Remove this
+  //return myc_cohort(person, info->birth_rate_per_day, 0);
 }
 
 id myc_first_born_on(id day, myc_family_info const * const info) {
   return myc_mixed_cohort_outer(day, 0, info->birth_rate_per_day, 0);
+  // TODO: Remove this
+  //return myc_cohort_outer(day, 0, info->birth_rate_per_day, 0);
 }
 
 id myc_mother(id person, myc_family_info const * const info) {
   id parent, index;
-  if (person == NONE) {
-    return NONE;
-  }
-  myc_select_exp_parent_and_index(
-    person - (info->birth_rate_per_day * info->minimum_age_at_first_child),
-    info->average_children_per_mother,
-    info->max_children_per_mother,
-    info->child_age_distribution_shape,
-    info->birth_rate_per_day * info->childbearing_days,
-    info->seed,
-    &parent,
-    &index
-  );
+  myc_mother_and_index(person, info, &parent, &index);
   return parent;
 }
 
@@ -106,16 +98,31 @@ void myc_mother_and_index(
     *r_index = 0;
     return;
   }
+  // Correct age gap:
+  id adjusted = person;
+  adjusted -= (info->birth_rate_per_day * info->minimum_age_at_first_child);
+  if (adjusted > person) { // underflow
+    *r_mother = NONE;
+    *r_index = 0;
+    return;
+  }
   myc_select_exp_parent_and_index(
-    person - (info->birth_rate_per_day * info->minimum_age_at_first_child),
+    adjusted,
     info->average_children_per_mother,
     info->max_children_per_mother,
     info->child_age_distribution_shape,
-    info->birth_rate_per_day * info->childbearing_days,
+    info->birth_rate_per_day
+   * info->childbearing_days
+   / info->max_children_per_mother,
     info->seed,
     r_mother,
     r_index
   );
+  if (*r_mother > person) { // underflow
+    *r_mother = NONE;
+    *r_index = 0;
+    return;
+  }
 }
 
 id myc_child(id person, id nth, myc_family_info const * const info) {
@@ -125,9 +132,15 @@ id myc_child(id person, id nth, myc_family_info const * const info) {
     info->average_children_per_mother,
     info->max_children_per_mother,
     info->child_age_distribution_shape,
-    info->birth_rate_per_day * info->childbearing_days,
+    info->birth_rate_per_day
+   * info->childbearing_days
+   / info->max_children_per_mother,
     info->seed
   );
-  if (child == NONE) { return NONE; }
-  return child + (info->birth_rate_per_day * info->minimum_age_at_first_child);
+  if (child == NONE) { return NONE; } // mother doesn't have this many children
+  // Introduce age gap:
+  id adjusted = child;
+  adjusted += (info->birth_rate_per_day * info->minimum_age_at_first_child);
+  if (adjusted < child || child < person) { return NONE; } // overflow
+  return adjusted;
 }

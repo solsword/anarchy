@@ -29,3 +29,10 @@ myc_unit_test(
 );
 
 myc_unit_test("exponential_selection_grahpviz", &myc_test_exp_select_graphviz);
+
+myc_unit_test("selection_average_distances", &myc_test_avg_parent_child_gap);
+
+myc_unit_test(
+  "selection_average_exp_distances",
+  &myc_test_avg_exp_parent_child_gap
+);

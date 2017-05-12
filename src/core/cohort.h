@@ -11,6 +11,9 @@
 
 #include <assert.h>
 #include <math.h> // for roundf
+#ifdef DEBUG_COHORT
+  #include <stdio.h>
+#endif
 
 #include "core/unit.h" // for "id" and unit operations
 
@@ -19,13 +22,13 @@
  ********************/
 
 // Picks out which cohort we're in.
-static inline id myc_cohort(id outer, id cohort_size, id seed) {
-  return ((outer + seed) / cohort_size);
+static inline id myc_cohort(id outer, id cohort_size) {
+  return outer / cohort_size;
 }
 
 // Identifies our within-cohort id.
-static inline id myc_cohort_inner(id outer, id cohort_size, id seed) {
-  return (outer + seed) % cohort_size;
+static inline id myc_cohort_inner(id outer, id cohort_size) {
+  return outer % cohort_size;
 }
 
 // Combines cohort and cohort_inner, returning both values via return
@@ -33,23 +36,21 @@ static inline id myc_cohort_inner(id outer, id cohort_size, id seed) {
 static inline void myc_cohort_and_inner(
   id outer,
   id cohort_size,
-  id seed,
   id *r_cohort,
   id *r_inner
 ) {
-  *r_cohort = myc_cohort(outer, cohort_size, seed);
-  *r_inner = myc_cohort_inner(outer, cohort_size, seed);
+  *r_cohort = myc_cohort(outer, cohort_size);
+  *r_inner = myc_cohort_inner(outer, cohort_size);
 }
 
 // Find global ID from cohort & inner ID:
 static inline id myc_cohort_outer(
   id cohort,
   id inner,
-  id cohort_size,
-  id seed
+  id cohort_size
 ) {
   id cohort_start = cohort * cohort_size;
-  return cohort_start + inner - seed;
+  return cohort_start + inner;
 }
 
 // Interleaves cohort members by folding top half into bottom half.
@@ -180,8 +181,8 @@ static inline id myc_rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
 // indices (the biased indices are useful for some purposes).
 // TODO: Guarantee that size isn't off-by-one?
 static inline id myc_mixed_cohort(id outer, id cohort_size, id seed) {
-  id strict_cohort = myc_cohort(outer, cohort_size, seed);
-  id strict_inner = myc_cohort_inner(outer, cohort_size, seed);
+  id strict_cohort = myc_cohort(outer, cohort_size);
+  id strict_inner = myc_cohort_inner(outer, cohort_size);
 
   id shuf = myc_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
   id lower = shuf < cohort_size/2;
@@ -194,8 +195,8 @@ static inline id myc_mixed_cohort(id outer, id cohort_size, id seed) {
 
 // Gets the inner id for a mixed cohort (see above)
 static inline id myc_mixed_cohort_inner(id outer, id cohort_size, id seed) {
-  id strict_cohort = myc_cohort(outer, cohort_size, seed);
-  id strict_inner = myc_cohort_inner(outer, cohort_size, seed);
+  id strict_cohort = myc_cohort(outer, cohort_size);
+  id strict_inner = myc_cohort_inner(outer, cohort_size);
 
   id shuf = myc_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
 
@@ -211,8 +212,8 @@ static inline void myc_mixed_cohort_and_inner(
   id *r_cohort,
   id *r_inner
 ) {
-  id strict_cohort = myc_cohort(outer, cohort_size, seed);
-  id strict_inner = myc_cohort_inner(outer, cohort_size, seed);
+  id strict_cohort = myc_cohort(outer, cohort_size);
+  id strict_inner = myc_cohort_inner(outer, cohort_size);
 
   id shuf = myc_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
   id lower = shuf < cohort_size/2;
@@ -239,7 +240,7 @@ static inline id myc_mixed_cohort_outer(
   );
 
   id unshuf = myc_rev_cohort_shuffle(inner, cohort_size, seed + strict_cohort);
-  return myc_cohort_outer(strict_cohort, unshuf, cohort_size, seed);
+  return myc_cohort_outer(strict_cohort, unshuf, cohort_size);
 }
 
 // A special kind of mixed cohort that's biased towards one direction on the
@@ -259,8 +260,8 @@ static inline void myc_biased_cohort_and_inner(
   assert(bias > 0);
   assert(bias < MAX_BIAS);
 
-  id strict_cohort = myc_cohort(outer, cohort_size, seed);
-  id strict_inner = myc_cohort_inner(outer, cohort_size, seed);
+  id strict_cohort = myc_cohort(outer, cohort_size);
+  id strict_inner = myc_cohort_inner(outer, cohort_size);
 
   id shuf = myc_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
   id split = (cohort_size * (MAX_BIAS - bias)) / MAX_BIAS;
@@ -294,7 +295,7 @@ static inline id myc_biased_cohort_outer(
   );
 
   id unshuf = myc_rev_cohort_shuffle(inner, cohort_size, seed + strict_cohort);
-  return myc_cohort_outer(strict_cohort, unshuf, cohort_size, seed);
+  return myc_cohort_outer(strict_cohort, unshuf, cohort_size);
 }
 
 // Takes a float (should be between 0 and 1) and returns the nearest
@@ -371,8 +372,13 @@ static inline void myc_exp_cohort_and_inner(
     section_count = cohort_size / resolution;
   }
 
-  id strict_cohort = myc_cohort(outer, cohort_size, seed);
-  id strict_inner = myc_cohort_inner(outer, cohort_size, seed);
+  id strict_cohort = myc_cohort(outer, cohort_size);
+  id strict_inner = myc_cohort_inner(outer, cohort_size);
+
+#ifdef DEBUG_COHORT
+  fprintf(stderr, "\nexp_cohort::outer/shape/size::%lu/%.3f/%lu\n", outer, shape, cohort_size);
+  fprintf(stderr, "exp_cohort::strict_cohort/inner::%lu/%lu\n", strict_cohort, strict_inner);
+#endif
 
   id section = strict_inner / resolution;
   id in_section = strict_inner % resolution;
@@ -385,7 +391,12 @@ static inline void myc_exp_cohort_and_inner(
   id split = myc_exp_split(shape, section_count, section, resolution);
   id lower = shuf < split;
 
+  // TODO: Type here?
   int adjust = !lower * (-1 + 2*(shape > 0));
+
+#ifdef DEBUG_COHORT
+  fprintf(stderr, "exp_cohort::adjust::%d\n\n", adjust);
+#endif
 
   *r_cohort = strict_cohort + adjust;
   *r_inner = shuf + (section * resolution);
@@ -422,7 +433,7 @@ static inline id myc_exp_cohort_outer(
 
   id strict_inner = (section * resolution) + unshuf;
 
-  return myc_cohort_outer(strict_cohort, strict_inner, cohort_size, seed);
+  return myc_cohort_outer(strict_cohort, strict_inner, cohort_size);
 }
 
 #endif // INCLUDE_COHORT_H
