@@ -10,6 +10,11 @@
 myc_unit_test("mothers_&_children", &myc_test_mothers);
 
 myc_unit_test(
+  "mother/child_age_diff_stream",
+  &myc_test_mothers_age_stream
+);
+
+myc_unit_test(
   "mother/child_age_diff_histogram",
   &myc_test_mothers_age_histogram
 );
