@@ -144,15 +144,52 @@ static inline id myc_cohort_flop(id inner, id cohort_size, id seed) {
 }
 // Flop is its own inverse.
 
+// Does a different cohort spin for even and odd items.
+static inline id myc_cohort_mix(id inner, id cohort_size, id seed) {
+  id even = inner - inner % 2;
+  id target;
+  if (inner % 2) {
+    target = myc_cohort_spin(
+      even/2,
+      (cohort_size+(1-cohort_size%2))/2,
+      seed + 464185
+    );
+    return 2 * target + 1;
+  } else {
+    target = myc_cohort_spin(even/2, (cohort_size+1)/2, seed + 1048239);
+    return 2 * target;
+  }
+}
+
+// Reverse
+static inline id myc_rev_cohort_mix(id mixed, id cohort_size, id seed) {
+  id even = mixed - mixed % 2;
+  id target;
+  if (mixed % 2) {
+    target = myc_rev_cohort_spin(
+      even/2,
+      (cohort_size+(1-cohort_size%2))/2,
+      seed + 464185
+    );
+    return 2 * target + 1;
+  } else {
+    target = myc_rev_cohort_spin(even/2, (cohort_size+1)/2, seed + 1048239);
+    return 2 * target;
+  }
+}
+
 // Uses the above functions to shuffle a cohort
 static inline id myc_cohort_shuffle(id inner, id cohort_size, id seed) {
   id r = inner;
+  seed ^= cohort_size/3;
+  r = myc_cohort_mix(r, cohort_size, seed + 2891);
   r = myc_cohort_interleave(r, cohort_size);
   r = myc_cohort_spin(r, cohort_size, seed + 1982);
   r = myc_cohort_fold(r, cohort_size, seed + 837);
   r = myc_cohort_interleave(r, cohort_size);
   r = myc_cohort_flop(r, cohort_size, seed + 53);
   r = myc_cohort_fold(r, cohort_size, seed + 201);
+  r = myc_cohort_mix(r, cohort_size, seed + 728);
   r = myc_cohort_interleave(r, cohort_size);
   r = myc_cohort_flop(r, cohort_size, seed + 192);
   r = myc_cohort_spin(r, cohort_size, seed + 19);
@@ -162,15 +199,18 @@ static inline id myc_cohort_shuffle(id inner, id cohort_size, id seed) {
 // Reverse
 static inline id myc_rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
   id r = shuffled;
+  seed ^= cohort_size/3;
   r = myc_rev_cohort_spin(r, cohort_size, seed + 19);
   r = myc_cohort_flop(r, cohort_size, seed + 192);
   r = myc_rev_cohort_interleave(r, cohort_size);
+  r = myc_rev_cohort_mix(r, cohort_size, seed + 728);
   r = myc_rev_cohort_fold(r, cohort_size, seed + 201);
   r = myc_cohort_flop(r, cohort_size, seed + 53);
   r = myc_rev_cohort_interleave(r, cohort_size);
   r = myc_rev_cohort_fold(r, cohort_size, seed + 837);
   r = myc_rev_cohort_spin(r, cohort_size, seed + 1982);
   r = myc_rev_cohort_interleave(r, cohort_size);
+  r = myc_rev_cohort_mix(r, cohort_size, seed + 2891);
   return r;
 }
 

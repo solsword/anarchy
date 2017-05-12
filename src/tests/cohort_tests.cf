@@ -145,6 +145,27 @@ int myc_test_cohort_flop() {
   return 0;
 }
 
+int myc_test_cohort_mix() {
+  id i, cohort_size;
+  id mixed, reversed;
+  for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
+    for (i = 0; i < cohort_size; ++i) {
+      mixed = myc_cohort_mix(i, cohort_size, 17+i);
+      reversed = myc_rev_cohort_mix(mixed, cohort_size, 17+i);
+      if (reversed != i) {
+        fprintf(
+          stderr,
+          "Cohort mix reversibility failed [%lu]: %lu → %lu → %lu\n",
+          cohort_size, i, mixed, reversed
+        );
+        return (int) i+1;
+      }
+    }
+  }
+
+  return 0;
+}
+
 int myc_test_cohort_shuffle() {
   id i, cohort_size;
   id shuffled, reversed;
@@ -181,11 +202,35 @@ int myc_test_cohort_shuffle_visual() {
         "Error: Invalid shuffled value:\nI → S    %zu → %zu\n",
         i, s
       );
+      return i+1;
     }
   }
   results[cohort_size] = '\0';
-  fprintf(stdout, "Original:         %s\n", original);
-  fprintf(stdout, "Shuffle result:   %s\n", results);
+  fprintf(stdout, "\nOriginal:         %s\n", original);
+  fprintf(stdout, "Shuffle result:   %s\n\n", results);
+
+  return 0;
+}
+
+int myc_test_cohort_shuffle_visual_list() {
+  id i;
+  id cohort_size = 18201821;
+  id sample_size = 12;
+  id s;
+  fprintf(stdout, "\nShuffle sample (cohort size is %lu):\n", cohort_size);
+  for (i = cohort_size/2; i < cohort_size/2 + sample_size; ++i) {
+    s = myc_cohort_shuffle(i, cohort_size, 84398384391);
+    if (s >= cohort_size) {
+      fprintf(
+        stderr,
+        "Error: Invalid shuffled value:\nI → S    %zu → %zu\n",
+        i, s
+      );
+      return i+1;
+    }
+    fprintf(stdout, "  %zu → %zu\n", i, s);
+  }
+  fprintf(stdout, "\n");
 
   return 0;
 }

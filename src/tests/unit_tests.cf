@@ -117,7 +117,7 @@ int myc_test_prng() {
 int myc_test_prng_spew() {
   int i;
   id x = 65;
-  fprintf(stdout, "Spew test:\n");
+  fprintf(stdout, "\nSpew test:\n");
   for (int line = 0; line < 10; ++line) {
     for (i = 0; i < 80; ++i) {
       x = myc_prng(x, 45);
@@ -125,6 +125,7 @@ int myc_test_prng_spew() {
     }
     fputc('\n', stdout);
   }
+  fputc('\n', stdout);
 
   return 0;
 }

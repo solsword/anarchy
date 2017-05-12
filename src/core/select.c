@@ -179,8 +179,13 @@ void myc_select_exp_parent_and_index(
 #ifdef DEBUG_SELECT
   fprintf(
     stderr,
-    "\nselect_exp_parent_and_index::child/avg/max/shape/size::%lu/%lu/%lu/%.3f/%lu\n",
-    child, avg_arity, max_arity, exp_cohort_shape, exp_cohort_size
+    "\nselect_exp_parent_and_index::child/avg/max::%lu/%lu/%lu\n",
+    child, avg_arity, max_arity
+  );
+  fprintf(
+    stderr,
+    "select_exp_parent_and_index::shape/size::%.3f/%lu\n",
+    exp_cohort_shape, exp_cohort_size
   );
 #endif
 
@@ -212,7 +217,7 @@ void myc_select_exp_parent_and_index(
   );
 
 #ifdef DEBUG_SELECT
-  fprintf(stderr, "select_exp_parent_and_index::super/inner/super_first::%lu/%lu/%lu\n", super_cohort, inner, super_cohort * lower_cohort_size);
+  fprintf(stderr, "select_exp_parent_and_index::super/inner::%lu/%lu\n", super_cohort, inner);
 #endif
 
   // shuffle within the exponential cohort:

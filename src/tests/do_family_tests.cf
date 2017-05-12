@@ -7,16 +7,18 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-myc_unit_test("mothers_&_children", &myc_test_mothers);
+//myc_unit_test("mothers_&_children", &myc_test_mothers);
 
 myc_unit_test(
   "mother/child_age_diff_stream",
   &myc_test_mothers_age_stream
 );
 
+/*
 myc_unit_test(
   "mother/child_age_diff_histogram",
   &myc_test_mothers_age_histogram
 );
 
 myc_unit_test("mothers_tree_viz", &myc_test_mothers_tree_graphviz);
+*/
