@@ -63,6 +63,56 @@ int myc_test_mothers() {
 }
 
 
+int myc_test_mothers_age_histogram() {
+  id n_samples = 10000;
+  id max_age_diff = 50;
+  id max_bucket_length = 60;
+  id largest_bucket = 0;
+  id buckets[max_age_diff];
+  // 60 equals signs:
+  char *bar = "============================================================";
+  for (
+    id start = 810221831718;
+    start < 810221831718 + 21983*10;
+    start += 21983
+  ) {
+    for (id i = 0; i < max_age_diff; ++i) {
+      buckets[i] = 0;
+    }
+    for (id child = start; child < start + n_samples; ++child) {
+      id mother = myc_mother(child, &DEFAULT_FAMILY_INFO);
+      id age_diff = (
+        myc_birthdate(child, &DEFAULT_FAMILY_INFO)
+      - myc_birthdate(mother, &DEFAULT_FAMILY_INFO)
+      ) / ONE_EARTH_YEAR;
+      if (age_diff < max_age_diff) {
+        buckets[age_diff] += 1;
+        if (buckets[age_diff] > largest_bucket) {
+          largest_bucket = buckets[age_diff];
+        }
+      } else {
+        fprintf(
+          stderr,
+          "\nParent/child with large age gap: %lu → %lu (%lu years)\n",
+          mother, child, age_diff
+        );
+        return child;
+      }
+    }
+    fprintf(stdout, "\nAge difference histogram [%lu]:\n\n", start);
+    for (id i = 0; i < max_age_diff; ++i) {
+      float normalized = (
+        buckets[i]
+      * max_bucket_length
+      ) / (float) largest_bucket;
+      int normint = (int) normalized;
+      fprintf(stdout, "  [%03lu] %.*s(%.3f)\n", i, normint, bar, normalized);
+    }
+    fprintf(stdout, "\n");
+  }
+  return 0;
+}
+
 void myc_print_mothers_recursively(
   FILE* stream,
   id parent,

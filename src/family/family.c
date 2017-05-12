@@ -32,7 +32,9 @@ typedef struct myc_family_info_s myc_family_info;
 myc_family_info const DEFAULT_FAMILY_INFO = {
   .birth_rate_per_day = 10000,
   .minimum_age_at_first_child = 15 * ONE_EARTH_YEAR,
-  .childbearing_days = 20 * ONE_EARTH_YEAR,
+  // TODO: Debug
+  //.minimum_age_at_first_child = 1 * ONE_EARTH_YEAR,
+  .childbearing_days = 25 * ONE_EARTH_YEAR,
   .average_children_per_mother = 1,
   .max_children_per_mother = 32,
   .child_age_distribution_shape = 0.01,
@@ -106,14 +108,16 @@ void myc_mother_and_index(
     *r_index = 0;
     return;
   }
+  id cohort_size = (
+    (info->birth_rate_per_day * info->childbearing_days)
+  / (info->max_children_per_mother*2)
+  );
   myc_select_exp_parent_and_index(
     adjusted,
     info->average_children_per_mother,
     info->max_children_per_mother,
     info->child_age_distribution_shape,
-    info->birth_rate_per_day
-   * info->childbearing_days
-   / info->max_children_per_mother,
+    cohort_size,
     info->seed,
     r_mother,
     r_index
@@ -126,15 +130,17 @@ void myc_mother_and_index(
 }
 
 id myc_child(id person, id nth, myc_family_info const * const info) {
+  id cohort_size = (
+    (info->birth_rate_per_day * info->childbearing_days)
+  / (info->max_children_per_mother*2)
+  );
   id child = myc_select_exp_nth_child(
     person,
     nth,
     info->average_children_per_mother,
     info->max_children_per_mother,
     info->child_age_distribution_shape,
-    info->birth_rate_per_day
-   * info->childbearing_days
-   / info->max_children_per_mother,
+    cohort_size,
     info->seed
   );
   if (child == NONE) { return NONE; } // mother doesn't have this many children
