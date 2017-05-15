@@ -8,6 +8,7 @@
  */
 
 #include <stdio.h>
+#include <sys/stat.h> // for chmod
 
 #include "core/select.h"
 
@@ -536,5 +537,114 @@ int myc_test_avg_exp_parent_child_gap() {
       max_child_dist
     );
   }
+  return 0;
+}
+
+int myc_test_select_gnuplot() {
+  id n_samples = 100;
+  id n_batches = 3;
+  id avg_arity = 1;
+  id max_arity = 37;
+  id seed;
+  id parent, child, index;
+
+  char* scriptfile = "test/select/sel-data.gpt";
+  FILE *fout = fopen(scriptfile, "w");
+  fprintf(
+    fout,
+    "#!/usr/bin/env gnuplot\n"
+    "# sel-data.gpt\n"
+    "# gnuplot script for plotting sel-data.dat\n"
+    "set term png\n"
+    "set output \"sel-data.png\"\n"
+    "set title \"Parent/Child IDs\"\n"
+    "set xlabel \"Parent\"\n"
+    "set ylabel \"Child\"\n"
+    "datafile = 'sel-data.dat'\n"
+    "stats datafile\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) with points title columnheader(1)\n"
+    "quit\n"
+  );
+  fclose(fout);
+  chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
+  fout = fopen("test/select/sel-data.dat", "w");
+  fprintf(fout, "# Parent child\n");
+  id increment = n_samples + n_samples/5;
+  for (
+    id start = 3298019;
+    start < 3298019 + increment * n_batches;
+    start += increment
+  ) {
+    seed = myc_prng(start, start + 4654681615348494);
+    fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
+    for (child = start; child < start + n_samples; ++child) {
+      myc_select_parent_and_index(
+        child,
+        avg_arity,
+        max_arity,
+        seed,
+        &parent,
+        &index
+      );
+      fprintf(fout, "%lu %lu\n", parent, child);
+    }
+  }
+  fclose(fout);
+  return 0;
+}
+
+int myc_test_exp_select_gnuplot() {
+  id n_samples = 1000;
+  id n_batches = 3;
+  id avg_arity = 1;
+  id max_arity = 37;
+  id exp_shape = -0.2;
+  id exp_size = 105;
+  id seed;
+  id parent, child, index;
+
+  char* scriptfile = "test/select/exp-data.gpt";
+  FILE *fout = fopen(scriptfile, "w");
+  fprintf(
+    fout,
+    "#!/usr/bin/env gnuplot\n"
+    "# exp-data.gpt\n"
+    "# gnuplot script for plotting exp-data.dat\n"
+    "set term png\n"
+    "set output \"exp-data.png\"\n"
+    "set title \"Parent/Child IDs\"\n"
+    "set xlabel \"Parent\"\n"
+    "set ylabel \"Child\"\n"
+    "datafile = 'exp-data.dat'\n"
+    "stats datafile\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) with points title columnheader(1)\n"
+    "quit\n"
+  );
+  fclose(fout);
+  chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
+  fout = fopen("test/select/exp-data.dat", "w");
+  fprintf(fout, "# Parent child\n");
+  for (
+    id start = 3298019;
+    start < 3298019 + 1930*n_batches;
+    start += 1930
+  ) {
+    seed = myc_prng(start, start + 4654681615348494);
+    fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
+    for (child = start; child < start + n_samples; ++child) {
+      myc_select_exp_parent_and_index(
+        child,
+        avg_arity,
+        max_arity,
+        exp_shape,
+        exp_size,
+        seed,
+        &parent,
+        &index
+      );
+      fprintf(fout, "%lu %lu\n", parent, child);
+    }
+  }
+  fclose(fout);
   return 0;
 }

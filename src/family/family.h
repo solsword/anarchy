@@ -51,14 +51,18 @@ void myc_copy_family_info(
   myc_family_info *dst
 );
 
-// Sets the seed of a family info object.
+// Get/set the seed of a family info object.
 void myc_set_info_seed(myc_family_info *info, id seed);
+id myc_get_info_seed(myc_family_info *info);
 
 // Returns a person's birth date (in days).
 id myc_birthdate(id person, myc_family_info const * const info);
 
 // Returns the first person born on the given day.
 id myc_first_born_on(id day, myc_family_info const * const info);
+
+// Returns a number used to adjust child IDs to correct age discrepancies.
+id myc_get_child_id_adjust(myc_family_info const * const info);
 
 // Returns the mother of the given person.
 id myc_mother(id person, myc_family_info const * const info);

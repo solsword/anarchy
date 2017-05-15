@@ -12,15 +12,27 @@ ALL_SOURCES:=$(SOURCES) $(FRAGMENTS)
 HEADS:=$(shell find src/heads -name "*.c" -print)
 DEBUG_ALL:=-DDEBUG_SELECT -DDEBUG_COHORT
 
+SVGS:=$(shell find test -name "*.gv" | sed -e "s/\.gv$$/.svg/")
+PLOTS:=$(shell find test -name "*.gpt" | sed -e "s/\.gpt$$/.png/")
+
 OBJS:=$(shell find src -path "src/heads" -prune -o -name "*.c" -print | sed "s/\.c/.o/g" | sed "s/^src/obj/")
 
 DBG_OBJS:=$(shell find src -path "src/heads" -prune -o -name "*.c" -print | sed "s/\.c/.o.d/g" | sed "s/^src/obj/")
 
 .PHONY: list
 list:
-	@echo $(ALL_SOURCES)
-	@echo $(HEADS)
-	@echo $(OBJS)
+	@echo "All Sources:"
+	@echo "$(ALL_SOURCES)"
+	@echo "Headers:"
+	@echo "$(HEADS)"
+	@echo "Objects:"
+	@echo "$(OBJS)"
+	@echo "Debug Objects:"
+	@echo "$(DBG_OBJS)"
+	@echo "SVGs:"
+	@echo "$(SVGS)"
+	@echo "Plots:"
+	@echo "$(PLOTS)"
 
 obj/%.o: src/%.c
 	mkdir -p $(@D)
@@ -40,15 +52,22 @@ bin/rng: $(ALL_SOURCES) $(OBJS) src/heads/rng.c
 	$(COMPILE) $(OBJS) src/heads/rng.c -o $@
 
 test/%.gv: bin/test
-	./bin/test
+	./bin/test > /dev/null
 
 test/%.svg: test/%.gv
 	dot -Tsvg $< > $@
 
-SVGS:=$(shell find test -name "*.gv" | sed -e "s/\.gv$$/.svg/")
-
 .PHONY: graphviz
 graphviz: $(SVGS)
+
+test/%.gpt: bin/test
+	./bin/test > /dev/null
+
+test/%.png: test/%.gpt test/%.dat
+	cd `dirname $<` && ./`basename $<`
+
+.PHONY: plots
+plots: $(PLOTS)
 
 .PHONY: test
 test: bin/test
@@ -69,4 +88,5 @@ rng: bin/rng
 .PHONY: clean
 clean:
 	rm -R obj/*
+	rm test/*/*
 	rm bin/*

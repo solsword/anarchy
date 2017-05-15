@@ -7,7 +7,6 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-/*
 myc_unit_test("select_nth/parent", &myc_test_parent_child_selection);
 
 myc_unit_test("select_nth/parent_odd", &myc_test_odd_parent_child_selection);
@@ -37,4 +36,7 @@ myc_unit_test(
   "selection_average_exp_distances",
   &myc_test_avg_exp_parent_child_gap
 );
-*/
+
+myc_unit_test("selection_parent/child_plot", &myc_test_select_gnuplot);
+
+myc_unit_test("selection_exp_parent/child_plot", &myc_test_exp_select_gnuplot);

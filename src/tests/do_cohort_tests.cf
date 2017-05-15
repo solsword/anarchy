@@ -21,6 +21,10 @@ myc_unit_test("cohort_flop", &myc_test_cohort_flop);
 
 myc_unit_test("cohort_mix", &myc_test_cohort_mix);
 
+myc_unit_test("cohort_spread", &myc_test_cohort_spread);
+
+myc_unit_test("cohort_upend", &myc_test_cohort_upend);
+
 myc_unit_test("cohort_shuffle", &myc_test_cohort_shuffle);
 
 myc_unit_test("cohort_shuffle_visual", &myc_test_cohort_shuffle_visual);
@@ -29,6 +33,8 @@ myc_unit_test(
   "cohort_shuffle_visual_list",
   &myc_test_cohort_shuffle_visual_list
 );
+
+myc_unit_test("cohort _shuffle_gnuplot", &myc_test_cohort_shuffle_gnuplot);
 
 myc_unit_test("find_mixed_cohort", &myc_test_find_mixed_cohort);
 

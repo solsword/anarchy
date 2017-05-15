@@ -32,12 +32,10 @@ typedef struct myc_family_info_s myc_family_info;
 myc_family_info const DEFAULT_FAMILY_INFO = {
   .birth_rate_per_day = 10000,
   .minimum_age_at_first_child = 15 * ONE_EARTH_YEAR,
-  // TODO: Debug
-  //.minimum_age_at_first_child = 1 * ONE_EARTH_YEAR,
   .childbearing_days = 25 * ONE_EARTH_YEAR,
   .average_children_per_mother = 1,
   .max_children_per_mother = 32,
-  .child_age_distribution_shape = 0.01,
+  .child_age_distribution_shape = 0.1,
   .seed = 9728182391
 };
 
@@ -71,6 +69,10 @@ void myc_set_info_seed(myc_family_info *info, id seed) {
   info->seed = seed;
 }
 
+id myc_get_info_seed(myc_family_info *info) {
+  return info->seed;
+}
+
 id myc_birthdate(id person, myc_family_info const * const info) {
   return myc_mixed_cohort(person, info->birth_rate_per_day, 0);
   // TODO: Remove this
@@ -81,6 +83,10 @@ id myc_first_born_on(id day, myc_family_info const * const info) {
   return myc_mixed_cohort_outer(day, 0, info->birth_rate_per_day, 0);
   // TODO: Remove this
   //return myc_cohort_outer(day, 0, info->birth_rate_per_day, 0);
+}
+
+id myc_get_child_id_adjust(myc_family_info const * const info) {
+  return info->birth_rate_per_day * info->minimum_age_at_first_child;
 }
 
 id myc_mother(id person, myc_family_info const * const info) {
@@ -102,7 +108,7 @@ void myc_mother_and_index(
   }
   // Correct age gap:
   id adjusted = person;
-  adjusted -= (info->birth_rate_per_day * info->minimum_age_at_first_child);
+  adjusted -= myc_get_child_id_adjust(info);
   if (adjusted > person) { // underflow
     *r_mother = NONE;
     *r_index = 0;
@@ -146,7 +152,7 @@ id myc_child(id person, id nth, myc_family_info const * const info) {
   if (child == NONE) { return NONE; } // mother doesn't have this many children
   // Introduce age gap:
   id adjusted = child;
-  adjusted += (info->birth_rate_per_day * info->minimum_age_at_first_child);
+  adjusted += myc_get_child_id_adjust(info);
   if (adjusted < child || child < person) { return NONE; } // overflow
   return adjusted;
 }

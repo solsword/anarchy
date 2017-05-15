@@ -7,6 +7,9 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
+#include <stdio.h> // for writing files
+#include <sys/stat.h> // for chmod
+
 #include "core/cohort.h"
 
 int myc_test_find_cohort() {
@@ -166,6 +169,64 @@ int myc_test_cohort_mix() {
   return 0;
 }
 
+int myc_test_cohort_spread() {
+  id i, cohort_size;
+  id spread, reversed;
+  for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
+    for (i = 0; i < cohort_size; ++i) {
+      spread = myc_cohort_spread(i, cohort_size, 1182453 + cohort_size);
+      reversed = myc_rev_cohort_spread(
+        spread,
+        cohort_size,
+        1182453 + cohort_size
+      );
+      if (reversed != i) {
+        fprintf(
+          stderr,
+          "Cohort spread reversibility failed [%lu]: %lu → %lu → %lu\n",
+          cohort_size, i, spread, reversed
+        );
+        return (int) i+1;
+      } else if (spread >= cohort_size) {
+        fprintf(
+          stderr,
+          "Cohort spread out-of-bounds [%lu]: %lu → %lu\n",
+          cohort_size, i, spread
+        );
+      }
+    }
+  }
+
+  return 0;
+}
+
+int myc_test_cohort_upend() {
+  id i, cohort_size;
+  id upended, reversed;
+  for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
+    for (i = 0; i < cohort_size; ++i) {
+      upended = myc_cohort_upend(i, cohort_size, 17+i);
+      reversed = myc_cohort_upend(upended, cohort_size, 17+i);
+      if (reversed != i) {
+        fprintf(
+          stderr,
+          "Cohort upend reversibility failed [%lu]: %lu → %lu → %lu\n",
+          cohort_size, i, upended, reversed
+        );
+        return (int) i+1;
+      } else if (upended >= cohort_size) {
+        fprintf(
+          stderr,
+          "Cohort upend out-of-bounds [%lu]: %lu → %lu\n",
+          cohort_size, i, upended
+        );
+      }
+    }
+  }
+
+  return 0;
+}
+
 int myc_test_cohort_shuffle() {
   id i, cohort_size;
   id shuffled, reversed;
@@ -220,6 +281,22 @@ int myc_test_cohort_shuffle_visual_list() {
   fprintf(stdout, "\nShuffle sample (cohort size is %lu):\n", cohort_size);
   for (i = cohort_size/2; i < cohort_size/2 + sample_size; ++i) {
     s = myc_cohort_shuffle(i, cohort_size, 84398384391);
+    if (s >= cohort_size) {
+      fprintf(
+        stderr,
+        "Error: Invalid shuffled value:\nI → S    %zu → %zu\n",
+        i, s
+      );
+      return i+1;
+    }
+    fprintf(stdout, "  %zu → %zu\n", i, s);
+  }
+  fprintf(stdout, "\n");
+
+  cohort_size = 300000000000;
+  fprintf(stdout, "\nShuffle sample (cohort size is %lu):\n", cohort_size);
+  for (i = cohort_size/2; i < cohort_size/2 + sample_size; ++i) {
+    s = myc_cohort_shuffle(i, cohort_size, 1654686134);
     if (s >= cohort_size) {
       fprintf(
         stderr,
@@ -619,5 +696,50 @@ int myc_test_find_exp_cohort_and_inner() {
     }
   }
 
+  return 0;
+}
+
+int myc_test_cohort_shuffle_gnuplot() {
+  id n_samples = 1000;
+  id n_batches = 3;
+  id cohort_size = 1000;
+  id seed;
+  id index, shuffled;
+
+  char* scriptfile = "test/cohort/shuffle-data.gpt";
+  FILE *fout = fopen(scriptfile, "w");
+  fprintf(
+    fout,
+    "#!/usr/bin/env gnuplot\n"
+    "# shuffle-data.gpt\n"
+    "# gnuplot script for plotting shuffle-data.dat\n"
+    "set term png\n"
+    "set output \"shuffle-data.png\"\n"
+    "set title \"Parent/Child IDs\"\n"
+    "set xlabel \"Parent\"\n"
+    "set ylabel \"Child\"\n"
+    "datafile = 'shuffle-data.dat'\n"
+    "stats datafile\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) with points title columnheader(1)\n"
+    "quit\n"
+  );
+  fclose(fout);
+  chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
+  fout = fopen("test/cohort/shuffle-data.dat", "w");
+  fprintf(fout, "# Original Shuffled\n");
+  id increment = n_samples + n_samples/5;
+  for (
+    id start = 3298019;
+    start < 3298019 + increment * n_batches;
+    start += increment
+  ) {
+    seed = myc_prng(start, start + 4654681615348494);
+    fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
+    for (index = start; index < start + n_samples; ++index) {
+      shuffled = myc_cohort_shuffle(index, cohort_size, seed);
+      fprintf(fout, "%lu %lu\n", index, shuffled);
+    }
+  }
+  fclose(fout);
   return 0;
 }

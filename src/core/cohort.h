@@ -178,20 +178,94 @@ static inline id myc_rev_cohort_mix(id mixed, id cohort_size, id seed) {
   }
 }
 
+// Spreads items out between a number of different regions.
+#define MIN_REGION_SIZE 2
+#define MAX_REGION_COUNT 16
+// TODO: Don't send stuff out-of-range
+static inline id myc_cohort_spread(id inner, id cohort_size, id seed) {
+  id min_regions = 2 - (cohort_size < 2 * MIN_REGION_SIZE);
+  id max_regions = 1 + cohort_size / MIN_REGION_SIZE;
+  id regions = (
+    min_regions
+  + (
+      (seed % (1 + (max_regions - min_regions)))
+    % MAX_REGION_COUNT
+    )
+  );
+  id region_size = cohort_size / regions;
+  id leftovers = cohort_size - regions * region_size;
+
+  id region = inner % regions;
+  id index = inner / regions;
+  return (
+     (index < region_size) * (region * region_size + index + leftovers)
+  + !(index < region_size) * (inner - regions * region_size)
+  );
+}
+
+// Reverse
+static inline id myc_rev_cohort_spread(id spread, id cohort_size, id seed) {
+  id min_regions = 2 - (cohort_size < 2 * MIN_REGION_SIZE);
+  id max_regions = 1 + cohort_size / MIN_REGION_SIZE;
+  id regions = (
+    min_regions
+  + (
+      (seed % (1 + (max_regions - min_regions)))
+    % MAX_REGION_COUNT
+    )
+  );
+  id region_size = cohort_size / regions;
+  id leftovers = cohort_size - regions * region_size;
+
+  id index = (spread - leftovers) / region_size;
+  id region = (spread - leftovers) % region_size;
+  return (
+     (spread < leftovers) * (regions * region_size + spread)
+  + !(spread < leftovers) * (region * regions + index)
+  );
+}
+
+// Reverses ordering within each of several fragments.
+static inline id myc_cohort_upend(id inner, id cohort_size, id seed) {
+  id min_regions = 2 - (cohort_size < 2 * MIN_REGION_SIZE);
+  id max_regions = 1 + cohort_size / MIN_REGION_SIZE;
+  id regions = (
+    min_regions
+  + (
+      (seed % (1 + (max_regions - min_regions)))
+    % MAX_REGION_COUNT
+    )
+  );
+  id region_size = cohort_size / regions;
+
+  id region = inner / region_size;
+  id index = inner % region_size;
+  id result = region * region_size + (region_size - 1 - index);
+  return (
+     (result < cohort_size) * result
+  + !(result < cohort_size) * inner
+  );
+}
+// Upend is its own inverse
+
 // Uses the above functions to shuffle a cohort
 static inline id myc_cohort_shuffle(id inner, id cohort_size, id seed) {
   id r = inner;
   seed ^= cohort_size/3;
+  r = myc_cohort_spread(r, cohort_size, seed + 453);
   r = myc_cohort_mix(r, cohort_size, seed + 2891);
   r = myc_cohort_interleave(r, cohort_size);
   r = myc_cohort_spin(r, cohort_size, seed + 1982);
+  r = myc_cohort_upend(r, cohort_size, seed + 47);
   r = myc_cohort_fold(r, cohort_size, seed + 837);
   r = myc_cohort_interleave(r, cohort_size);
   r = myc_cohort_flop(r, cohort_size, seed + 53);
   r = myc_cohort_fold(r, cohort_size, seed + 201);
   r = myc_cohort_mix(r, cohort_size, seed + 728);
+  r = myc_cohort_spread(r, cohort_size, seed + 881);
   r = myc_cohort_interleave(r, cohort_size);
   r = myc_cohort_flop(r, cohort_size, seed + 192);
+  r = myc_cohort_upend(r, cohort_size, seed + 794614);
   r = myc_cohort_spin(r, cohort_size, seed + 19);
   return r;
 }
@@ -201,16 +275,20 @@ static inline id myc_rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
   id r = shuffled;
   seed ^= cohort_size/3;
   r = myc_rev_cohort_spin(r, cohort_size, seed + 19);
+  r = myc_cohort_upend(r, cohort_size, seed + 794614);
   r = myc_cohort_flop(r, cohort_size, seed + 192);
   r = myc_rev_cohort_interleave(r, cohort_size);
+  r = myc_rev_cohort_spread(r, cohort_size, seed + 881);
   r = myc_rev_cohort_mix(r, cohort_size, seed + 728);
   r = myc_rev_cohort_fold(r, cohort_size, seed + 201);
   r = myc_cohort_flop(r, cohort_size, seed + 53);
   r = myc_rev_cohort_interleave(r, cohort_size);
   r = myc_rev_cohort_fold(r, cohort_size, seed + 837);
+  r = myc_cohort_upend(r, cohort_size, seed + 47);
   r = myc_rev_cohort_spin(r, cohort_size, seed + 1982);
   r = myc_rev_cohort_interleave(r, cohort_size);
   r = myc_rev_cohort_mix(r, cohort_size, seed + 2891);
+  r = myc_rev_cohort_spread(r, cohort_size, seed + 453);
   return r;
 }
 
