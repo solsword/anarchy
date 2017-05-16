@@ -449,15 +449,15 @@ static inline id myc_nearest_bias(float f) {
 //
 //   sections indicates how many sections there are in total.
 //
-//   which indicates which section's cutoff we're interested in.
-//
 //   section_width indicates how wide each section is.
+//
+//   which indicates which section's cutoff we're interested in.
 //
 static inline id myc_exp_split(
   float shape,
   id sections,
-  id which,
-  id section_width
+  id section_width,
+  id which
 ) {
   if (shape < 0) {
     which = sections - which - 1;
@@ -494,19 +494,32 @@ static inline void myc_exp_cohort_and_inner(
   id strict_inner = myc_cohort_inner(outer, cohort_size);
 
 #ifdef DEBUG_COHORT
-  fprintf(stderr, "\nexp_cohort::outer/shape/size::%lu/%.3f/%lu\n", outer, shape, cohort_size);
-  fprintf(stderr, "exp_cohort::strict_cohort/inner::%lu/%lu\n", strict_cohort, strict_inner);
+  fprintf(
+    stderr,
+    "\nexp_cohort::outer/shape/size::%lu/%.3f/%lu\n",
+    outer,
+    shape,
+    cohort_size
+  );
+  fprintf(
+    stderr,
+    "exp_cohort::strict_cohort/inner::%lu/%lu\n",
+    strict_cohort,
+    strict_inner
+  );
 #endif
 
   id section = strict_inner / resolution;
   id in_section = strict_inner % resolution;
-  // TODO: ID coherency between cohorts!
+  // Note: ID coherency between cohorts is impossible if we also want a smooth
+  // distribution of cohort members throughout ID space (which is much more
+  // important)
   id shuf = myc_cohort_shuffle(
     in_section,
     resolution,
     seed + section
   );
-  id split = myc_exp_split(shape, section_count, section, resolution);
+  id split = myc_exp_split(shape, section_count, resolution, section);
   id lower = shuf < split;
 
   // TODO: Type here?
@@ -540,12 +553,167 @@ static inline id myc_exp_cohort_outer(
   id in_section = inner % resolution;
   id section = inner / resolution;
 
-  id split = myc_exp_split(shape, section_count, section, resolution);
+  id split = myc_exp_split(shape, section_count, resolution, section);
   id lower = in_section < split;
 
   int adjust = !lower * (-1 + 2*(shape > 0));
 
   id strict_cohort = cohort - adjust;
+
+  id unshuf = myc_rev_cohort_shuffle(in_section, resolution, seed + section);
+
+  id strict_inner = (section * resolution) + unshuf;
+
+  return myc_cohort_outer(strict_cohort, strict_inner, cohort_size);
+}
+
+// Works like myc_exp_split but computes multiple layered splits, using the
+// additional layer and n_layers argument to select a layer.
+static inline id myc_multi_exp_split(
+  float shape,
+  id sections,
+  id section_width,
+  id which,
+  id layer,
+  id n_layers
+) {
+  return myc_exp_split(
+    shape,
+    sections,
+    section_width,
+    (which + (sections - (sections/n_layers)*layer)) % sections
+  );
+}
+
+// Looks up which layer we're in using myc_multi_exp_split.
+static inline id myc_multi_exp_get_layer(
+  id in_section,
+  float shape,
+  id sections,
+  id section_width,
+  id which,
+  id n_layers
+) {
+  id layer = 0;
+  id last_split = 0;
+  id split;
+  do {
+    split = myc_multi_exp_split(
+      shape,
+      sections,
+      section_width,
+      which,
+      layer,
+      n_layers
+    );
+    if (split < last_split) {
+      break;
+    }
+    last_split = split;
+    layer += 1;
+  } while (in_section > split && layer < n_layers - 1);
+  return layer;
+}
+
+// Works like myc_exp_cohort_and_inner but instead of slicing each cohort into
+// two parts, it slices each cohort into multiple parts, and distributes them
+// nearby. This can give a much smoother distribution.
+static inline void myc_multiexp_cohort_and_inner(
+  id outer,
+  float shape,
+  id cohort_size,
+  id n_layers,
+  id seed,
+  id *r_cohort,
+  id *r_inner
+) {
+  id resolution = EXP_SECTION_RESOLUTION;
+  id section_count = cohort_size / resolution;
+  if (section_count < MIN_SECTION_COUNT) {
+    resolution = cohort_size / MIN_SECTION_COUNT;
+    if (resolution < MIN_SECTION_RESOLUTION) {
+      resolution = MIN_SECTION_RESOLUTION;
+    }
+    section_count = cohort_size / resolution;
+  }
+
+  id strict_cohort = myc_cohort(outer, cohort_size);
+  id strict_inner = myc_cohort_inner(outer, cohort_size);
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "\nmultiexp_cohort::outer/shape/size::%lu/%.3f/%lu\n",
+    outer,
+    shape,
+    cohort_size
+  );
+  fprintf(
+    stderr,
+    "multiexp_cohort::strict_cohort/inner::%lu/%lu\n",
+    strict_cohort,
+    strict_inner
+  );
+#endif
+
+  id section = strict_inner / resolution;
+  id in_section = strict_inner % resolution;
+  // Note: ID coherency between cohorts is impossible if we also want a smooth
+  // distribution of cohort members throughout ID space (which is much more
+  // important)
+  id shuf = myc_cohort_shuffle(
+    in_section,
+    resolution,
+    seed + section
+  );
+  id layer = myc_multi_exp_get_layer(
+    shuf,
+    shape, 
+    section_count,
+    resolution,
+    section,
+    n_layers
+  );
+
+#ifdef DEBUG_COHORT
+  fprintf(stderr, "multiexp_cohort::layer::%d\n\n", layer);
+#endif
+
+  *r_cohort = strict_cohort + layer;
+  *r_inner = shuf + (section * resolution);
+}
+
+static inline id myc_multiexp_cohort_outer(
+  id cohort,
+  id inner,
+  float shape,
+  id cohort_size,
+  id n_layers,
+  id seed
+) {
+  id resolution = EXP_SECTION_RESOLUTION;
+  id section_count = cohort_size / resolution;
+  if (section_count < MIN_SECTION_COUNT) {
+    resolution = cohort_size / MIN_SECTION_COUNT;
+    if (resolution < MIN_SECTION_RESOLUTION) {
+      resolution = MIN_SECTION_RESOLUTION;
+    }
+    section_count = cohort_size / resolution;
+  }
+
+  id in_section = inner % resolution;
+  id section = inner / resolution;
+
+  id layer = myc_multi_exp_get_layer(
+    in_section,
+    shape, 
+    section_count,
+    resolution,
+    section,
+    n_layers
+  );
+
+  id strict_cohort = cohort - layer;
 
   id unshuf = myc_rev_cohort_shuffle(in_section, resolution, seed + section);
 

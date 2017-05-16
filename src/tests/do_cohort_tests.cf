@@ -64,3 +64,17 @@ myc_unit_test("exp_cohort_visual", &myc_test_exp_cohort_visual);
 myc_unit_test("exp_cohort_inners", &myc_test_exp_cohort_inners);
 
 myc_unit_test("find_exp_cohort_and_inner", &myc_test_find_exp_cohort_and_inner);
+
+myc_unit_test(
+  "multiexp_cohort_sections_visual",
+  &myc_test_multiexp_cohort_sections_visual
+);
+
+myc_unit_test(
+  "find_multiexp_cohort_and_inner",
+  &myc_test_find_multiexp_cohort_and_inner
+);
+
+myc_unit_test("exp_cohort_gnuplot", &myc_test_exp_cohort_gnuplot);
+
+myc_unit_test("multiexp_cohort_gnuplot", &myc_test_multiexp_cohort_gnuplot);

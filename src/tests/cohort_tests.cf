@@ -699,6 +699,91 @@ int myc_test_find_exp_cohort_and_inner() {
   return 0;
 }
 
+int myc_test_find_multiexp_cohort_and_inner() {
+  id i;
+  id my_cohort, inner; 
+  id cohort_size = 10000;
+  id cohort_seed = 1728;
+  id cohort_layers = 8;
+  float shape = 0.25;
+  id reversed;
+  for (i = 0; i < 391831; i += 12817) {
+    myc_multiexp_cohort_and_inner(
+      i,
+      shape,
+      cohort_size,
+      cohort_layers,
+      cohort_seed,
+      &my_cohort,
+      &inner
+    );
+    reversed = myc_multiexp_cohort_outer(
+      my_cohort,
+      inner,
+      shape,
+      cohort_size,
+      cohort_layers,
+      cohort_seed
+    );
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Multi-Exponential cohort reversibility failed: %lu → %lu/%lu → %lu\n",
+        i, my_cohort, inner, reversed
+      );
+      return (int) i+1;
+    }
+  }
+
+  return 0;
+}
+
+int myc_test_multiexp_cohort_sections_visual() {
+  id i;
+  id sections = 20;
+  id section_width = EXP_SECTION_RESOLUTION;
+  id cohort_size = sections * section_width;
+  id cohort_layers = 8;
+  id cohort_seed = 1;
+  float shape = -0.05;
+  id mxc, mxi;
+  size_t lines = cohort_size*2 / section_width;
+  char cohorts[lines*section_width+1];
+  char inners[lines*section_width+1];
+  id first_mxc = UNLIKELY;
+  for (i = 0; i < cohort_size*2; ++i) {
+    myc_multiexp_cohort_and_inner(
+      i,
+      shape,
+      cohort_size,
+      cohort_layers,
+      cohort_seed,
+      &mxc,
+      &mxi
+    );
+    if (first_mxc == UNLIKELY) { first_mxc = mxc; }
+    cohorts[i] = (char) (0x30 + mxc - first_mxc);
+    inners[i] = (char) (0x41 + (mxi % 26) + ((mxc - first_mxc)%2)*0x20);
+  }
+  cohorts[lines*section_width] = '\0';
+  inners[lines*section_width] = '\0';
+  fputc('\n', stdout);
+  for (i = 0; i < lines; ++i) {
+    fputs("    ", stdout);
+    for (int j = 0; j < section_width; ++j) {
+      fputc(cohorts[j + section_width*i], stdout);
+    }
+    fputs("    ", stdout);
+    for (int j = 0; j < section_width; ++j) {
+      fputc(inners[j + section_width*i], stdout);
+    }
+    fputc('\n', stdout);
+  }
+  fputc('\n', stdout);
+
+  return 0;
+}
+
 int myc_test_cohort_shuffle_gnuplot() {
   id n_samples = 1000;
   id n_batches = 3;
@@ -720,7 +805,8 @@ int myc_test_cohort_shuffle_gnuplot() {
     "set ylabel \"Child\"\n"
     "datafile = 'shuffle-data.dat'\n"
     "stats datafile\n"
-    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) with points title columnheader(1)\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
     "quit\n"
   );
   fclose(fout);
@@ -738,6 +824,172 @@ int myc_test_cohort_shuffle_gnuplot() {
     for (index = start; index < start + n_samples; ++index) {
       shuffled = myc_cohort_shuffle(index, cohort_size, seed);
       fprintf(fout, "%lu %lu\n", index, shuffled);
+    }
+  }
+  fclose(fout);
+  return 0;
+}
+
+int myc_test_exp_cohort_gnuplot() {
+  id n_batches = 3;
+  //id cohort_size = 100;
+  id cohort_size = 37*105;
+  id n_samples = cohort_size;
+  float cohort_shape = 0.02;
+  id seed;
+  id outer, inner, cohort;
+
+  char* scriptfile = "test/cohort/exp-cohort-data.gpt";
+  FILE *fout = fopen(scriptfile, "w");
+  fprintf(
+    fout,
+    "#!/usr/bin/env gnuplot\n"
+    "# exp-cohort-data.gpt\n"
+    "# gnuplot script for plotting exp-cohort-data.dat\n"
+    "set term png\n"
+    "set output \"exp-cohort-data.png\"\n"
+    "set title \"Exponential Cohorts\"\n"
+    "set key off\n"
+    "set xlabel \"Outer\"\n"
+    "set ylabel \"Relative Inner\"\n"
+    "datafile = 'exp-cohort-data.dat'\n"
+    "stats datafile\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
+    "quit\n"
+  );
+  fclose(fout);
+  chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
+  fout = fopen("test/cohort/exp-cohort-data.dat", "w");
+  fprintf(fout, "# Original Shuffled\n");
+  id increment = n_samples;
+  id outers[n_samples*n_batches];
+  id inners[n_samples*n_batches];
+  id cohorts[n_samples*n_batches];
+  id batch = 0;
+  id min_cohort = 0 - 1;
+  id max_cohort = 0;
+  id idx = 0;
+  for (
+    id start = 3298019;
+    start < 3298019 + increment * n_batches;
+    start += increment
+  ) {
+    idx = n_samples*batch;
+    seed = myc_prng(start, start + 66489419814);
+    for (outer = start; outer < start + n_samples; ++outer) {
+      myc_exp_cohort_and_inner(
+        outer - (cohort_size*2),
+        cohort_shape,
+        cohort_size,
+        seed,
+        &cohort,
+        &inner
+      );
+      outers[idx] = outer;
+      cohorts[idx] = cohort;
+      inners[idx] = inner;
+      if (cohort < min_cohort) { min_cohort = cohort; }
+      if (cohort > max_cohort) { max_cohort = cohort; }
+      idx += 1;
+    }
+    batch += 1;
+  }
+  for (id coh = min_cohort; coh < max_cohort+1; ++coh) {
+    fprintf(fout, "\n\n\"Inners for cohort %lu (batch %lu):\"\n", coh, batch);
+    for (idx = 0; idx < n_samples*n_batches; ++idx) {
+      if (cohorts[idx] == coh) {
+        fprintf(
+          fout,
+          "%lu %lu\n",
+          outers[idx],
+          inners[idx] + (coh - min_cohort) * cohort_size
+        );
+      }
+    }
+  }
+  fclose(fout);
+  return 0;
+}
+
+int myc_test_multiexp_cohort_gnuplot() {
+  id n_batches = 3;
+  //id cohort_size = 100;
+  id cohort_size = 37*105;
+  id n_samples = cohort_size;
+  float cohort_shape = 0.02;
+  id seed;
+  id outer, inner, cohort;
+
+  char* scriptfile = "test/cohort/multi-exp-cohort-data.gpt";
+  FILE *fout = fopen(scriptfile, "w");
+  fprintf(
+    fout,
+    "#!/usr/bin/env gnuplot\n"
+    "# multi-exp-cohort-data.gpt\n"
+    "# gnuplot script for plotting multi-exp-cohort-data.dat\n"
+    "set term png\n"
+    "set output \"multi-exp-cohort-data.png\"\n"
+    "set title \"Multi-Exponential Cohorts\"\n"
+    "set key off\n"
+    "set xlabel \"Outer\"\n"
+    "set ylabel \"Relative Inner\"\n"
+    "datafile = 'multi-exp-cohort-data.dat'\n"
+    "stats datafile\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
+    "quit\n"
+  );
+  fclose(fout);
+  chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
+  fout = fopen("test/cohort/multi-exp-cohort-data.dat", "w");
+  fprintf(fout, "# Original Shuffled\n");
+  id increment = n_samples;
+  id outers[n_samples*n_batches];
+  id inners[n_samples*n_batches];
+  id cohorts[n_samples*n_batches];
+  id batch = 0;
+  id min_cohort = 0 - 1;
+  id max_cohort = 0;
+  id idx = 0;
+  id cohort_layers = 8;
+  for (
+    id start = 3298019;
+    start < 3298019 + increment * n_batches;
+    start += increment
+  ) {
+    idx = n_samples*batch;
+    seed = myc_prng(start, start + 66489419814);
+    for (outer = start; outer < start + n_samples; ++outer) {
+      myc_multiexp_cohort_and_inner(
+        outer - (cohort_size*2),
+        cohort_shape,
+        cohort_size,
+        cohort_layers,
+        seed,
+        &cohort,
+        &inner
+      );
+      outers[idx] = outer;
+      cohorts[idx] = cohort;
+      inners[idx] = inner;
+      if (cohort < min_cohort) { min_cohort = cohort; }
+      if (cohort > max_cohort) { max_cohort = cohort; }
+      idx += 1;
+    }
+    batch += 1;
+  }
+  for (id coh = min_cohort; coh < max_cohort+1; ++coh) {
+    fprintf(fout, "\n\n\"Inners for cohort %lu (batch %lu):\"\n", coh, batch);
+    for (idx = 0; idx < n_samples*n_batches; ++idx) {
+      if (cohorts[idx] == coh) {
+        fprintf(
+          fout,
+          "%lu %lu\n",
+          outers[idx],
+          inners[idx] + (coh - min_cohort) * cohort_size
+        );
+      }
     }
   }
   fclose(fout);

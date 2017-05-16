@@ -137,7 +137,8 @@ int myc_test_mothers_age_histogram() {
 
 int myc_test_mothers_gnuplot() {
   id n_samples = 1000;
-  id n_batches = 2;
+  id stride = 11078;
+  id n_batches = 3;
   id seed;
   char *scriptfile = "test/family/mothers-data.gpt";
   FILE *fout = fopen(scriptfile, "w");
@@ -149,11 +150,12 @@ int myc_test_mothers_gnuplot() {
     "set term png\n"
     "set output \"mothers-data.png\"\n"
     "set title \"Mother/Child IDs\"\n"
-    "set xlabel \"Mother\"\n"
-    "set ylabel \"Child\"\n"
+    "set xlabel \"Child\"\n"
+    "set ylabel \"Mother\"\n"
     "datafile = 'mothers-data.dat'\n"
     "stats datafile\n"
-    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) with points title columnheader(1)\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
     "quit\n"
   );
   fclose(fout);
@@ -161,8 +163,8 @@ int myc_test_mothers_gnuplot() {
   fout = fopen("test/family/mothers-data.dat", "w");
   myc_family_info *tinfo = myc_create_family_info();
   myc_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
-  fprintf(fout, "# Mother child\n");
-  id increment = n_samples + n_samples/5;
+  fprintf(fout, "# Child Mother\n");
+  id increment = n_samples*stride;
   for (
     id start = 180280193;
     start < 180280193 + increment * n_batches;
@@ -171,9 +173,9 @@ int myc_test_mothers_gnuplot() {
     seed = myc_prng(start, start + 120912);
     myc_set_info_seed(tinfo, seed);
     fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
-    for (id child = start; child < start + n_samples; ++child) {
+    for (id child = start; child < start + n_samples * stride; child += stride){
       id mother = myc_mother(child, tinfo);
-      fprintf(fout, "%lu %lu\n", mother, child);
+      fprintf(fout, "%lu %lu\n", child, mother);
     }
   }
   fclose(fout);
@@ -183,6 +185,7 @@ int myc_test_mothers_gnuplot() {
 
 int myc_test_mother_ages_gnuplot() {
   id n_samples = 1000;
+  id stride = 10213;
   id n_batches = 2;
   id seed;
   char *scriptfile = "test/family/mother-age-data.gpt";
@@ -195,11 +198,12 @@ int myc_test_mother_ages_gnuplot() {
     "set term png\n"
     "set output \"mother-age-data.png\"\n"
     "set title \"Mother/Child Birthdays\"\n"
-    "set xlabel \"Mother\"\n"
-    "set ylabel \"Child\"\n"
+    "set xlabel \"Child\"\n"
+    "set ylabel \"Mother\"\n"
     "datafile = 'mother-age-data.dat'\n"
     "stats datafile\n"
-    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) with points title columnheader(1)\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
     "quit\n"
   );
   fclose(fout);
@@ -207,8 +211,8 @@ int myc_test_mother_ages_gnuplot() {
   fout = fopen("test/family/mother-age-data.dat", "w");
   myc_family_info *tinfo = myc_create_family_info();
   myc_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
-  fprintf(fout, "# Mother child\n");
-  id increment = n_samples + n_samples/5;
+  fprintf(fout, "# Child Mother\n");
+  id increment = n_samples*stride;
   for (
     id start = 180280193;
     start < 180280193 + increment * n_batches;
@@ -217,13 +221,13 @@ int myc_test_mother_ages_gnuplot() {
     seed = myc_prng(start, start + 120912);
     myc_set_info_seed(tinfo, seed);
     fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
-    for (id child = start; child < start + n_samples; ++child) {
+    for (id child = start; child < start + stride * n_samples; child += stride){
       id mother = myc_mother(child, tinfo);
       fprintf(
         fout,
         "%lu %lu\n",
-        myc_birthdate(mother, tinfo),
-        myc_birthdate(child, tinfo)
+        myc_birthdate(child, tinfo),
+        myc_birthdate(mother, tinfo)
       );
     }
   }
@@ -233,9 +237,9 @@ int myc_test_mother_ages_gnuplot() {
 }
 
 int myc_test_mother_age_at_birth_gnuplot() {
-  id n_samples = 10000;
-  id n_batches = 2;
-  id stride = 3047;
+  id n_samples = 1000;
+  id n_batches = 5;
+  id stride = 31047;
   id seed;
   char *scriptfile = "test/family/mother-age-at-birth-data.gpt";
   FILE *fout = fopen(scriptfile, "w");
@@ -246,12 +250,14 @@ int myc_test_mother_age_at_birth_gnuplot() {
     "# gnuplot script for plotting mother-age-at-birth-data.dat\n"
     "set term png\n"
     "set output \"mother-age-at-birth-data.png\"\n"
+    "set key off\n"
     "set title \"Mother Age-at-Birth\"\n"
     "set xlabel \"Child\"\n"
     "set ylabel \"Mother-Age-at-Birth\"\n"
     "datafile = 'mother-age-at-birth-data.dat'\n"
     "stats datafile\n"
-    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) with points title columnheader(1)\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
     "quit\n"
   );
   fclose(fout);
@@ -260,10 +266,10 @@ int myc_test_mother_age_at_birth_gnuplot() {
   myc_family_info *tinfo = myc_create_family_info();
   myc_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
   fprintf(fout, "# Child Mother-age-at-birth\n");
-  id increment = (n_samples + n_samples/5) * stride;
+  id increment = (n_samples - n_samples/8) * stride;
   for (
-    id start = 1802830193;
-    start < 1802830193 + increment * n_batches;
+    id start = 1911494693;
+    start < 1911494693 + increment * n_batches;
     start += increment
   ) {
     seed = myc_prng(start, start + 120912);
@@ -275,8 +281,9 @@ int myc_test_mother_age_at_birth_gnuplot() {
         fout,
         "%lu %lu\n",
         child,
-        (myc_birthdate(child, tinfo) - myc_birthdate(mother, tinfo))
-       / ONE_EARTH_YEAR
+        mother
+      //   (myc_birthdate(child, tinfo) - myc_birthdate(mother, tinfo))
+      // / ONE_EARTH_YEAR
       );
     }
   }
