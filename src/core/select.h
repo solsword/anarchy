@@ -50,6 +50,7 @@ void myc_select_exp_parent_and_index(
   id max_arity,
   float exp_cohort_shape,
   id exp_cohort_size,
+  id exp_cohort_layers,
   id seed,
   id *r_parent,
   id *r_index
@@ -64,6 +65,7 @@ id myc_select_exp_nth_child(
   id max_arity,
   float exp_cohort_shape,
   id exp_cohort_size,
+  id exp_cohort_layers,
   id seed
 );
 

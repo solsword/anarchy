@@ -54,7 +54,7 @@ int myc_test_odd_parent_child_selection() {
   id avg_arity = 3;
   id seed = 1028101;
   id result;
-  for (id tin = 40192; tin < 524011; tin += 1873) {
+  for (id tin = 4075192; tin < 4075192 + 22921; tin += 1873) {
     myc_select_parent_and_index(
       tin,
       avg_arity,
@@ -67,7 +67,7 @@ int myc_test_odd_parent_child_selection() {
     if (result != tin) {
       fprintf(
         stderr,
-        "Selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        "Odd selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
         tin, parent, index, parent, index, result
       );
       fprintf(stderr, "All children of %lu:\n", parent);
@@ -119,14 +119,16 @@ int myc_test_exp_parent_child_selection() {
   id seed = 798513546;
   float exp_shape = 0.2;
   id exp_size = 1024;
+  id exp_layers = 4;
   id result;
-  for (id tin = 54646; tin < 9464135; tin += 5167) {
+  for (id tin = 9464135; tin < 9464135 + 409102; tin += 5167) {
     myc_select_exp_parent_and_index(
       tin,
       avg_arity,
       max_arity,
       exp_shape,
       exp_size,
+      exp_layers,
       seed,
       &parent,
       &index
@@ -138,12 +140,13 @@ int myc_test_exp_parent_child_selection() {
       max_arity,
       exp_shape,
       exp_size,
+      exp_layers,
       seed
     );
     if (result != tin) {
       fprintf(
         stderr,
-        "Selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        "Exp. selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
         tin, parent, index, parent, index, result
       );
       fprintf(stderr, "All children of %lu:\n", parent);
@@ -157,6 +160,7 @@ int myc_test_exp_parent_child_selection() {
           max_arity,
           exp_shape,
           exp_size,
+          exp_layers,
           seed
         );
         fprintf(stderr, "  #%lu: %lu\n", nth, child);
@@ -175,6 +179,7 @@ int myc_test_odd_exp_parent_child_selection() {
   id seed = 17219;
   float exp_shape = 0.3;
   id exp_size = 45;
+  id exp_layers = 4;
   id result;
   for (id tin = 389238; tin < 581201; tin += 8756) {
     myc_select_exp_parent_and_index(
@@ -183,6 +188,7 @@ int myc_test_odd_exp_parent_child_selection() {
       max_arity,
       exp_shape,
       exp_size,
+      exp_layers,
       seed,
       &parent,
       &index
@@ -194,12 +200,14 @@ int myc_test_odd_exp_parent_child_selection() {
       max_arity,
       exp_shape,
       exp_size,
+      exp_layers,
       seed
     );
     if (result != tin) {
       fprintf(
         stderr,
-        "Selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+       "Odd exp. selection reversibility failed: "
+         "%lu → %lu#%lu / %lu#%lu → %lu\n",
         tin, parent, index, parent, index, result
       );
       fprintf(stderr, "All children of %lu:\n", parent);
@@ -213,6 +221,7 @@ int myc_test_odd_exp_parent_child_selection() {
           max_arity,
           exp_shape,
           exp_size,
+          exp_layers,
           seed
         );
         fprintf(stderr, "  #%lu: %lu\n", nth, child);
@@ -232,6 +241,7 @@ int myc_test_exp_parent_child_visual() {
   id child = NONE;
   float exp_cohort_shape = 0.02;
   id exp_cohort_size = 512;
+  id exp_cohort_layers = 4;
   fprintf(stdout, "\n  %lu", parent);
   for (id i = 0; i < 7; ++i) {
       nth = 0;
@@ -244,6 +254,7 @@ int myc_test_exp_parent_child_visual() {
           max_arity,
           exp_cohort_shape,
           exp_cohort_size,
+          exp_cohort_layers,
           seed
         );
         if (child == NONE) {
@@ -260,6 +271,7 @@ int myc_test_exp_parent_child_visual() {
         max_arity,
         exp_cohort_shape,
         exp_cohort_size,
+        exp_cohort_layers,
         seed
       );
       if (parent == NONE) {
@@ -278,6 +290,7 @@ void myc_print_edges_recursively(
   id seed,
   float exp_cohort_shape,
   id exp_cohort_size,
+  id exp_cohort_layers,
   id depth_limit
 ) {
   id nth = 0;
@@ -290,6 +303,7 @@ void myc_print_edges_recursively(
       max_arity,
       exp_cohort_shape,
       exp_cohort_size,
+      exp_cohort_layers,
       seed
     );
     if (child == NONE) {
@@ -306,6 +320,7 @@ void myc_print_edges_recursively(
         seed,
         exp_cohort_shape,
         exp_cohort_size,
+        exp_cohort_layers,
         depth_limit - 1
       );
     }
@@ -318,6 +333,7 @@ int myc_test_exp_select_graphviz() {
   id index = 0;
   float exp_cohort_shape = 0.02;
   id exp_cohort_size = 512;
+  id exp_cohort_layers = 4;
   char filename[1024];
   for (id seed = 172741; seed < 172746; seed += 1) {
     parent = 10000000;
@@ -329,6 +345,7 @@ int myc_test_exp_select_graphviz() {
         max_arity,
         exp_cohort_shape,
         exp_cohort_size,
+        exp_cohort_layers,
         seed,
         &parent,
         &index
@@ -347,6 +364,7 @@ int myc_test_exp_select_graphviz() {
       seed,
       exp_cohort_shape,
       exp_cohort_size,
+      exp_cohort_layers,
       5
     );
     fprintf(fout, "}\n");
@@ -450,6 +468,7 @@ int myc_test_avg_exp_parent_child_gap() {
   id avg_arity = 1;
   float cohort_shape = 0.01;
   id cohort_size = 1024;
+  id cohort_layers = 4;
   double avg_parent_distance = 0; 
   double avg_child_distance = 0; 
   id parent_dist_count = 0;
@@ -471,6 +490,7 @@ int myc_test_avg_exp_parent_child_gap() {
         max_arity,
         cohort_shape,
         cohort_size,
+        cohort_layers,
         seed,
         &parent,
         &index
@@ -485,6 +505,7 @@ int myc_test_avg_exp_parent_child_gap() {
         max_arity,
         cohort_shape,
         cohort_size,
+        cohort_layers,
         seed
       );
       if (child != NONE) {
@@ -558,8 +579,8 @@ int myc_test_select_gnuplot() {
     "set term png\n"
     "set output \"sel-data.png\"\n"
     "set title \"Parent/Child IDs\"\n"
-    "set xlabel \"Parent\"\n"
-    "set ylabel \"Child\"\n"
+    "set xlabel \"Child\"\n"
+    "set ylabel \"Parent\"\n"
     "datafile = 'sel-data.dat'\n"
     "stats datafile\n"
     "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
@@ -569,7 +590,7 @@ int myc_test_select_gnuplot() {
   fclose(fout);
   chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
   fout = fopen("test/select/sel-data.dat", "w");
-  fprintf(fout, "# Parent child\n");
+  fprintf(fout, "# Child Parent\n");
   id increment = n_samples + n_samples/5;
   for (
     id start = 3298019;
@@ -587,7 +608,7 @@ int myc_test_select_gnuplot() {
         &parent,
         &index
       );
-      fprintf(fout, "%lu %lu\n", parent, child);
+      fprintf(fout, "%lu %lu\n", child, parent);
     }
   }
   fclose(fout);
@@ -601,6 +622,7 @@ int myc_test_exp_select_gnuplot() {
   id max_arity = 37;
   float exp_shape = 0.02;
   id exp_size = 105;
+  id exp_layers = 5;
   id seed;
   id parent, child, index;
 
@@ -613,7 +635,7 @@ int myc_test_exp_select_gnuplot() {
     "# gnuplot script for plotting exp-data.dat\n"
     "set term png\n"
     "set output \"exp-data.png\"\n"
-    "set title \"Parent/Child IDs\"\n"
+    "set title \"Exponential Parent/Child IDs\"\n"
     "set xlabel \"Child\"\n"
     "set ylabel \"Parent\"\n"
     "datafile = 'exp-data.dat'\n"
@@ -643,6 +665,7 @@ int myc_test_exp_select_gnuplot() {
         max_arity,
         exp_shape,
         exp_size,
+        exp_layers,
         seed,
         &parent,
         &index

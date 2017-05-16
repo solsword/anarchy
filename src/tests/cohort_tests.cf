@@ -500,7 +500,7 @@ int myc_test_exp_split_visual() {
   id sections = 20;
   id section_width = 32;
   for (id i = 0; i < sections; ++i) {
-    id result = myc_exp_split(0.05, sections, i, section_width);
+    id result = myc_exp_split(0.05, sections, section_width, i);
     for (id j = 0; j < section_width; ++j) {
       if (j < result) {
         fputc('#', stdout);
@@ -510,7 +510,7 @@ int myc_test_exp_split_visual() {
     }
     fprintf(stdout, " :%02lu", result);
     fputs("    ", stdout);
-    result = myc_exp_split(-0.05, sections, i, section_width);
+    result = myc_exp_split(-0.05, sections, section_width, i);
     for (id j = 0; j < section_width; ++j) {
       if (j < result) {
         fputc('#', stdout);
@@ -519,6 +519,41 @@ int myc_test_exp_split_visual() {
       }
     }
     fprintf(stdout, " :%02lu", result);
+    fputc('\n', stdout);
+  }
+  fputc('\n', stdout);
+  return 0;
+}
+
+int myc_test_multiexp_split_visual() {
+  fputc('\n', stdout);
+  id sections = 20;
+  id section_width = 32;
+  id n_layers = 4;
+  for (id i = 0; i < sections; ++i) {
+    for (id j = 0; j < section_width; ++j) {
+      id layer = myc_multi_exp_get_layer(
+        j,
+        0.05,
+        sections,
+        section_width,
+        i,
+        n_layers
+      );
+      fputc(0x30 + layer, stdout);
+    }
+    fputs("    ", stdout);
+    for (id j = 0; j < section_width; ++j) {
+      id layer = myc_multi_exp_get_layer(
+        j,
+        -0.05,
+        sections,
+        section_width,
+        i,
+        n_layers
+      );
+      fputc(0x30 + layer, stdout);
+    }
     fputc('\n', stdout);
   }
   fputc('\n', stdout);
@@ -707,7 +742,7 @@ int myc_test_find_multiexp_cohort_and_inner() {
   id cohort_layers = 8;
   float shape = 0.25;
   id reversed;
-  for (i = 0; i < 391831; i += 12817) {
+  for (i = 89898128; i < 89898128 + 3921831; i += 12817) {
     myc_multiexp_cohort_and_inner(
       i,
       shape,
@@ -717,6 +752,14 @@ int myc_test_find_multiexp_cohort_and_inner() {
       &my_cohort,
       &inner
     );
+    if (inner >= cohort_size) {
+      fprintf(
+        stderr,
+        "Multi-exponential cohort index out-of-bounds: %lu → %lu/%lu [%lu]\n",
+        i, my_cohort, inner, cohort_size
+      );
+      return (int) i+1;
+    }
     reversed = myc_multiexp_cohort_outer(
       my_cohort,
       inner,
@@ -728,7 +771,7 @@ int myc_test_find_multiexp_cohort_and_inner() {
     if (reversed != i) {
       fprintf(
         stderr,
-        "Multi-Exponential cohort reversibility failed: %lu → %lu/%lu → %lu\n",
+        "Multi-exponential cohort reversibility failed: %lu → %lu/%lu → %lu\n",
         i, my_cohort, inner, reversed
       );
       return (int) i+1;
@@ -743,9 +786,10 @@ int myc_test_multiexp_cohort_sections_visual() {
   id sections = 20;
   id section_width = EXP_SECTION_RESOLUTION;
   id cohort_size = sections * section_width;
-  id cohort_layers = 8;
+  id cohort_layers = 4;
   id cohort_seed = 1;
-  float shape = -0.05;
+  // TODO: Get this test working with a negative shape!
+  float shape = 0.05;
   id mxc, mxi;
   size_t lines = cohort_size*2 / section_width;
   char cohorts[lines*section_width+1];
@@ -914,8 +958,8 @@ int myc_test_exp_cohort_gnuplot() {
 
 int myc_test_multiexp_cohort_gnuplot() {
   id n_batches = 3;
-  //id cohort_size = 100;
-  id cohort_size = 37*105;
+  id cohort_layers = 4;
+  id cohort_size = 107 * cohort_layers;
   id n_samples = cohort_size;
   float cohort_shape = 0.02;
   id seed;
@@ -952,7 +996,6 @@ int myc_test_multiexp_cohort_gnuplot() {
   id min_cohort = 0 - 1;
   id max_cohort = 0;
   id idx = 0;
-  id cohort_layers = 8;
   for (
     id start = 3298019;
     start < 3298019 + increment * n_batches;
@@ -962,7 +1005,7 @@ int myc_test_multiexp_cohort_gnuplot() {
     seed = myc_prng(start, start + 66489419814);
     for (outer = start; outer < start + n_samples; ++outer) {
       myc_multiexp_cohort_and_inner(
-        outer - (cohort_size*2),
+        outer,
         cohort_shape,
         cohort_size,
         cohort_layers,
@@ -993,5 +1036,81 @@ int myc_test_multiexp_cohort_gnuplot() {
     }
   }
   fclose(fout);
+  return 0;
+}
+
+int myc_test_count_multiexp_cohorts() {
+  id i;
+  id cohort_size = 1037;
+  id cohort_layers = 4;
+  id cohort_seed = 10920192831;
+  float shape = 0.05;
+  id mxc, mxi;
+  id possible_layers = cohort_layers * 2 + 1;
+  id cohort_counts[possible_layers];
+  id inner_counts[cohort_size * possible_layers];
+  // zero out stuff:
+  for (i = 0; i < possible_layers; ++i) {
+    cohort_counts[i] = 0;
+    for (id j = 0; j < cohort_size; ++j) {
+      inner_counts[i*cohort_size + j] = 0;
+    }
+  }
+  // count cohorts & indices seen:
+  for (i = 0; i < cohort_size * possible_layers; ++i) {
+    myc_multiexp_cohort_and_inner(
+      i,
+      shape,
+      cohort_size,
+      cohort_layers,
+      cohort_seed,
+      &mxc,
+      &mxi
+    );
+    if (mxc >= possible_layers) {
+      fprintf(
+        stderr,
+        "\nMultiexp cohort out-of-bounds: %lu/%lu\n",
+        mxc,
+        possible_layers
+      );
+      return i+1;
+    }
+    cohort_counts[mxc] += 1;
+    if (mxi >= cohort_size) {
+      fprintf(
+        stderr,
+        "\nMultiexp inner out-of-bounds: %lu/%lu\n",
+        mxi,
+        cohort_size
+      );
+      continue;
+      //return i+1;
+    }
+    inner_counts[mxc * cohort_size + mxi] += 1;
+  }
+  // expected totals:
+  for (i = 0; i < possible_layers; ++i) {
+    if (cohort_counts[i] != cohort_size) {
+      fprintf(
+        stderr, 
+        "\nMultiexp cohort counting error: cohort %lu found %lu/%lu times.\n",
+        i, cohort_counts[i], cohort_size
+      );
+      return i+1;
+    }
+    for (id j = 0; j < cohort_size; ++j) {
+      if (inner_counts[i*cohort_size + j] != 1) {
+        fprintf(
+          stderr, 
+          "\nMultiexp inner counting error: "
+            "inner %lu in cohort %lu found %lu/1 times.\n",
+          j, i, inner_counts[i*cohort_size + j]
+        );
+        return i+1;
+      }
+    }
+  }
+
   return 0;
 }

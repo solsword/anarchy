@@ -54,6 +54,8 @@ myc_unit_test("biased_cohort_visual", &myc_test_biased_cohort_visual);
 
 myc_unit_test("test_exp_split_visual", &myc_test_exp_split_visual);
 
+myc_unit_test("test_multiexp_split_visual", &myc_test_multiexp_split_visual);
+
 myc_unit_test(
   "exp_cohort_sections_visual",
   &myc_test_exp_cohort_sections_visual
@@ -74,6 +76,8 @@ myc_unit_test(
   "find_multiexp_cohort_and_inner",
   &myc_test_find_multiexp_cohort_and_inner
 );
+
+myc_unit_test("multiexp_cohort_counts", &myc_test_count_multiexp_cohorts);
 
 myc_unit_test("exp_cohort_gnuplot", &myc_test_exp_cohort_gnuplot);
 

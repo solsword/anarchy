@@ -95,6 +95,16 @@ id myc_mother(id person, myc_family_info const * const info) {
   return parent;
 }
 
+#define FAMILY_COHORT_LAYERS 4
+static inline id myc_family_children_cohort_size(
+  myc_family_info const * const info
+) {
+  return (
+    (info->birth_rate_per_day * info->childbearing_days)
+  / (info->max_children_per_mother*FAMILY_COHORT_LAYERS)
+  );
+}
+
 void myc_mother_and_index(
   id person,
   myc_family_info const * const info,
@@ -114,16 +124,14 @@ void myc_mother_and_index(
     *r_index = 0;
     return;
   }
-  id cohort_size = (
-    (info->birth_rate_per_day * info->childbearing_days)
-  / (info->max_children_per_mother*2)
-  );
+  id cohort_size = myc_family_children_cohort_size(info);
   myc_select_exp_parent_and_index(
     adjusted,
     info->average_children_per_mother,
     info->max_children_per_mother,
     info->child_age_distribution_shape,
     cohort_size,
+    FAMILY_COHORT_LAYERS,
     info->seed,
     r_mother,
     r_index
@@ -136,10 +144,7 @@ void myc_mother_and_index(
 }
 
 id myc_child(id person, id nth, myc_family_info const * const info) {
-  id cohort_size = (
-    (info->birth_rate_per_day * info->childbearing_days)
-  / (info->max_children_per_mother*2)
-  );
+  id cohort_size = myc_family_children_cohort_size(info);
   id child = myc_select_exp_nth_child(
     person,
     nth,
@@ -147,6 +152,7 @@ id myc_child(id person, id nth, myc_family_info const * const info) {
     info->max_children_per_mother,
     info->child_age_distribution_shape,
     cohort_size,
+    FAMILY_COHORT_LAYERS,
     info->seed
   );
   if (child == NONE) { return NONE; } // mother doesn't have this many children
