@@ -646,6 +646,7 @@ static inline void myc_multiexp_cohort_and_inner(
     }
     section_count = cohort_size / resolution;
   }
+  id leftovers = cohort_size - section_count * resolution;
 
   id strict_cohort;
   id strict_inner;
@@ -665,24 +666,39 @@ static inline void myc_multiexp_cohort_and_inner(
     strict_cohort,
     strict_inner
   );
-  fprintf(
-    stderr,
-    "multiexp_cohort::sections/resolution::%lu/%lu\n",
-    section_count,
-    resolution
-  );
 #endif
 
   id section = strict_inner / resolution;
   id in_section = strict_inner % resolution;
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_cohort::sections/resolution/section/inner::%lu/%lu/%lu/%lu\n",
+    section_count,
+    resolution,
+    section,
+    in_section
+  );
+#endif
+
   // Note: ID coherency between cohorts is impossible if we also want a smooth
   // distribution of cohort members throughout ID space (which is much more
   // important)
-  id shuf = myc_cohort_shuffle(
-    in_section,
-    resolution,
-    seed + section
-  );
+  id shuf;
+  if (section < section_count) {
+    shuf = myc_cohort_shuffle(
+      in_section,
+      resolution,
+      seed + section
+    );
+  } else {
+    shuf = myc_cohort_shuffle(
+      in_section,
+      leftovers,
+      seed + section
+    );
+  }
   id layer = myc_multi_exp_get_layer(
     shuf,
     shape, 
@@ -693,7 +709,18 @@ static inline void myc_multiexp_cohort_and_inner(
   );
 
 #ifdef DEBUG_COHORT
-  fprintf(stderr, "multiexp_cohort::layer::%lu\n\n", layer);
+  fprintf(
+    stderr,
+    "multiexp_cohort::layer/adjusted_cohort::%lu/%lu\n\n",
+    layer,
+    strict_cohort * n_layers + layer
+  );
+  fprintf(
+    stderr,
+    "multiexp_cohort::shuf/adjusted_inner::%lu/%lu\n\n",
+    shuf,
+    shuf + (section * resolution)
+  );
 #endif
 
   if (strict_cohort * n_layers + layer < strict_cohort) { // overflow
@@ -722,6 +749,7 @@ static inline id myc_multiexp_cohort_outer(
     }
     section_count = cohort_size / resolution;
   }
+  id leftovers = cohort_size - section_count * resolution;
 
   id in_section = inner % resolution;
   id section = inner / resolution;
@@ -741,7 +769,12 @@ static inline id myc_multiexp_cohort_outer(
   id strict_cohort = cohort - layer;
   strict_cohort /= n_layers;
 
-  id unshuf = myc_rev_cohort_shuffle(in_section, resolution, seed + section);
+  id unshuf;
+  if (section < section_count) {
+    unshuf = myc_rev_cohort_shuffle(in_section, resolution, seed + section);
+  } else {
+    unshuf = myc_rev_cohort_shuffle(in_section, leftovers, seed + section);
+  }
 
   id strict_inner = (section * resolution) + unshuf;
 
