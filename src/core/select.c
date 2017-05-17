@@ -194,7 +194,6 @@ void myc_select_exp_parent_and_index(
   assert(avg_arity < (max_arity/2));
   id upper_cohort_size = max_arity / avg_arity; // at least 2, ideally 8+ or so
   id lower_cohort_size = max_arity * exp_cohort_size;
-  id effective_lower_cohort_size = lower_cohort_size / exp_cohort_layers;
 
   if (child < lower_cohort_size*exp_cohort_layers) { // underflow
     *r_parent = NONE;
@@ -209,10 +208,9 @@ void myc_select_exp_parent_and_index(
 #ifdef DEBUG_SELECT
   fprintf(
     stderr,
-    "select_exp_parent_and_index::ucs/lcs/elcs::%lu/%lu/%lu\n",
+    "select_exp_parent_and_index::ucs/lcs::%lu/%lu\n",
     upper_cohort_size,
-    lower_cohort_size,
-    effective_lower_cohort_size
+    lower_cohort_size
   );
 #endif
 
@@ -348,7 +346,6 @@ id myc_select_exp_nth_child(
   id inner;
   id upper_cohort_size = max_arity / avg_arity; // at least 2, ideally 8+ or so
   id lower_cohort_size = max_arity * exp_cohort_size;
-  id effective_lower_cohort_size = lower_cohort_size / exp_cohort_layers;
 
 #ifdef DEBUG_SELECT
   fprintf(
@@ -366,10 +363,9 @@ id myc_select_exp_nth_child(
 #ifdef DEBUG_SELECT
   fprintf(
     stderr,
-    "select_exp_nth_child::ucs/lcs/elcs::%lu/%lu/%lu\n",
+    "select_exp_nth_child::ucs/lcs::%lu/%lu\n",
     upper_cohort_size,
-    lower_cohort_size,
-    effective_lower_cohort_size
+    lower_cohort_size
   );
 #endif
 

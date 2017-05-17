@@ -530,7 +530,7 @@ int myc_test_multiexp_split_visual() {
   id sections = 20;
   id section_width = 32;
   id n_layers = 4;
-  for (id i = 0; i < sections; ++i) {
+  for (id i = sections; i < 2*sections; ++i) {
     for (id j = 0; j < section_width; ++j) {
       id layer = myc_multi_exp_get_layer(
         j,
@@ -726,6 +726,142 @@ int myc_test_find_exp_cohort_and_inner() {
         stderr,
         "Exponential cohort reversibility failed: %lu → %lu/%lu → %lu\n",
         i, my_cohort, inner, reversed
+      );
+      return (int) i+1;
+    }
+  }
+
+  return 0;
+}
+
+int myc_test_multiexp_layer_consistency_visual() {
+  id section;
+  id cohort_size = 10073;
+  id n_layers = 8;
+  id section_width = 52;
+  id section_count = cohort_size / section_width;
+  id layer_width = section_count / n_layers;
+  // TODO: Get this working for negative shapes?
+  float shape = 0.03;
+  id last_split;
+  id show_sections = 30;
+  fprintf(
+    stdout,
+    "\n     Section width: %lu   Section count: %lu   Layer width: %lu\n     ", 
+    section_width,
+    section_count,
+    layer_width
+  );
+  for (id i = 0; i < section_width; ++i) {
+    fputc('=', stdout);
+  }
+  fputc('\n', stdout);
+  for (
+    section = section_count-2;
+    section < section_count-2 + show_sections;
+    ++section
+  ) {
+    fprintf(stdout, "%-3lu: ", section);
+    last_split = 0;
+    id written = 0;
+    for (id layer = 0; layer < n_layers*2+1; ++layer) {
+      id layer_origin_section = layer_width * layer;
+      id split = myc_multi_exp_split(
+        shape,
+        section_count,
+        section_width,
+        section,
+        layer,
+        n_layers
+      );
+      if (split < last_split) {
+        fputc('X', stdout);
+        written += 1;
+        for (id i = written; i < section_width+1; ++i) {
+          fputc(' ', stdout);
+        }
+        break;
+      }
+      for (id i = 0; i < split - last_split; ++i) {
+        if (section >= layer_origin_section) {
+          fputc(0x30 + layer, stdout);
+        } else {
+          fputc(0x60 + layer, stdout);
+        }
+        written += 1;
+      }
+      last_split = split;
+    }
+    fprintf(stdout, " [");
+    for (id layer = 0; layer < n_layers*2+1; ++layer) {
+      id layer_origin_section = layer_width * layer;
+      if (
+        section >= layer_origin_section - layer_width
+     && section < layer_origin_section + section_count
+      ) {
+        fputc(0x30 + layer, stdout);
+      } else {
+        fputc('_', stdout);
+      }
+    }
+    fprintf(stdout, "]\n");
+  }
+  fprintf(stdout, "     ");
+  for (id i = 0; i < section_width; ++i) {
+    fputc('=', stdout);
+  }
+  fputc('\n', stdout);
+  fputc('\n', stdout);
+
+  return 0;
+}
+
+int myc_test_find_multiexp_layer_and_inner() {
+  id i;
+  id my_layer, inner; 
+  id cohort_size = 10073;
+  id cohort_seed = 5528810291;
+  id cohort_layers = 8;
+  id section_width = 64;
+  id section_count = cohort_size / section_width;
+  float shape = 0.03;
+  id reversed;
+  for (i = 8281942431; i < 8281942431 + 465134; i += 3146) {
+    id within_cohort = i % cohort_size;
+    myc_multiexp_layer_and_inner(
+      within_cohort,
+      cohort_size,
+      shape,
+      section_count,
+      section_width,
+      cohort_layers,
+      cohort_seed,
+      &my_layer,
+      &inner
+    );
+    if (inner >= cohort_size) {
+      fprintf(
+        stderr,
+        "Multi-exponential layer index out-of-bounds: %lu → %lu/%lu [%lu]\n",
+        within_cohort, my_layer, inner, cohort_size
+      );
+      return (int) i+1;
+    }
+    reversed = myc_multiexp_layer_outer(
+      my_layer,
+      inner,
+      cohort_size,
+      shape,
+      section_count,
+      section_width,
+      cohort_layers,
+      cohort_seed
+    );
+    if (reversed != within_cohort) {
+      fprintf(
+        stderr,
+        "Multi-exponential layer reversibility failed: %lu → %lu/%lu → %lu\n",
+        within_cohort, my_layer, inner, reversed
       );
       return (int) i+1;
     }
