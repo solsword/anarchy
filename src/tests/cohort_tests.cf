@@ -500,7 +500,7 @@ int myc_test_exp_split_visual() {
   id sections = 20;
   id section_width = 32;
   for (id i = 0; i < sections; ++i) {
-    id result = myc_exp_split(0.05, sections, section_width, i);
+    id result = myc_exp_split(10, sections, section_width, i);
     for (id j = 0; j < section_width; ++j) {
       if (j < result) {
         fputc('#', stdout);
@@ -510,7 +510,7 @@ int myc_test_exp_split_visual() {
     }
     fprintf(stdout, " :%02lu", result);
     fputs("    ", stdout);
-    result = myc_exp_split(-0.05, sections, section_width, i);
+    result = myc_exp_split(-10, sections, section_width, i);
     for (id j = 0; j < section_width; ++j) {
       if (j < result) {
         fputc('#', stdout);
@@ -531,25 +531,26 @@ int myc_test_multiexp_split_visual() {
   id section_width = 32;
   id n_layers = 4;
   for (id i = sections; i < 2*sections; ++i) {
+    fputs("    ", stdout);
     for (id j = 0; j < section_width; ++j) {
-      id layer = myc_multi_exp_get_layer(
+      id layer = myc_multiexp_get_layer(
+        i,
         j,
-        0.05,
+        50,
         sections,
         section_width,
-        i,
         n_layers
       );
       fputc(0x30 + layer, stdout);
     }
     fputs("    ", stdout);
     for (id j = 0; j < section_width; ++j) {
-      id layer = myc_multi_exp_get_layer(
+      id layer = myc_multiexp_get_layer(
+        i,
         j,
-        -0.05,
+        -50,
         sections,
         section_width,
-        i,
         n_layers
       );
       fputc(0x30 + layer, stdout);
@@ -560,13 +561,56 @@ int myc_test_multiexp_split_visual() {
   return 0;
 }
 
+int myc_test_multiexp_split_visual_extended() {
+  fputc('\n', stdout);
+  id sections = 20;
+  id section_width = 32;
+  id n_layers = 4;
+  for (id i = 0; i < 3*sections; ++i) {
+    id cohort = i / sections;
+    id inner = sections + i % sections;
+    fputs("    ", stdout);
+    for (id j = 0; j < section_width; ++j) {
+      id layer = myc_multiexp_get_layer(
+        inner,
+        j,
+        50,
+        sections,
+        section_width,
+        n_layers
+      );
+      id adjusted = layer + cohort * n_layers;
+      fputc(0x30 + adjusted, stdout);
+    }
+    fputs("    ", stdout);
+    for (id j = 0; j < section_width; ++j) {
+      id layer = myc_multiexp_get_layer(
+        inner,
+        j,
+        -50,
+        sections,
+        section_width,
+        n_layers
+      );
+      id adjusted = cohort * n_layers - layer;
+      fputc(0x30 + adjusted, stdout);
+    }
+    fputc('\n', stdout);
+    if (i % sections == sections - 1) {
+      fputc('\n', stdout);
+    }
+  }
+  fputc('\n', stdout);
+  return 0;
+}
+
 int myc_test_exp_cohort_sections_visual() {
   id i;
   id sections = 20;
-  id section_width = EXP_SECTION_RESOLUTION;
+  id section_width = 32;
   id cohort_size = sections * section_width;
   id cohort_seed = 1;
-  float shape = -0.05;
+  float shape = -50;
   id mxc, mxi;
   size_t lines = cohort_size*2 / section_width;
   char cohorts[lines*section_width+1];
@@ -609,11 +653,11 @@ int myc_test_exp_cohort_visual() {
   id first_mxc = UNLIKELY;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
     if (cohort_seed == 0) {
-      shape = 0.05;
+      shape = 50;
     } else if (cohort_seed == 1) {
-      shape = -0.05;
+      shape = -50;
     } else {
-      shape = 0.5;
+      shape = 2;
     }
     for (i = 0; i < length; ++i) {
       myc_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
@@ -649,10 +693,10 @@ int myc_test_exp_cohort_visual() {
 int myc_test_exp_cohort_inners() {
   id i;
   id sections = 10;
-  id section_width = EXP_SECTION_RESOLUTION;
+  id section_width = 32;
   id cohort_size = sections * section_width;
   id cohort_seed = 752812;
-  float shape = 0.05;
+  float shape = 50;
   id mxc, mxi;
   id cohorts[cohort_size*3];
   id inners[cohort_size*3];
@@ -703,7 +747,7 @@ int myc_test_find_exp_cohort_and_inner() {
   id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
-  float shape = 0.25;
+  float shape = 5;
   id reversed;
   for (i = 0; i < 391831; i += 12817) {
     myc_exp_cohort_and_inner(
@@ -742,7 +786,7 @@ int myc_test_multiexp_layer_consistency_visual() {
   id section_count = cohort_size / section_width;
   id layer_width = section_count / n_layers;
   // TODO: Get this working for negative shapes?
-  float shape = 0.03;
+  float shape = 60;
   id last_split;
   id show_sections = 30;
   fprintf(
@@ -766,7 +810,7 @@ int myc_test_multiexp_layer_consistency_visual() {
     id written = 0;
     for (id layer = 0; layer < n_layers*2+1; ++layer) {
       id layer_origin_section = layer_width * layer;
-      id split = myc_multi_exp_split(
+      id split = myc_multiexp_split(
         shape,
         section_count,
         section_width,
@@ -816,6 +860,8 @@ int myc_test_multiexp_layer_consistency_visual() {
   return 0;
 }
 
+/*
+ * TODO: Get rid of this?
 int myc_test_find_multiexp_layer_and_inner() {
   id i;
   id my_layer, inner; 
@@ -824,7 +870,7 @@ int myc_test_find_multiexp_layer_and_inner() {
   id cohort_layers = 8;
   id section_width = 64;
   id section_count = cohort_size / section_width;
-  float shape = 0.03;
+  float shape = 60;
   id reversed;
   for (i = 8281942431; i < 8281942431 + 465134; i += 3146) {
     id within_cohort = i % cohort_size;
@@ -869,6 +915,7 @@ int myc_test_find_multiexp_layer_and_inner() {
 
   return 0;
 }
+*/
 
 int myc_test_find_multiexp_cohort_and_inner() {
   id i;
@@ -876,7 +923,7 @@ int myc_test_find_multiexp_cohort_and_inner() {
   id cohort_size = 10000;
   id cohort_seed = 1728;
   id cohort_layers = 8;
-  float shape = 0.25;
+  float shape = 5;
   id reversed;
   for (i = 89898128; i < 89898128 + 3921831; i += 12817) {
     myc_multiexp_cohort_and_inner(
@@ -920,12 +967,12 @@ int myc_test_find_multiexp_cohort_and_inner() {
 int myc_test_multiexp_cohort_sections_visual() {
   id i;
   id sections = 20;
-  id section_width = EXP_SECTION_RESOLUTION;
+  id section_width = 32;
   id cohort_size = sections * section_width;
   id cohort_layers = 4;
   id cohort_seed = 1;
   // TODO: Get this test working with a negative shape!
-  float shape = 0.05;
+  float shape = 50;
   id mxc, mxi;
   size_t lines = cohort_size*2 / section_width;
   char cohorts[lines*section_width+1];
@@ -958,6 +1005,9 @@ int myc_test_multiexp_cohort_sections_visual() {
       fputc(inners[j + section_width*i], stdout);
     }
     fputc('\n', stdout);
+    if (i % sections == sections - 1) {
+      fputc('\n', stdout);
+    }
   }
   fputc('\n', stdout);
 
@@ -1015,7 +1065,7 @@ int myc_test_exp_cohort_gnuplot() {
   //id cohort_size = 100;
   id cohort_size = 37*105;
   id n_samples = cohort_size;
-  float cohort_shape = 0.02;
+  float cohort_shape = 80;
   id seed;
   id outer, inner, cohort;
 
@@ -1097,7 +1147,7 @@ int myc_test_multiexp_cohort_gnuplot() {
   id cohort_layers = 4;
   id cohort_size = 107 * cohort_layers;
   id n_samples = cohort_size;
-  float cohort_shape = 0.02;
+  float cohort_shape = 80;
   id seed;
   id outer, inner, cohort;
 
@@ -1180,7 +1230,7 @@ int myc_test_count_multiexp_cohorts() {
   id cohort_size = 1037;
   id cohort_layers = 4;
   id cohort_seed = 10920192831;
-  float shape = 0.05;
+  float shape = 50;
   id mxc, mxi;
   id possible_layers = (cohort_layers * 3 + 1);
   id cohort_counts[possible_layers];
@@ -1207,7 +1257,7 @@ int myc_test_count_multiexp_cohorts() {
     if (mxc >= possible_layers) {
       fprintf(
         stderr,
-        "\nMultiexp cohort out-of-bounds: %lu/%lu\n",
+        "\nMultiexp cohort out-of-bounds while counting: %lu/%lu\n",
         mxc,
         possible_layers
       );
@@ -1217,7 +1267,7 @@ int myc_test_count_multiexp_cohorts() {
     if (mxi >= cohort_size) {
       fprintf(
         stderr,
-        "\nMultiexp inner out-of-bounds: %lu/%lu\n",
+        "\nMultiexp inner out-of-bounds while counting: %lu/%lu\n",
         mxi,
         cohort_size
       );

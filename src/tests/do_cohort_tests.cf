@@ -57,6 +57,11 @@ myc_unit_test("test_exp_split_visual", &myc_test_exp_split_visual);
 myc_unit_test("test_multiexp_split_visual", &myc_test_multiexp_split_visual);
 
 myc_unit_test(
+  "test_multiexp_split_visual_extended",
+  &myc_test_multiexp_split_visual_extended
+);
+
+myc_unit_test(
   "multiexp_layer_consistency_visual",
   &myc_test_multiexp_layer_consistency_visual
 );
@@ -77,10 +82,13 @@ myc_unit_test(
   &myc_test_multiexp_cohort_sections_visual
 );
 
+/*
+ * TODO: Get rid of this?
 myc_unit_test(
   "find_multiexp_layer_and_inner",
   &myc_test_find_multiexp_layer_and_inner
 );
+*/
 
 myc_unit_test(
   "find_multiexp_cohort_and_inner",

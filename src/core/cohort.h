@@ -250,6 +250,12 @@ static inline id myc_cohort_upend(id inner, id cohort_size, id seed) {
 
 // Uses the above functions to shuffle a cohort
 static inline id myc_cohort_shuffle(id inner, id cohort_size, id seed) {
+#ifdef DEBUG_COHORT
+  if (cohort_size == 1) {
+    fprintf(stderr, "Cohort shuffle with size==1!\n");
+    return inner;
+  }
+#endif
   id r = inner;
   seed ^= cohort_size/3;
   r = myc_cohort_spread(r, cohort_size, seed + 453);
@@ -272,6 +278,12 @@ static inline id myc_cohort_shuffle(id inner, id cohort_size, id seed) {
 
 // Reverse
 static inline id myc_rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
+#ifdef DEBUG_COHORT
+  if (cohort_size == 1) {
+    fprintf(stderr, "Reverse cohort shuffle with size==1!\n");
+    return shuffled;
+  }
+#endif
   id r = shuffled;
   seed ^= cohort_size/3;
   r = myc_rev_cohort_spin(r, cohort_size, seed + 19);
@@ -416,10 +428,10 @@ static inline id myc_biased_cohort_outer(
   return myc_cohort_outer(strict_cohort, unshuf, cohort_size);
 }
 
-// Takes a float (should be between 0 and 1) and returns the nearest
+// Takes a double (should be between 0 and 1) and returns the nearest
 // corresponding bias value, according to the resolution established by
 // the definition of MAX_BIAS.
-static inline id myc_nearest_bias(float f) {
+static inline id myc_nearest_bias(double f) {
   id result = (id) roundf(MAX_BIAS * f);
   if (result < 1) {
     return 1;
@@ -433,16 +445,18 @@ static inline id myc_nearest_bias(float f) {
 // are:
 // 
 //   shape controls how steeply exponential the distribution is. Values between
-//   1 (essentially no cutoffs) and 0.00000000001 (almost all cutoff except in
-//   the first few sections) make sense, with a few sensible ones being:
+//   0.0...01 and infinity make sense, with smaller values being higher
+//   logarithmic shapes and larger values being deeper exponential shapes.
+//   A few sensible values are:
 //
-//     0.00001: gives ~75% full cutoff
-//     0.001: gives ~50% full cutoff
-//     0.01: gives ~25% full cutoff
-//     0.05: leaves ~1 item in the last bin
-//     0.25: leaves 25% in the last bin (only slightly curvy)
-//     0.5: leaves 50% in the last bin (starts seeming linear)
-//     0.75: leaves 75% in the last bin (pretty much linear)
+//     0.0001
+//     0.001
+//     0.01
+//     0.05
+//     2
+//     10
+//     100
+//     1000
 //
 //   Negative values for shape simply reverse the section position within the
 //   number of sections, so that the result is symmetric to positive values.
@@ -454,7 +468,7 @@ static inline id myc_nearest_bias(float f) {
 //   which indicates which section's cutoff we're interested in.
 //
 static inline id myc_exp_split(
-  float shape,
+  double shape,
   id section_count,
   id section_width,
   id which
@@ -463,18 +477,22 @@ static inline id myc_exp_split(
     which = section_count - which - 1;
     shape = -shape;
   }
-  return (id) (section_width * exp(-(which/(float)section_count)*-log(shape)));
+  double x = which / (double) section_count;
+  double f = (pow(shape, -x) - 1/shape) / (1 - 1/shape);
+  return (id) (section_width * f);
+  // TODO: Get rid of this old equation
+  //return (id) (section_width * exp(-(which/(double)section_count)*-log(shape)));
 }
 
 // Divides a cohort into sections and then sends proportionally more items from
 // each section to the next cohort, forming cohorts with round asymptotic
 // bottoms and long tail tops (or vice versa if shape < 0; see exp_split above).
-#define EXP_SECTION_RESOLUTION 32
+#define EXP_SECTION_RESOLUTION 1024
 #define MIN_SECTION_COUNT 8
 #define MIN_SECTION_RESOLUTION 4
 static inline void myc_exp_cohort_and_inner(
   id outer,
-  float shape,
+  double shape,
   id cohort_size,
   id seed,
   id *r_cohort,
@@ -536,7 +554,7 @@ static inline void myc_exp_cohort_and_inner(
 static inline id myc_exp_cohort_outer(
   id cohort,
   id inner,
-  float shape,
+  double shape,
   id cohort_size,
   id seed
 ) {
@@ -571,8 +589,8 @@ static inline id myc_exp_cohort_outer(
 // additional layer and n_layers argument to select a layer. Note that section
 // indices (which) are relative to cohort -1, so a section index of
 // section_count is the 0th section of the current cohort.
-static inline id myc_multi_exp_split(
-  float shape,
+static inline id myc_multiexp_split(
+  double shape,
   id section_count,
   id section_width,
   id which,
@@ -599,26 +617,26 @@ static inline id myc_multi_exp_split(
   );
 }
 
-// Looks up which layer we're in using myc_multi_exp_split. Note that the layer
+// Looks up which layer we're in using myc_multiexp_split. Note that the layer
 // ranges from 0 to n_layers*2+1, and the sections are indexed starting from
 // the beginning of the previous cohort.
-static inline id myc_multi_exp_get_layer(
+static inline id myc_multiexp_get_layer(
+  id section,
   id in_section,
-  float shape,
+  double shape,
   id section_count,
   id section_width,
-  id which,
   id n_layers
 ) {
   id layer = 0;
   id last_split = 0;
   id split;
   do {
-    split = myc_multi_exp_split(
+    split = myc_multiexp_split(
       shape,
       section_count,
       section_width,
-      which,
+      section,
       layer,
       n_layers
     );
@@ -628,13 +646,13 @@ static inline id myc_multi_exp_get_layer(
     }
     last_split = split;
     layer += 1;
-  } while (in_section >= split && layer < n_layers*2 + 1);
+  } while (in_section >= split && layer < n_layers*2 + 2);
   return layer - 1;
 }
 
 // Computes the top and bottom limits of the given layer in the given section.
-static inline void myc_multi_exp_limits(
-  float shape,
+static inline void myc_multiexp_limits(
+  double shape,
   id section_count,
   id section_width,
   id which,
@@ -645,7 +663,7 @@ static inline void myc_multi_exp_limits(
 ) {
   id layer_width = section_count / n_layers; // in sections
   id layer_origin_section = layer_width * layer;
-  id bottom = myc_multi_exp_split(
+  id bottom = myc_multiexp_split(
     shape,
     section_count,
     section_width,
@@ -653,7 +671,7 @@ static inline void myc_multi_exp_limits(
     layer - 1,
     n_layers
   );
-  id top = myc_multi_exp_split(
+  id top = myc_multiexp_split(
     shape,
     section_count,
     section_width,
@@ -673,391 +691,39 @@ static inline void myc_multi_exp_limits(
   *r_top = top;
 }
 
-// Takes an inner index (inner) within a cohort of the given size (cohort_size)
-// And returns (via return parameters r_layer and r_inner) the layer to which
-// that index belongs and which index it has within that layer.
-static inline void myc_multiexp_layer_and_inner(
-  id inner,
-  id cohort_size,
-  float shape,
-  id section_count,
-  id section_width,
-  id n_layers,
-  id seed,
-  id *r_layer,
-  id *r_inner
-) {
-  id leftovers = cohort_size - (section_count * section_width);
-  id section = inner / section_width;
-  id in_section = inner % section_width;
-  id full_section = section + section_count;
-
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "\nmultiexp_layer::inner/shape/size::%lu/%.3f/%lu\n",
-    inner,
-    shape,
-    cohort_size
-  );
-  fprintf(
-    stderr,
-    "multiexp_layer::section count/width/n_layers/leftovers::%lu/%lu/%lu/%lu\n",
-    section_count,
-    section_width,
-    n_layers,
-    leftovers
-  );
-  fprintf(
-    stderr,
-    "multiexp_layer::section/full/in_section::%lu/%lu/%lu\n",
-    section,
-    full_section,
-    in_section
-  );
-#endif
-
-  id shuf;
-  if (section < section_count) {
-    shuf = myc_cohort_shuffle(
-      in_section,
-      section_width,
-      seed + section
-    );
-  } else {
-    if (leftovers > 1) {
-      shuf = myc_cohort_shuffle(
-        in_section,
-        leftovers,
-        seed + section
-      );
-    } else {
-      shuf = in_section;
-    }
-  }
-
-#ifdef DEBUG_COHORT
-  fprintf(stderr, "multiexp_layer::shuf::%lu\nSplits: ", shuf);
-#endif
-
-  // Find layer and relevant splits
-  id layer = 0;
-  id last_split = 0;
-  id split;
-  do {
-    split = myc_multi_exp_split(
-      shape,
-      section_count,
-      section_width,
-      full_section,
-      layer,
-      n_layers
-    );
-    if (split < last_split) {
-      layer += 1;
-#ifdef DEBUG_COHORT
-      fprintf(stderr, "X\nSplit %lu < %lu", split, last_split);
-#endif
-      break;
-    }
-#ifdef DEBUG_COHORT
-    fprintf(stderr, "%lu %lu--%lu\n", layer, last_split, split);
-    /*
-    for (id i = 0; i < split - last_split; ++i) {
-      fputc(0x30 + layer, stderr);
-    }
-    */
-#endif
-    last_split = split;
-    layer += 1;
-  } while (shuf >= split && layer < n_layers*2 + 1);
-  layer -= 1;
-#ifdef DEBUG_COHORT
-  fputc('\n', stderr);
-#endif
-
-#ifdef DEBUG_COHORT
-  fprintf(stderr, "multiexp_layer::layer::%lu\n", layer);
-#endif
-
-  // Figure out position within layer (in this section):
-  id within_layer;
-  if (layer > 0) {
-    within_layer = shuf - myc_multi_exp_split(
-      shape,
-      section_count,
-      section_width,
-      full_section,
-      layer-1,
-      n_layers
-    );
-  } else {
-    within_layer = shuf;
-  }
-
-#ifdef DEBUG_COHORT
-  fprintf(stderr, "multiexp_layer::within_layer::%lu\n", within_layer);
-#endif
-
-  // Figure out how many other indices precede us:
-  // TODO: What if this rounds?
-  id layer_width = section_count / n_layers; // in sections
-  id layer_origin_section = layer_width * layer;
-
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "multiexp_layer::layer width/origin::%lu/%lu\n",
-    layer_width,
-    layer_origin_section
-  );
-#endif
-
-  id before = 0; // number of ids before here
-  id bottom, top;
-  for ( // iterate over all previous sections within this layer
-    id previous_section = layer_origin_section - layer_width;
-    previous_section < full_section;
-    ++previous_section
-  ) {
-    myc_multi_exp_limits(
-      shape,
-      section_count,
-      section_width,
-      previous_section,
-      layer,
-      n_layers,
-      &bottom,
-      &top
-    );
-#ifdef DEBUG_COHORT
-    fprintf(
-      stderr,
-      "BefCalc [%lu]: %lu--%lu (%lu → %lu)\n",
-      previous_section,
-      bottom, top,
-      before, before + (top - bottom)
-    );
-#endif
-    before += top - bottom;
-  }
-
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "multiexp_layer::before/result::%lu/%lu\n\n",
-    before,
-    before + within_layer
-  );
-#endif
-
-  // Results:
-  *r_layer = layer;
-  *r_inner = before + within_layer;
-}
-
-// Inverse of myc_multiexp_layer_and_inner
-static inline id myc_multiexp_layer_outer(
-  id layer,
-  id within_layer,
-  id cohort_size,
-  float shape,
-  id section_count,
-  id section_width,
-  id n_layers,
-  id seed
-) {
-  id leftovers = cohort_size - (section_count * section_width);
-
-  // Iterate to find within-section/layer index:
-  id layer_width = section_count / n_layers; // in sections
-  id layer_origin_section = layer_width * layer;
-
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "\nmultiexp_layer_outer::layer width/origin::%lu/%lu\n",
-    layer_width,
-    layer_origin_section
-  );
-#endif
-
-  id full_section = layer_origin_section - layer_width - 1;
-  id span = 0;
-  id bottom, top;
-
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "multiexp_layer_outer::layer/inner/shape/size::%lu/%lu/%.3f/%lu\n",
-    layer,
-    within_layer,
-    shape,
-    cohort_size
-  );
-  fprintf(
-    stderr,
-    "multiexp_layer_outer::section count/width/n_layers::%lu/%lu/%lu\n",
-    section_count,
-    section_width,
-    n_layers
-  );
-  fprintf(
-    stderr,
-    "multiexp_layer_outer::leftovers/layer_origin::%lu/%lu\n",
-    leftovers,
-    layer_origin_section
-  );
-#endif
-
-  id adjust = 0;
-  do {
-    adjust += span;
-    full_section += 1;
-    myc_multi_exp_limits(
-      shape,
-      section_count,
-      section_width,
-      full_section,
-      layer,
-      n_layers,
-      &bottom,
-      &top
-    );
-#ifdef DEBUG_COHORT
-    fprintf(
-      stderr,
-      "AdjCalc [%lu]: %lu--%lu (%lu → %lu)\n",
-      full_section,
-      bottom, top,
-      adjust, adjust + (top - bottom)
-    );
-#endif
-    span = top - bottom;
-  } while (
-    within_layer - adjust >= span
- && (
-      full_section - (layer_origin_section - layer_width)
-    < (section_count + layer_width)
-    )
-  );
-  id adjusted = within_layer - adjust;
-  if (
-    full_section < section_count
-  ||
-    adjusted > span
-  ) { // out-of-bounds (too early or too far)
-#ifdef DEBUG_COHORT
-    fprintf(
-      stderr,
-      "\nInner out-of-bounds in layer: "
-        "section %lu layer %lu [%lu--%lu] inner %lu\n"
-        "  Adjusted/span: %lu/%lu",
-      full_section,
-      layer,
-      layer_origin_section,
-      layer_origin_section + section_count + layer_width,
-      within_layer,
-      adjusted,
-      span
-    );
-#endif
-    return NONE;
-  }
-  // adjusted is now within section & layer
-  // adjust section to fall within second cohort:
-  id section = full_section - section_count;
-
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "multiexp_layer_outer::full_section/section::%lu/%lu\n",
-    full_section,
-    section
-  );
-#endif
-
-  // bottom/top remain those within correct section:
-  id within_section = bottom + adjusted;
-
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "multiexp_layer_outer::span/adjusted/within_section::%lu/%lu/%lu\n",
-    span,
-    adjusted,
-    within_section
-  );
-#endif
-
-  // unshuffle within section:
-  id unshuf;
-  if (section < section_count) {
-    unshuf = myc_rev_cohort_shuffle(
-      within_section,
-      section_width,
-      seed + section
-    );
-  } else {
-    if (leftovers > 1) {
-      unshuf = myc_rev_cohort_shuffle(
-        within_section,
-        leftovers,
-        seed + section
-      );
-    } else {
-      unshuf = within_section;
-    }
-  }
-
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "multiexp_layer_outer::unshuffled/result::%lu/%lu\n\n",
-    unshuf,
-    section * section_width + unshuf
-  );
-#endif
-
-  // return index within layered cohort:
-  return section * section_width + unshuf;
-}
-
 // Works like myc_exp_cohort_and_inner but instead of slicing each cohort into
 // two parts, it slices each cohort into multiple parts, and distributes them
 // nearby. This can give a much smoother distribution.
 static inline void myc_multiexp_cohort_and_inner(
   id outer,
-  float shape,
+  double shape,
   id cohort_size,
   id n_layers,
   id seed,
   id *r_cohort,
   id *r_inner
 ) {
-  id full_size = cohort_size * n_layers;
   id resolution = EXP_SECTION_RESOLUTION;
-  id section_count = full_size / resolution;
+  id section_count = cohort_size / resolution;
   if (section_count < MIN_SECTION_COUNT) {
-    resolution = full_size / MIN_SECTION_COUNT;
+    resolution = cohort_size / MIN_SECTION_COUNT;
     if (resolution < MIN_SECTION_RESOLUTION) {
       resolution = MIN_SECTION_RESOLUTION;
     }
-    section_count = full_size / resolution;
+    section_count = cohort_size / resolution;
   }
 
   id strict_cohort;
   id strict_inner;
-  myc_cohort_and_inner(outer, full_size, &strict_cohort, &strict_inner);
+  myc_cohort_and_inner(outer, cohort_size, &strict_cohort, &strict_inner);
 
 #ifdef DEBUG_COHORT
+  fprintf( stderr, "\nmultiexp_cohort::outer::%lu\n", outer);
   fprintf(
     stderr,
-    "\nmultiexp_cohort::outer/shape/size/full_size::%lu/%.3f/%lu/%lu\n",
-    outer,
+    "multiexp_cohort::shape/size::%.3f/%lu\n",
     shape,
-    cohort_size,
-    full_size
+    cohort_size
   );
   fprintf(
     stderr,
@@ -1067,17 +733,34 @@ static inline void myc_multiexp_cohort_and_inner(
   );
 #endif
 
-  id layer, layer_inner;
-  myc_multiexp_layer_and_inner(
-    strict_inner,
-    full_size,
+  // shuffle within super-cohort:
+  // id shuf = myc_cohort_shuffle(strict_inner, cohort_size, seed);
+
+  // section information:
+  id section = strict_inner / resolution;
+  id full_section = section + section_count;
+  id in_section = strict_inner % resolution;
+
+  id shuf = myc_cohort_shuffle(in_section, resolution, seed + section);
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_cohort::section/in_section/shuffled::%lu/%lu/%lu\n",
+    section,
+    in_section,
+    shuf
+  );
+#endif
+
+  // find layer:
+  id layer = myc_multiexp_get_layer(
+    full_section,
+    shuf,
     shape,
     section_count,
     resolution,
-    n_layers,
-    seed,
-    &layer,
-    &layer_inner
+    n_layers
   );
 
 #ifdef DEBUG_COHORT
@@ -1087,22 +770,17 @@ static inline void myc_multiexp_cohort_and_inner(
     section_count,
     resolution
   );
-  fprintf(
-    stderr,
-    "multiexp_cohort::layer/inner::%lu/%lu\n",
-    layer,
-    layer_inner
-  );
+  fprintf(stderr, "multiexp_cohort::layer::%lu\n", layer);
 #endif
 
-  id full_n_layers = n_layers * 2 + 1;
-  id adjusted_cohort = strict_cohort * full_n_layers + layer;
+  id adjusted_cohort = strict_cohort * n_layers + layer;
 
 #ifdef DEBUG_COHORT
   fprintf(
     stderr,
-    "multiexp_cohort::adjusted_cohort::%lu\n\n",
-    adjusted_cohort
+    "multiexp_cohort::adjusted_cohort/shuffled_inner::%lu/%lu\n\n",
+    adjusted_cohort,
+    strict_inner
   );
 #endif
 
@@ -1112,45 +790,85 @@ static inline void myc_multiexp_cohort_and_inner(
     return;
   }
   *r_cohort = adjusted_cohort;
-  *r_inner = layer_inner;
+  *r_inner = strict_inner;
 }
 
 static inline id myc_multiexp_cohort_outer(
   id cohort,
   id inner,
-  float shape,
+  double shape,
   id cohort_size,
   id n_layers,
   id seed
 ) {
-  id full_size = cohort_size * n_layers;
   id resolution = EXP_SECTION_RESOLUTION;
-  id section_count = full_size / resolution;
+  id section_count = cohort_size / resolution;
   if (section_count < MIN_SECTION_COUNT) {
-    resolution = full_size / MIN_SECTION_COUNT;
+    resolution = cohort_size / MIN_SECTION_COUNT;
     if (resolution < MIN_SECTION_RESOLUTION) {
       resolution = MIN_SECTION_RESOLUTION;
     }
-    section_count = full_size / resolution;
+    section_count = cohort_size / resolution;
   }
 
-  // Back out the strict cohort and layer:
-  id full_n_layers = n_layers * 2 + 1;
-  id strict_cohort = cohort / full_n_layers;
-  id layer = cohort % full_n_layers;
+#ifdef DEBUG_COHORT
+  fprintf(stderr, "\nmultiexp_outer::cohort/inner::%lu/%lu\n", cohort, inner);
+  fprintf(
+    stderr,
+    "multiexp_outer::shape/size::%.3f/%lu\n",
+    shape,
+    cohort_size
+  );
+#endif
 
-  id strict_inner = myc_multiexp_layer_outer(
-    layer,
-    inner,
-    full_size,
+  // section information:
+  id section = inner / resolution;
+  id full_section = section + section_count;
+  id in_section = inner % resolution;
+
+  id shuf = myc_cohort_shuffle(in_section, resolution, seed + section);
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_outer::section/in_section/shuffled::%lu/%lu/%lu\n",
+    section,
+    in_section,
+    shuf
+  );
+#endif
+
+  // find layer:
+  id layer = myc_multiexp_get_layer(
+    full_section,
+    shuf,
     shape,
     section_count,
     resolution,
-    n_layers,
-    seed
+    n_layers
   );
 
-  return myc_cohort_outer(strict_cohort, strict_inner, full_size);
+#ifdef DEBUG_COHORT
+  fprintf(stderr, "multiexp_outer::layer::%lu\n", layer);
+#endif
+
+  // Back out the strict cohort and layer:
+  id strict_cohort = (cohort - layer) / n_layers;
+
+  // escape super-cohort:
+  id result = myc_cohort_outer(strict_cohort, inner, cohort_size);
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_outer::strict_cohort/inner/result::%lu/%lu/%lu\n\n",
+    strict_cohort,
+    inner,
+    result
+  );
+#endif
+
+  return result;
 }
 
 #endif // INCLUDE_COHORT_H

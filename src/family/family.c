@@ -20,7 +20,7 @@ struct myc_family_info_s {
   id childbearing_days;
   id average_children_per_mother; // so that population is stable TODO: gender!?
   id max_children_per_mother;
-  float child_age_distribution_shape;
+  double child_age_distribution_shape;
   id seed;
 };
 typedef struct myc_family_info_s myc_family_info;
@@ -35,7 +35,7 @@ myc_family_info const DEFAULT_FAMILY_INFO = {
   .childbearing_days = 25 * ONE_EARTH_YEAR,
   .average_children_per_mother = 1,
   .max_children_per_mother = 32,
-  .child_age_distribution_shape = 0.1,
+  .child_age_distribution_shape = 10.0,
   .seed = 9728182391
 };
 
@@ -116,14 +116,17 @@ void myc_mother_and_index(
     *r_index = 0;
     return;
   }
+
   // Correct age gap:
-  id adjusted = person;
-  adjusted -= myc_get_child_id_adjust(info);
+  id adjusted = person - myc_get_child_id_adjust(info);
+  /*
+   * TODO: Check underflow!
   if (adjusted > person) { // underflow
     *r_mother = NONE;
     *r_index = 0;
     return;
   }
+  */
   id cohort_size = myc_family_children_cohort_size(info);
   myc_select_exp_parent_and_index(
     adjusted,
@@ -136,11 +139,14 @@ void myc_mother_and_index(
     r_mother,
     r_index
   );
+  /*
+   * TODO: Check underflow
   if (*r_mother > person) { // underflow
     *r_mother = NONE;
     *r_index = 0;
     return;
   }
+  */
 }
 
 id myc_child(id person, id nth, myc_family_info const * const info) {
@@ -157,8 +163,10 @@ id myc_child(id person, id nth, myc_family_info const * const info) {
   );
   if (child == NONE) { return NONE; } // mother doesn't have this many children
   // Introduce age gap:
-  id adjusted = child;
-  adjusted += myc_get_child_id_adjust(info);
+  id adjusted = person + myc_get_child_id_adjust(info);
+  /*
+   * TODO: Check overflow
   if (adjusted < child || child < person) { return NONE; } // overflow
+  */
   return adjusted;
 }

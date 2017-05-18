@@ -117,7 +117,7 @@ int myc_test_exp_parent_child_selection() {
   id max_arity = 32;
   id avg_arity = 1;
   id seed = 798513546;
-  float exp_shape = 0.2;
+  float exp_shape = 2;
   id exp_size = 1024;
   id exp_layers = 4;
   id result;
@@ -177,7 +177,7 @@ int myc_test_odd_exp_parent_child_selection() {
   id max_arity = 37;
   id avg_arity = 3;
   id seed = 17219;
-  float exp_shape = 0.3;
+  float exp_shape = 2.5;
   id exp_size = 45;
   id exp_layers = 4;
   id result;
@@ -239,7 +239,7 @@ int myc_test_exp_parent_child_visual() {
   id seed = 172911;
   id nth = 0;
   id child = NONE;
-  float exp_cohort_shape = 0.02;
+  float exp_cohort_shape = 80;
   id exp_cohort_size = 512;
   id exp_cohort_layers = 4;
   fprintf(stdout, "\n  %lu", parent);
@@ -331,7 +331,7 @@ int myc_test_exp_select_graphviz() {
   id avg_arity = 1, max_arity = 32;
   id parent;
   id index = 0;
-  float exp_cohort_shape = 0.02;
+  float exp_cohort_shape = 80;
   id exp_cohort_size = 512;
   id exp_cohort_layers = 4;
   char filename[1024];
@@ -466,7 +466,7 @@ int myc_test_avg_exp_parent_child_gap() {
   id parent, index, child;
   id max_arity = 32;
   id avg_arity = 1;
-  float cohort_shape = 0.01;
+  float cohort_shape = 100;
   id cohort_size = 1024;
   id cohort_layers = 4;
   double avg_parent_distance = 0; 
@@ -561,6 +561,87 @@ int myc_test_avg_exp_parent_child_gap() {
   return 0;
 }
 
+int myc_test_exp_select_gap_stream() {
+  id n_patches = 200;
+  id n_samples = 8;
+  id avg_arity = 1;
+  id max_arity = 32;
+  id seed = 71829812983;
+  double exp_shape = 10;
+  id exp_size = 1024;
+  id exp_layers = 8;
+  for (
+    //*
+    id start = 372221831718;
+    start < 372221831718 + 4587518831*n_patches;
+    start += 4587518831
+    // */
+    /*
+    id start = 10000;
+    start < 10000 + 1000*n_patches;
+    start += 1000
+    // */
+  ) {
+    /*
+    max_arity *= 2;
+    exp_size /= 2;
+    exp_layers *= 2;
+    */
+    fprintf(
+      stdout,
+      "\nParent/child gaps [%lu max_arity=%lu exp_size=%lu exp_layers=%lu]:\n",
+      start,
+      max_arity,
+      exp_size,
+      exp_layers
+    );
+    for (id child = start; child < start + n_samples; ++child) {
+      id parent, index;
+      myc_select_exp_parent_and_index(
+        child,
+        avg_arity,
+        max_arity,
+        exp_shape,
+        exp_size,
+        exp_layers,
+        seed,
+        &parent,
+        &index
+      );
+      id epc = myc_select_exp_earliest_possible_child(
+        parent,
+        avg_arity,
+        max_arity,
+        exp_size,
+        exp_layers
+      );
+      id ccs = myc_select_exp_child_cohort_start(
+        child,
+        avg_arity,
+        max_arity,
+        exp_size,
+        exp_layers
+      );
+      int64_t diff = child - epc;
+      int64_t diff2 = child - ccs;
+#ifdef DEBUG_SELECT
+      if (diff != diff2) {
+        fprintf(stderr, "Bad diffs: %ld != %ld!\n", diff, diff2);
+      }
+#endif
+      fprintf(
+        stdout,
+        "  %lu → %lu [%lu→%ld//%lu→%ld]\n",
+        parent, child,
+        epc, diff,
+        ccs, diff2
+      );
+    }
+  }
+  fputc('\n', stdout);
+  return 0;
+}
+
 int myc_test_select_gnuplot() {
   id n_samples = 100;
   id n_batches = 3;
@@ -616,13 +697,14 @@ int myc_test_select_gnuplot() {
 }
 
 int myc_test_exp_select_gnuplot() {
-  id n_samples = 1500;
-  id n_batches = 3;
+  id n_samples = 2500;
+  id n_batches = 5;
   id avg_arity = 1;
   id max_arity = 37;
-  float exp_shape = 0.02;
+  float exp_shape = 10;
   id exp_size = 105;
-  id exp_layers = 5;
+  // TODO: Why does this change at 9?
+  id exp_layers = 8;
   id seed;
   id parent, child, index;
 

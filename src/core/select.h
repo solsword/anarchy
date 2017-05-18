@@ -40,6 +40,26 @@ id myc_select_nth_child(
   id seed
 );
 
+// For exponential cohort selection (see below) returns the earliest possible
+// child of the given parent.
+id myc_select_exp_earliest_possible_child(
+  id parent,
+  id avg_arity,
+  id max_arity,
+  id exp_cohort_size,
+  id exp_cohort_layers
+);
+
+// Same as myc_select_exp_earliest_possible_child, but from the child's
+// perspective.
+id myc_select_exp_child_cohort_start(
+  id child,
+  id avg_arity,
+  id max_arity,
+  id exp_cohort_size,
+  id exp_cohort_layers
+);
+
 // Works like myc_select_parent_and_index, but uses an exponential cohort for
 // child selection. The exp_cohort_size parameter controls how large this
 // exponential cohort is, in terms of multiples of max_arity. Returns values
@@ -48,7 +68,7 @@ void myc_select_exp_parent_and_index(
   id child,
   id avg_arity,
   id max_arity,
-  float exp_cohort_shape,
+  double exp_cohort_shape,
   id exp_cohort_size,
   id exp_cohort_layers,
   id seed,
@@ -63,7 +83,7 @@ id myc_select_exp_nth_child(
   id nth,
   id avg_arity,
   id max_arity,
-  float exp_cohort_shape,
+  double exp_cohort_shape,
   id exp_cohort_size,
   id exp_cohort_layers,
   id seed

@@ -66,8 +66,8 @@ int myc_test_mothers_age_stream() {
   id n_patches = 3;
   id n_samples = 15;
   for (
-    id start = 372221831718;
-    start < 372221831718 + 418831*n_patches;
+    id start = 37222183441718;
+    start < 37222183441718 + 418831*n_patches;
     start += 418831
   ) {
     fprintf(stdout, "\nMother/child age gaps [%lu]:\n", start);
@@ -80,6 +80,7 @@ int myc_test_mothers_age_stream() {
       fprintf(stdout, "  %lu → %lu [%lu years]\n", mother, child, age_diff);
     }
   }
+  fputc('\n', stdout);
   return 0;
 }
 

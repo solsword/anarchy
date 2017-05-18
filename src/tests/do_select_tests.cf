@@ -28,6 +28,11 @@ myc_unit_test(
   &myc_test_exp_parent_child_visual
 );
 
+myc_unit_test(
+  "exponential_selection_diff_stream",
+  &myc_test_exp_select_gap_stream
+);
+
 myc_unit_test("exponential_selection_grahpviz", &myc_test_exp_select_graphviz);
 
 myc_unit_test("selection_average_distances", &myc_test_avg_parent_child_gap);

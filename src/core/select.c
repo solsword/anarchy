@@ -159,11 +159,69 @@ id myc_select_nth_child(
   return child + max_arity;
 }
 
+id myc_select_exp_earliest_possible_child(
+  id parent,
+  id avg_arity,
+  id max_arity,
+  id exp_cohort_size,
+  id exp_cohort_layers
+) {
+  // Cohort sizes
+  id upper_cohort_size = max_arity / avg_arity;
+  id lower_cohort_size = max_arity * exp_cohort_size;
+  id mega_cohort_size = max_arity * exp_cohort_size * exp_cohort_layers;
+
+  // Find parent cohort
+  id parent_cohort = parent / (upper_cohort_size * exp_cohort_layers);
+
+  // Compute child cohort
+  id child_cohort = parent_cohort / exp_cohort_size;
+
+  //id min_child_cohort = child_cohort - exp_cohort_layers;
+
+  return mega_cohort_size * (
+    (child_cohort * lower_cohort_size) / mega_cohort_size
+  );
+
+  /*
+
+  // Escape at the bottom of the exponential child cohort
+  return (
+    lower_cohort_size
+  * min_child_cohort
+  / exp_cohort_layers
+  );
+  */
+}
+
+id myc_select_exp_child_cohort_start(
+  id child,
+  id avg_arity,
+  id max_arity,
+  id exp_cohort_size,
+  id exp_cohort_layers
+) {
+  // Cohort sizes
+  // id upper_cohort_size = max_arity / avg_arity;
+  id lower_cohort_size = max_arity * exp_cohort_size;
+  id mega_cohort_size = max_arity * exp_cohort_size * exp_cohort_layers;
+
+  return mega_cohort_size * (child / mega_cohort_size);
+
+  /*
+  // Compute child cohort
+  id child_cohort = child / lower_cohort_size;
+
+  // Escape at the bottom of the exponential child cohort
+  return lower_cohort_size * child_cohort;
+  */
+}
+
 void myc_select_exp_parent_and_index(
   id child,
   id avg_arity,
   id max_arity,
-  float exp_cohort_shape,
+  double exp_cohort_shape,
   id exp_cohort_size,
   id exp_cohort_layers,
   id seed,
@@ -195,16 +253,6 @@ void myc_select_exp_parent_and_index(
   id upper_cohort_size = max_arity / avg_arity; // at least 2, ideally 8+ or so
   id lower_cohort_size = max_arity * exp_cohort_size;
 
-  if (child < lower_cohort_size*exp_cohort_layers) { // underflow
-    *r_parent = NONE;
-    *r_index = NONE;
-    return;
-  }
-
-  // Account for child being adjusted to be >= parent:
-  child -= lower_cohort_size * exp_cohort_layers * 2;
-
-
 #ifdef DEBUG_SELECT
   fprintf(
     stderr,
@@ -214,6 +262,24 @@ void myc_select_exp_parent_and_index(
   );
 #endif
 
+  /*
+  id adjusted = child - myc_select_exp_child_cohort_start(
+    child,
+    avg_arity,
+    max_arity,
+    exp_cohort_size,
+    exp_cohort_layers
+  );
+
+  if (adjusted > child) { // underflow
+    *r_parent = NONE;
+    *r_index = NONE;
+    return;
+  }
+  */
+  // TODO: DEBUG
+  id adjusted = child;
+
   // Get from absolute-child to child-within-cohort. For exponential child
   // super-cohorts, parents in the xth cohort have children drawn from the
   // x%Nth sub-cohort of the x/Nth exponential super-cohort, where N is
@@ -221,7 +287,7 @@ void myc_select_exp_parent_and_index(
   id super_cohort, sub_cohort, inner;
   // exponential super-cohort 
   myc_multiexp_cohort_and_inner(
-    child,
+    adjusted,
     exp_cohort_shape,
     lower_cohort_size,
     exp_cohort_layers,
@@ -264,7 +330,8 @@ void myc_select_exp_parent_and_index(
 #ifdef DEBUG_SELECT
   fprintf(
     stderr,
-    "select_exp_parent_and_index::parent_cohort::%lu\n",
+    "select_exp_parent_and_index::child/parent_cohort::%lu/%lu\n",
+    child / upper_cohort_size,
     parent_cohort
   );
 #endif
@@ -335,7 +402,7 @@ id myc_select_exp_nth_child(
   id nth,
   id avg_arity,
   id max_arity,
-  float exp_cohort_shape,
+  double exp_cohort_shape,
   id exp_cohort_size,
   id exp_cohort_layers,
   id seed
@@ -440,7 +507,8 @@ id myc_select_exp_nth_child(
 
   // Get back from child-within-sub-cohort-within-super-cohort to
   // absolute-child. Note that children of parents in the xth parent cohort are
-  // assigned to the xth sub cohort.
+  // assigned to the x/Nth super cohort and the x%Nth sub cohort, where N is
+  // exp_cohort_size.
   id outer = myc_cohort_outer(
     parent_cohort % exp_cohort_size,
     unshuf,
@@ -480,26 +548,28 @@ id myc_select_exp_nth_child(
 #ifdef DEBUG_SELECT
   fprintf(
     stderr,
-    "select_exp_nth_child::super/super-outer::%lu/%lu\n",
+    "select_exp_nth_child::super/result::%lu/%lu\n",
     parent_cohort/exp_cohort_size,
     child
   );
 #endif
 
-  id adjusted = child + lower_cohort_size * exp_cohort_layers * 2;
-
-#ifdef DEBUG_SELECT
-  fprintf(
-    stderr,
-    "select_exp_nth_child::result::%lu\n\n",
-    adjusted
+  /*
+  // Adjust index to be >= parent:
+  id adjusted = child + parent - myc_select_exp_earliest_possible_child(
+    parent,
+    avg_arity,
+    max_arity,
+    exp_cohort_size,
+    exp_cohort_layers
   );
-#endif
 
   if (adjusted < child) { // overflow
     return NONE;
   }
+  */
+  // TODO: DEBUG
+  id adjusted = child;
 
-  // Adjust index to be >= parent:
   return adjusted;
 }
