@@ -1,8 +1,14 @@
 # anarchy
 
-Stateless/local societal fabric generation, including family relationships.
+Stateless/local/reversible discrete number/pattern generator.
+
+Goals include societal fabric generation, starting with family relationships.
 
 ## TODO
 
-- Ancestry
+- Family
+    * Ancestry
+    * Marriage
+    * Heritable traits
 - Friendships
+- Professional Relationshps
