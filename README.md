@@ -1,4 +1,4 @@
-# mycelium
+# anarchy
 
 Stateless/local societal fabric generation, including family relationships.
 

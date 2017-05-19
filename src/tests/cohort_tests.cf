@@ -12,15 +12,15 @@
 
 #include "core/cohort.h"
 
-int myc_test_find_cohort() {
+int acy_test_find_cohort() {
   id i, cohort_size;
   id my_cohort, inner; 
   id reversed;
   for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
     for (i = 0; i < 391029831; i += 290320) {
-      my_cohort = myc_cohort(i, cohort_size);
-      inner = myc_cohort_inner(i, cohort_size);
-      reversed = myc_cohort_outer(my_cohort, inner, cohort_size);
+      my_cohort = acy_cohort(i, cohort_size);
+      inner = acy_cohort_inner(i, cohort_size);
+      reversed = acy_cohort_outer(my_cohort, inner, cohort_size);
       if (reversed != i) {
         fprintf(
           stderr,
@@ -35,14 +35,14 @@ int myc_test_find_cohort() {
   return 0;
 }
 
-int myc_test_find_cohort_and_inner() {
+int acy_test_find_cohort_and_inner() {
   id i, cohort_size;
   id my_cohort, inner; 
   id reversed;
   for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
     for (i = 0; i < 391029831; i += 290320) {
-      myc_cohort_and_inner(i, cohort_size, &my_cohort, &inner);
-      reversed = myc_cohort_outer(my_cohort, inner, cohort_size);
+      acy_cohort_and_inner(i, cohort_size, &my_cohort, &inner);
+      reversed = acy_cohort_outer(my_cohort, inner, cohort_size);
       if (reversed != i) {
         fprintf(
           stderr,
@@ -57,13 +57,13 @@ int myc_test_find_cohort_and_inner() {
   return 0;
 }
 
-int myc_test_cohort_interleave() {
+int acy_test_cohort_interleave() {
   id i, cohort_size;
   id interleaved, reversed;
   for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
     for (i = 0; i < cohort_size; ++i) {
-      interleaved = myc_cohort_interleave(i, cohort_size);
-      reversed = myc_rev_cohort_interleave(interleaved, cohort_size);
+      interleaved = acy_cohort_interleave(i, cohort_size);
+      reversed = acy_rev_cohort_interleave(interleaved, cohort_size);
       if (reversed != i) {
         fprintf(
           stderr,
@@ -85,13 +85,13 @@ int myc_test_cohort_interleave() {
   return 0;
 }
 
-int myc_test_cohort_fold() {
+int acy_test_cohort_fold() {
   id i, cohort_size;
   id folded, reversed;
   for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
     for (i = 0; i < cohort_size; ++i) {
-      folded = myc_cohort_fold(i, cohort_size, 17+i);
-      reversed = myc_rev_cohort_fold(folded, cohort_size, 17+i);
+      folded = acy_cohort_fold(i, cohort_size, 17+i);
+      reversed = acy_rev_cohort_fold(folded, cohort_size, 17+i);
       if (reversed != i) {
         fprintf(
           stderr,
@@ -106,13 +106,13 @@ int myc_test_cohort_fold() {
   return 0;
 }
 
-int myc_test_cohort_spin() {
+int acy_test_cohort_spin() {
   id i, cohort_size;
   id spun, reversed;
   for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
     for (i = 0; i < cohort_size; ++i) {
-      spun = myc_cohort_spin(i, cohort_size, 17+i);
-      reversed = myc_rev_cohort_spin(spun, cohort_size, 17+i);
+      spun = acy_cohort_spin(i, cohort_size, 17+i);
+      reversed = acy_rev_cohort_spin(spun, cohort_size, 17+i);
       if (reversed != i) {
         fprintf(
           stderr,
@@ -127,13 +127,13 @@ int myc_test_cohort_spin() {
   return 0;
 }
 
-int myc_test_cohort_flop() {
+int acy_test_cohort_flop() {
   id i, cohort_size;
   id flopped, reversed;
   for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
     for (i = 0; i < cohort_size; ++i) {
-      flopped = myc_cohort_flop(i, cohort_size, 17+i);
-      reversed = myc_cohort_flop(flopped, cohort_size, 17+i);
+      flopped = acy_cohort_flop(i, cohort_size, 17+i);
+      reversed = acy_cohort_flop(flopped, cohort_size, 17+i);
       if (reversed != i) {
         fprintf(
           stderr,
@@ -148,13 +148,13 @@ int myc_test_cohort_flop() {
   return 0;
 }
 
-int myc_test_cohort_mix() {
+int acy_test_cohort_mix() {
   id i, cohort_size;
   id mixed, reversed;
   for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
     for (i = 0; i < cohort_size; ++i) {
-      mixed = myc_cohort_mix(i, cohort_size, 17+i);
-      reversed = myc_rev_cohort_mix(mixed, cohort_size, 17+i);
+      mixed = acy_cohort_mix(i, cohort_size, 17+i);
+      reversed = acy_rev_cohort_mix(mixed, cohort_size, 17+i);
       if (reversed != i) {
         fprintf(
           stderr,
@@ -169,13 +169,13 @@ int myc_test_cohort_mix() {
   return 0;
 }
 
-int myc_test_cohort_spread() {
+int acy_test_cohort_spread() {
   id i, cohort_size;
   id spread, reversed;
   for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
     for (i = 0; i < cohort_size; ++i) {
-      spread = myc_cohort_spread(i, cohort_size, 1182453 + cohort_size);
-      reversed = myc_rev_cohort_spread(
+      spread = acy_cohort_spread(i, cohort_size, 1182453 + cohort_size);
+      reversed = acy_rev_cohort_spread(
         spread,
         cohort_size,
         1182453 + cohort_size
@@ -200,13 +200,13 @@ int myc_test_cohort_spread() {
   return 0;
 }
 
-int myc_test_cohort_upend() {
+int acy_test_cohort_upend() {
   id i, cohort_size;
   id upended, reversed;
   for (cohort_size = 2; cohort_size < 1000; cohort_size += 1) {
     for (i = 0; i < cohort_size; ++i) {
-      upended = myc_cohort_upend(i, cohort_size, 17+i);
-      reversed = myc_cohort_upend(upended, cohort_size, 17+i);
+      upended = acy_cohort_upend(i, cohort_size, 17+i);
+      reversed = acy_cohort_upend(upended, cohort_size, 17+i);
       if (reversed != i) {
         fprintf(
           stderr,
@@ -227,13 +227,13 @@ int myc_test_cohort_upend() {
   return 0;
 }
 
-int myc_test_cohort_shuffle() {
+int acy_test_cohort_shuffle() {
   id i, cohort_size;
   id shuffled, reversed;
   for (cohort_size = 2; cohort_size < 1000; ++cohort_size) {
     for (i = 0; i < cohort_size; ++i) {
-      shuffled = myc_cohort_shuffle(i, cohort_size, 17+i);
-      reversed = myc_rev_cohort_shuffle(shuffled, cohort_size, 17+i);
+      shuffled = acy_cohort_shuffle(i, cohort_size, 17+i);
+      reversed = acy_rev_cohort_shuffle(shuffled, cohort_size, 17+i);
       if (reversed != i) {
         fprintf(
           stderr,
@@ -248,14 +248,14 @@ int myc_test_cohort_shuffle() {
   return 0;
 }
 
-int myc_test_cohort_shuffle_visual() {
+int acy_test_cohort_shuffle_visual() {
   id i;
   id cohort_size = 52;
   id s;
   char results[cohort_size+1];
   char *original = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   for (i = 0; i < cohort_size; ++i) {
-    s = myc_cohort_shuffle(i, cohort_size, 17);
+    s = acy_cohort_shuffle(i, cohort_size, 17);
     results[i] = original[s];
     if (s >= cohort_size) {
       fprintf(
@@ -273,14 +273,14 @@ int myc_test_cohort_shuffle_visual() {
   return 0;
 }
 
-int myc_test_cohort_shuffle_visual_list() {
+int acy_test_cohort_shuffle_visual_list() {
   id i;
   id cohort_size = 18201821;
   id sample_size = 12;
   id s;
   fprintf(stdout, "\nShuffle sample (cohort size is %lu):\n", cohort_size);
   for (i = cohort_size/2; i < cohort_size/2 + sample_size; ++i) {
-    s = myc_cohort_shuffle(i, cohort_size, 84398384391);
+    s = acy_cohort_shuffle(i, cohort_size, 84398384391);
     if (s >= cohort_size) {
       fprintf(
         stderr,
@@ -296,7 +296,7 @@ int myc_test_cohort_shuffle_visual_list() {
   cohort_size = 300000000000;
   fprintf(stdout, "\nShuffle sample (cohort size is %lu):\n", cohort_size);
   for (i = cohort_size/2; i < cohort_size/2 + sample_size; ++i) {
-    s = myc_cohort_shuffle(i, cohort_size, 1654686134);
+    s = acy_cohort_shuffle(i, cohort_size, 1654686134);
     if (s >= cohort_size) {
       fprintf(
         stderr,
@@ -312,16 +312,16 @@ int myc_test_cohort_shuffle_visual_list() {
   return 0;
 }
 
-int myc_test_find_mixed_cohort() {
+int acy_test_find_mixed_cohort() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
-    my_cohort = myc_mixed_cohort(i, cohort_size, cohort_seed);
-    inner = myc_mixed_cohort_inner(i, cohort_size, cohort_seed);
-    reversed = myc_mixed_cohort_outer(
+    my_cohort = acy_mixed_cohort(i, cohort_size, cohort_seed);
+    inner = acy_mixed_cohort_inner(i, cohort_size, cohort_seed);
+    reversed = acy_mixed_cohort_outer(
       my_cohort,
       inner,
       cohort_size,
@@ -340,15 +340,15 @@ int myc_test_find_mixed_cohort() {
   return 0;
 }
 
-int myc_test_find_mixed_cohort_and_inner() {
+int acy_test_find_mixed_cohort_and_inner() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
-    myc_mixed_cohort_and_inner(i, cohort_size, cohort_seed, &my_cohort, &inner);
-    reversed = myc_mixed_cohort_outer(
+    acy_mixed_cohort_and_inner(i, cohort_size, cohort_seed, &my_cohort, &inner);
+    reversed = acy_mixed_cohort_outer(
       my_cohort,
       inner,
       cohort_size,
@@ -368,7 +368,7 @@ int myc_test_find_mixed_cohort_and_inner() {
 }
 
 #define UNLIKELY 102901211
-int myc_test_mixed_cohort_visual() {
+int acy_test_mixed_cohort_visual() {
   id i;
   id cohort_size = 10;
   id cohort_seed = 1;
@@ -379,7 +379,7 @@ int myc_test_mixed_cohort_visual() {
   id first_mxc = UNLIKELY;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
     for (i = 0; i < length; ++i) {
-      myc_mixed_cohort_and_inner(i, cohort_size, cohort_seed, &mxc, &mxi);
+      acy_mixed_cohort_and_inner(i, cohort_size, cohort_seed, &mxc, &mxi);
       if (first_mxc == UNLIKELY) { first_mxc = mxc; }
       cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
       inners[length*cohort_seed + i] = (char) (0x30 + mxi);
@@ -409,15 +409,15 @@ int myc_test_mixed_cohort_visual() {
   return 0;
 }
 
-int myc_test_find_biased_cohort_and_inner() {
+int acy_test_find_biased_cohort_and_inner() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
   id cohort_seed = 1728;
-  id bias = myc_nearest_bias(0.8);
+  id bias = acy_nearest_bias(0.8);
   id reversed;
   for (i = 0; i < 391029831; i += 290320) {
-    myc_biased_cohort_and_inner(
+    acy_biased_cohort_and_inner(
       i,
       bias,
       cohort_size,
@@ -425,7 +425,7 @@ int myc_test_find_biased_cohort_and_inner() {
       &my_cohort,
       &inner
     );
-    reversed = myc_biased_cohort_outer(
+    reversed = acy_biased_cohort_outer(
       my_cohort,
       inner,
       bias,
@@ -445,7 +445,7 @@ int myc_test_find_biased_cohort_and_inner() {
   return 0;
 }
 
-int myc_test_biased_cohort_visual() {
+int acy_test_biased_cohort_visual() {
   id i;
   id cohort_size = 30;
   id cohort_seed = 1;
@@ -456,9 +456,9 @@ int myc_test_biased_cohort_visual() {
   char inners[3*length];
   id first_mxc = UNLIKELY;
   for (cohort_seed = 0; cohort_seed < 3; ++cohort_seed) {
-    bias = myc_nearest_bias(0.25 * cohort_seed);
+    bias = acy_nearest_bias(0.25 * cohort_seed);
     for (i = 0; i < length; ++i) {
-      myc_biased_cohort_and_inner(
+      acy_biased_cohort_and_inner(
         i,
         bias,
         cohort_size,
@@ -495,12 +495,12 @@ int myc_test_biased_cohort_visual() {
   return 0;
 }
 
-int myc_test_exp_split_visual() {
+int acy_test_exp_split_visual() {
   fputc('\n', stdout);
   id sections = 20;
   id section_width = 32;
   for (id i = 0; i < sections; ++i) {
-    id result = myc_exp_split(10, sections, section_width, i);
+    id result = acy_exp_split(10, sections, section_width, i);
     for (id j = 0; j < section_width; ++j) {
       if (j < result) {
         fputc('#', stdout);
@@ -510,7 +510,7 @@ int myc_test_exp_split_visual() {
     }
     fprintf(stdout, " :%02lu", result);
     fputs("    ", stdout);
-    result = myc_exp_split(-10, sections, section_width, i);
+    result = acy_exp_split(-10, sections, section_width, i);
     for (id j = 0; j < section_width; ++j) {
       if (j < result) {
         fputc('#', stdout);
@@ -525,7 +525,7 @@ int myc_test_exp_split_visual() {
   return 0;
 }
 
-int myc_test_multiexp_split_visual() {
+int acy_test_multiexp_split_visual() {
   fputc('\n', stdout);
   id sections = 20;
   id section_width = 32;
@@ -533,7 +533,7 @@ int myc_test_multiexp_split_visual() {
   for (id i = sections; i < 2*sections; ++i) {
     fputs("    ", stdout);
     for (id j = 0; j < section_width; ++j) {
-      id layer = myc_multiexp_get_layer(
+      id layer = acy_multiexp_get_layer(
         i,
         j,
         50,
@@ -545,7 +545,7 @@ int myc_test_multiexp_split_visual() {
     }
     fputs("    ", stdout);
     for (id j = 0; j < section_width; ++j) {
-      id layer = myc_multiexp_get_layer(
+      id layer = acy_multiexp_get_layer(
         i,
         j,
         -50,
@@ -561,7 +561,7 @@ int myc_test_multiexp_split_visual() {
   return 0;
 }
 
-int myc_test_multiexp_split_visual_extended() {
+int acy_test_multiexp_split_visual_extended() {
   fputc('\n', stdout);
   id sections = 20;
   id section_width = 32;
@@ -571,7 +571,7 @@ int myc_test_multiexp_split_visual_extended() {
     id inner = sections + i % sections;
     fputs("    ", stdout);
     for (id j = 0; j < section_width; ++j) {
-      id layer = myc_multiexp_get_layer(
+      id layer = acy_multiexp_get_layer(
         inner,
         j,
         50,
@@ -584,7 +584,7 @@ int myc_test_multiexp_split_visual_extended() {
     }
     fputs("    ", stdout);
     for (id j = 0; j < section_width; ++j) {
-      id layer = myc_multiexp_get_layer(
+      id layer = acy_multiexp_get_layer(
         inner,
         j,
         -50,
@@ -604,7 +604,7 @@ int myc_test_multiexp_split_visual_extended() {
   return 0;
 }
 
-int myc_test_exp_cohort_sections_visual() {
+int acy_test_exp_cohort_sections_visual() {
   id i;
   id sections = 20;
   id section_width = 32;
@@ -617,7 +617,7 @@ int myc_test_exp_cohort_sections_visual() {
   char inners[lines*section_width+1];
   id first_mxc = UNLIKELY;
   for (i = 0; i < cohort_size*2; ++i) {
-    myc_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
+    acy_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
     if (first_mxc == UNLIKELY) { first_mxc = mxc; }
     cohorts[i] = (char) (0x30 + mxc - first_mxc);
     inners[i] = (char) (0x41 + (mxi % 26) + ((mxc - first_mxc)%2)*0x20);
@@ -641,7 +641,7 @@ int myc_test_exp_cohort_sections_visual() {
   return 0;
 }
 
-int myc_test_exp_cohort_visual() {
+int acy_test_exp_cohort_visual() {
   id i;
   id cohort_size = 30;
   id cohort_seed = 1;
@@ -660,7 +660,7 @@ int myc_test_exp_cohort_visual() {
       shape = 2;
     }
     for (i = 0; i < length; ++i) {
-      myc_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
+      acy_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
       if (first_mxc == UNLIKELY) { first_mxc = mxc; }
       cohorts[length*cohort_seed + i] = (char) (0x30 + mxc - first_mxc);
       inners[length*cohort_seed + i] = (char) (0x41 + mxi);
@@ -690,7 +690,7 @@ int myc_test_exp_cohort_visual() {
   return 0;
 }
 
-int myc_test_exp_cohort_inners() {
+int acy_test_exp_cohort_inners() {
   id i;
   id sections = 10;
   id section_width = 32;
@@ -704,7 +704,7 @@ int myc_test_exp_cohort_inners() {
 
   // Now fill in the cohorts/inners arrays:
   for (i = 0; i < cohort_size*3; ++i) {
-    myc_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
+    acy_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
     if (mxi >= cohort_size) {
       fprintf(stderr, "Error: out-of-range cohort inner %zu!\n", mxi);
     } else {
@@ -742,7 +742,7 @@ int myc_test_exp_cohort_inners() {
   return 0;
 }
 
-int myc_test_find_exp_cohort_and_inner() {
+int acy_test_find_exp_cohort_and_inner() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
@@ -750,7 +750,7 @@ int myc_test_find_exp_cohort_and_inner() {
   float shape = 5;
   id reversed;
   for (i = 0; i < 391831; i += 12817) {
-    myc_exp_cohort_and_inner(
+    acy_exp_cohort_and_inner(
       i,
       shape,
       cohort_size,
@@ -758,7 +758,7 @@ int myc_test_find_exp_cohort_and_inner() {
       &my_cohort,
       &inner
     );
-    reversed = myc_exp_cohort_outer(
+    reversed = acy_exp_cohort_outer(
       my_cohort,
       inner,
       shape,
@@ -778,7 +778,7 @@ int myc_test_find_exp_cohort_and_inner() {
   return 0;
 }
 
-int myc_test_multiexp_layer_consistency_visual() {
+int acy_test_multiexp_layer_consistency_visual() {
   id section;
   id cohort_size = 10073;
   id n_layers = 8;
@@ -810,7 +810,7 @@ int myc_test_multiexp_layer_consistency_visual() {
     id written = 0;
     for (id layer = 0; layer < n_layers*2+1; ++layer) {
       id layer_origin_section = layer_width * layer;
-      id split = myc_multiexp_split(
+      id split = acy_multiexp_split(
         shape,
         section_count,
         section_width,
@@ -862,7 +862,7 @@ int myc_test_multiexp_layer_consistency_visual() {
 
 /*
  * TODO: Get rid of this?
-int myc_test_find_multiexp_layer_and_inner() {
+int acy_test_find_multiexp_layer_and_inner() {
   id i;
   id my_layer, inner; 
   id cohort_size = 10073;
@@ -874,7 +874,7 @@ int myc_test_find_multiexp_layer_and_inner() {
   id reversed;
   for (i = 8281942431; i < 8281942431 + 465134; i += 3146) {
     id within_cohort = i % cohort_size;
-    myc_multiexp_layer_and_inner(
+    acy_multiexp_layer_and_inner(
       within_cohort,
       cohort_size,
       shape,
@@ -893,7 +893,7 @@ int myc_test_find_multiexp_layer_and_inner() {
       );
       return (int) i+1;
     }
-    reversed = myc_multiexp_layer_outer(
+    reversed = acy_multiexp_layer_outer(
       my_layer,
       inner,
       cohort_size,
@@ -917,7 +917,7 @@ int myc_test_find_multiexp_layer_and_inner() {
 }
 */
 
-int myc_test_find_multiexp_cohort_and_inner() {
+int acy_test_find_multiexp_cohort_and_inner() {
   id i;
   id my_cohort, inner; 
   id cohort_size = 10000;
@@ -926,7 +926,7 @@ int myc_test_find_multiexp_cohort_and_inner() {
   float shape = 5;
   id reversed;
   for (i = 89898128; i < 89898128 + 3921831; i += 12817) {
-    myc_multiexp_cohort_and_inner(
+    acy_multiexp_cohort_and_inner(
       i,
       shape,
       cohort_size,
@@ -943,7 +943,7 @@ int myc_test_find_multiexp_cohort_and_inner() {
       );
       return (int) i+1;
     }
-    reversed = myc_multiexp_cohort_outer(
+    reversed = acy_multiexp_cohort_outer(
       my_cohort,
       inner,
       shape,
@@ -964,7 +964,7 @@ int myc_test_find_multiexp_cohort_and_inner() {
   return 0;
 }
 
-int myc_test_multiexp_cohort_sections_visual() {
+int acy_test_multiexp_cohort_sections_visual() {
   id i;
   id sections = 20;
   id section_width = 32;
@@ -979,7 +979,7 @@ int myc_test_multiexp_cohort_sections_visual() {
   char inners[lines*section_width+1];
   id first_mxc = UNLIKELY;
   for (i = 0; i < cohort_size*2; ++i) {
-    myc_multiexp_cohort_and_inner(
+    acy_multiexp_cohort_and_inner(
       i,
       shape,
       cohort_size,
@@ -1014,7 +1014,7 @@ int myc_test_multiexp_cohort_sections_visual() {
   return 0;
 }
 
-int myc_test_cohort_shuffle_gnuplot() {
+int acy_test_cohort_shuffle_gnuplot() {
   id n_samples = 1000;
   id n_batches = 3;
   id cohort_size = 1000;
@@ -1049,10 +1049,10 @@ int myc_test_cohort_shuffle_gnuplot() {
     start < 3298019 + increment * n_batches;
     start += increment
   ) {
-    seed = myc_prng(start, start + 4654681615348494);
+    seed = acy_prng(start, start + 4654681615348494);
     fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
     for (index = start; index < start + n_samples; ++index) {
-      shuffled = myc_cohort_shuffle(index, cohort_size, seed);
+      shuffled = acy_cohort_shuffle(index, cohort_size, seed);
       fprintf(fout, "%lu %lu\n", index, shuffled);
     }
   }
@@ -1060,7 +1060,7 @@ int myc_test_cohort_shuffle_gnuplot() {
   return 0;
 }
 
-int myc_test_exp_cohort_gnuplot() {
+int acy_test_exp_cohort_gnuplot() {
   id n_batches = 3;
   //id cohort_size = 100;
   id cohort_size = 37*105;
@@ -1106,9 +1106,9 @@ int myc_test_exp_cohort_gnuplot() {
     start += increment
   ) {
     idx = n_samples*batch;
-    seed = myc_prng(start, start + 66489419814);
+    seed = acy_prng(start, start + 66489419814);
     for (outer = start; outer < start + n_samples; ++outer) {
-      myc_exp_cohort_and_inner(
+      acy_exp_cohort_and_inner(
         outer - (cohort_size*2),
         cohort_shape,
         cohort_size,
@@ -1142,7 +1142,7 @@ int myc_test_exp_cohort_gnuplot() {
   return 0;
 }
 
-int myc_test_multiexp_cohort_gnuplot() {
+int acy_test_multiexp_cohort_gnuplot() {
   id n_batches = 3;
   id cohort_layers = 4;
   id cohort_size = 107 * cohort_layers;
@@ -1188,9 +1188,9 @@ int myc_test_multiexp_cohort_gnuplot() {
     start += increment
   ) {
     idx = n_samples*batch;
-    seed = myc_prng(start, start + 66489419814);
+    seed = acy_prng(start, start + 66489419814);
     for (outer = start; outer < start + n_samples; ++outer) {
-      myc_multiexp_cohort_and_inner(
+      acy_multiexp_cohort_and_inner(
         outer,
         cohort_shape,
         cohort_size,
@@ -1225,7 +1225,7 @@ int myc_test_multiexp_cohort_gnuplot() {
   return 0;
 }
 
-int myc_test_count_multiexp_cohorts() {
+int acy_test_count_multiexp_cohorts() {
   id i;
   id cohort_size = 1037;
   id cohort_layers = 4;
@@ -1245,7 +1245,7 @@ int myc_test_count_multiexp_cohorts() {
   // count cohorts & indices seen across two cohorts (should fully capture
   // cohorts 5/6/7 → 1/2/3 when using 4 layers)
   for (i = 0; i < cohort_size*2; ++i) {
-    myc_multiexp_cohort_and_inner(
+    acy_multiexp_cohort_and_inner(
       i,
       shape,
       cohort_size,

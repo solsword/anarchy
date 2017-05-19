@@ -12,14 +12,14 @@
 
 #include "core/select.h"
 
-int myc_test_parent_child_selection() {
+int acy_test_parent_child_selection() {
   id parent, index;
   id max_arity = 16;
   id avg_arity = 4;
   id seed = 46571;
   id result;
   for (id tin = 102012; tin < 1928012; tin += 331) {
-    myc_select_parent_and_index(
+    acy_select_parent_and_index(
       tin,
       avg_arity,
       max_arity,
@@ -27,7 +27,7 @@ int myc_test_parent_child_selection() {
       &parent,
       &index
     );
-    result = myc_select_nth_child(parent, index, avg_arity, max_arity, seed);
+    result = acy_select_nth_child(parent, index, avg_arity, max_arity, seed);
     if (result != tin) {
       fprintf(
         stderr,
@@ -38,7 +38,7 @@ int myc_test_parent_child_selection() {
       id nth = 0;
       id child = NONE;
       do {
-        child = myc_select_nth_child(parent, nth, avg_arity, max_arity, seed);
+        child = acy_select_nth_child(parent, nth, avg_arity, max_arity, seed);
         fprintf(stderr, "  #%lu: %lu\n", nth, child);
         nth += 1;
       } while (child != NONE);
@@ -48,14 +48,14 @@ int myc_test_parent_child_selection() {
   return 0;
 }
 
-int myc_test_odd_parent_child_selection() {
+int acy_test_odd_parent_child_selection() {
   id parent, index;
   id max_arity = 23;
   id avg_arity = 3;
   id seed = 1028101;
   id result;
   for (id tin = 4075192; tin < 4075192 + 22921; tin += 1873) {
-    myc_select_parent_and_index(
+    acy_select_parent_and_index(
       tin,
       avg_arity,
       max_arity,
@@ -63,7 +63,7 @@ int myc_test_odd_parent_child_selection() {
       &parent,
       &index
     );
-    result = myc_select_nth_child(parent, index, avg_arity, max_arity, seed);
+    result = acy_select_nth_child(parent, index, avg_arity, max_arity, seed);
     if (result != tin) {
       fprintf(
         stderr,
@@ -74,7 +74,7 @@ int myc_test_odd_parent_child_selection() {
       id nth = 0;
       id child = NONE;
       do {
-        child = myc_select_nth_child(parent, nth, avg_arity, max_arity, seed);
+        child = acy_select_nth_child(parent, nth, avg_arity, max_arity, seed);
         fprintf(stderr, "  #%lu: %lu\n", nth, child);
         nth += 1;
       } while (child != NONE);
@@ -84,7 +84,7 @@ int myc_test_odd_parent_child_selection() {
   return 0;
 }
 
-int myc_test_parent_child_visual() {
+int acy_test_parent_child_visual() {
   id avg_arity = 4, max_arity = 32;
   id parent = 7182;
   id seed = 191284;
@@ -95,7 +95,7 @@ int myc_test_parent_child_visual() {
       nth = 0;
       fprintf(stdout, "\n    |\n  ");
       while(1) {
-        child = myc_select_nth_child(parent, nth, avg_arity, max_arity, seed);
+        child = acy_select_nth_child(parent, nth, avg_arity, max_arity, seed);
         if (child == NONE) {
           fprintf(stdout, "|");
           break;
@@ -103,7 +103,7 @@ int myc_test_parent_child_visual() {
         fprintf(stdout, "%lu---", child);
         nth += 1;
       }
-      parent = myc_select_nth_child(parent, 0, avg_arity, max_arity, seed);
+      parent = acy_select_nth_child(parent, 0, avg_arity, max_arity, seed);
       if (parent == NONE) {
         break;
       }
@@ -112,7 +112,7 @@ int myc_test_parent_child_visual() {
   return 0;
 }
 
-int myc_test_exp_parent_child_selection() {
+int acy_test_exp_parent_child_selection() {
   id parent, index;
   id max_arity = 32;
   id avg_arity = 1;
@@ -122,7 +122,7 @@ int myc_test_exp_parent_child_selection() {
   id exp_layers = 4;
   id result;
   for (id tin = 9464135; tin < 9464135 + 409102; tin += 5167) {
-    myc_select_exp_parent_and_index(
+    acy_select_exp_parent_and_index(
       tin,
       avg_arity,
       max_arity,
@@ -133,7 +133,7 @@ int myc_test_exp_parent_child_selection() {
       &parent,
       &index
     );
-    result = myc_select_exp_nth_child(
+    result = acy_select_exp_nth_child(
       parent,
       index,
       avg_arity,
@@ -153,7 +153,7 @@ int myc_test_exp_parent_child_selection() {
       id nth = 0;
       id child = NONE;
       do {
-        child = myc_select_exp_nth_child(
+        child = acy_select_exp_nth_child(
           parent,
           nth,
           avg_arity,
@@ -172,7 +172,7 @@ int myc_test_exp_parent_child_selection() {
   return 0;
 }
 
-int myc_test_odd_exp_parent_child_selection() {
+int acy_test_odd_exp_parent_child_selection() {
   id parent, index;
   id max_arity = 37;
   id avg_arity = 3;
@@ -182,7 +182,7 @@ int myc_test_odd_exp_parent_child_selection() {
   id exp_layers = 4;
   id result;
   for (id tin = 389238; tin < 581201; tin += 8756) {
-    myc_select_exp_parent_and_index(
+    acy_select_exp_parent_and_index(
       tin,
       avg_arity,
       max_arity,
@@ -193,7 +193,7 @@ int myc_test_odd_exp_parent_child_selection() {
       &parent,
       &index
     );
-    result = myc_select_exp_nth_child(
+    result = acy_select_exp_nth_child(
       parent,
       index,
       avg_arity,
@@ -214,7 +214,7 @@ int myc_test_odd_exp_parent_child_selection() {
       id nth = 0;
       id child = NONE;
       do {
-        child = myc_select_exp_nth_child(
+        child = acy_select_exp_nth_child(
           parent,
           nth,
           avg_arity,
@@ -233,7 +233,7 @@ int myc_test_odd_exp_parent_child_selection() {
   return 0;
 }
 
-int myc_test_exp_parent_child_visual() {
+int acy_test_exp_parent_child_visual() {
   id avg_arity = 3, max_arity = 32;
   id parent = 46548464;
   id seed = 172911;
@@ -247,7 +247,7 @@ int myc_test_exp_parent_child_visual() {
       nth = 0;
       fprintf(stdout, "\n    |\n  ");
       while(1) {
-        child = myc_select_exp_nth_child(
+        child = acy_select_exp_nth_child(
           parent,
           nth,
           avg_arity,
@@ -264,7 +264,7 @@ int myc_test_exp_parent_child_visual() {
         fprintf(stdout, "%lu---", child);
         nth += 1;
       }
-      parent = myc_select_exp_nth_child(
+      parent = acy_select_exp_nth_child(
         parent,
         0,
         avg_arity,
@@ -282,7 +282,7 @@ int myc_test_exp_parent_child_visual() {
   return 0;
 }
 
-void myc_print_edges_recursively(
+void acy_print_edges_recursively(
   FILE* stream,
   id parent,
   id avg_arity,
@@ -296,7 +296,7 @@ void myc_print_edges_recursively(
   id nth = 0;
   id child;
   while(1) {
-    child = myc_select_exp_nth_child(
+    child = acy_select_exp_nth_child(
       parent,
       nth,
       avg_arity,
@@ -312,7 +312,7 @@ void myc_print_edges_recursively(
     fprintf(stream, "  %lu -> %lu;\n", parent, child);
     nth += 1;
     if (depth_limit > 0) {
-      myc_print_edges_recursively(
+      acy_print_edges_recursively(
         stream,
         child,
         avg_arity,
@@ -327,7 +327,7 @@ void myc_print_edges_recursively(
   }
 }
 
-int myc_test_exp_select_graphviz() {
+int acy_test_exp_select_graphviz() {
   id avg_arity = 1, max_arity = 32;
   id parent;
   id index = 0;
@@ -339,7 +339,7 @@ int myc_test_exp_select_graphviz() {
     parent = 10000000;
     // find the great-grandparent:
     for (id i = 0; i < 3; ++i) {
-      myc_select_exp_parent_and_index(
+      acy_select_exp_parent_and_index(
         parent,
         avg_arity,
         max_arity,
@@ -356,7 +356,7 @@ int myc_test_exp_select_graphviz() {
     FILE *fout = fopen(filename, "w");
     // print edges
     fprintf(fout, "digraph G {\n");
-    myc_print_edges_recursively(
+    acy_print_edges_recursively(
       fout,
       parent,
       avg_arity,
@@ -372,7 +372,7 @@ int myc_test_exp_select_graphviz() {
   return 0;
 }
 
-int myc_test_avg_parent_child_gap() {
+int acy_test_avg_parent_child_gap() {
   id parent, index, child;
   id max_arity = 32;
   id avg_arity = 1;
@@ -391,7 +391,7 @@ int myc_test_avg_parent_child_gap() {
     parent_dist_count = 0;
     child_dist_count = 0;
     for (id here = 5646461354679; here < 5646461354679 + n_samples; ++here) {
-      myc_select_parent_and_index(
+      acy_select_parent_and_index(
         here,
         avg_arity,
         max_arity,
@@ -402,7 +402,7 @@ int myc_test_avg_parent_child_gap() {
       dist = (int64_t) here - (int64_t) parent;
       parent_distances[parent_dist_count] = dist;
       avg_parent_distance += dist; parent_dist_count += 1;
-      child = myc_select_nth_child(
+      child = acy_select_nth_child(
         here,
         0,
         avg_arity,
@@ -462,7 +462,7 @@ int myc_test_avg_parent_child_gap() {
   return 0;
 }
 
-int myc_test_avg_exp_parent_child_gap() {
+int acy_test_avg_exp_parent_child_gap() {
   id parent, index, child;
   id max_arity = 32;
   id avg_arity = 1;
@@ -484,7 +484,7 @@ int myc_test_avg_exp_parent_child_gap() {
     parent_dist_count = 0;
     child_dist_count = 0;
     for (id here = 5646461354679; here < 5646461354679 + n_samples; ++here) {
-      myc_select_exp_parent_and_index(
+      acy_select_exp_parent_and_index(
         here,
         avg_arity,
         max_arity,
@@ -498,7 +498,7 @@ int myc_test_avg_exp_parent_child_gap() {
       dist = (int64_t) here - (int64_t) parent;
       parent_distances[parent_dist_count] = dist;
       avg_parent_distance += dist; parent_dist_count += 1;
-      child = myc_select_exp_nth_child(
+      child = acy_select_exp_nth_child(
         here,
         0,
         avg_arity,
@@ -561,7 +561,7 @@ int myc_test_avg_exp_parent_child_gap() {
   return 0;
 }
 
-int myc_test_exp_select_gap_stream() {
+int acy_test_exp_select_gap_stream() {
   id n_patches = 200;
   id n_samples = 8;
   id avg_arity = 1;
@@ -597,7 +597,7 @@ int myc_test_exp_select_gap_stream() {
     );
     for (id child = start; child < start + n_samples; ++child) {
       id parent, index;
-      myc_select_exp_parent_and_index(
+      acy_select_exp_parent_and_index(
         child,
         avg_arity,
         max_arity,
@@ -608,14 +608,14 @@ int myc_test_exp_select_gap_stream() {
         &parent,
         &index
       );
-      id epc = myc_select_exp_earliest_possible_child(
+      id epc = acy_select_exp_earliest_possible_child(
         parent,
         avg_arity,
         max_arity,
         exp_size,
         exp_layers
       );
-      id ccs = myc_select_exp_child_cohort_start(
+      id ccs = acy_select_exp_child_cohort_start(
         child,
         avg_arity,
         max_arity,
@@ -642,7 +642,7 @@ int myc_test_exp_select_gap_stream() {
   return 0;
 }
 
-int myc_test_select_gnuplot() {
+int acy_test_select_gnuplot() {
   id n_samples = 100;
   id n_batches = 3;
   id avg_arity = 1;
@@ -678,10 +678,10 @@ int myc_test_select_gnuplot() {
     start < 3298019 + increment * n_batches;
     start += increment
   ) {
-    seed = myc_prng(start, start + 4654681615348494);
+    seed = acy_prng(start, start + 4654681615348494);
     fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
     for (child = start; child < start + n_samples; ++child) {
-      myc_select_parent_and_index(
+      acy_select_parent_and_index(
         child,
         avg_arity,
         max_arity,
@@ -696,7 +696,7 @@ int myc_test_select_gnuplot() {
   return 0;
 }
 
-int myc_test_exp_select_gnuplot() {
+int acy_test_exp_select_gnuplot() {
   id n_samples = 2500;
   id n_batches = 5;
   id avg_arity = 1;
@@ -738,10 +738,10 @@ int myc_test_exp_select_gnuplot() {
     start < 3298019 + increment*n_batches;
     start += increment
   ) {
-    seed = myc_prng(start, start + 4654681615348494);
+    seed = acy_prng(start, start + 4654681615348494);
     fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
     for (child = start; child < start + n_samples; ++child) {
-      myc_select_exp_parent_and_index(
+      acy_select_exp_parent_and_index(
         child,
         avg_arity,
         max_arity,

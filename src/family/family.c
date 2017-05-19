@@ -14,7 +14,7 @@
  * Structure Definitions *
  *************************/
 
-struct myc_family_info_s {
+struct acy_family_info_s {
   id birth_rate_per_day;
   id minimum_age_at_first_child;
   id childbearing_days;
@@ -23,13 +23,13 @@ struct myc_family_info_s {
   double child_age_distribution_shape;
   id seed;
 };
-typedef struct myc_family_info_s myc_family_info;
+typedef struct acy_family_info_s acy_family_info;
 
 /*************
  * Constants *
  *************/
 
-myc_family_info const DEFAULT_FAMILY_INFO = {
+acy_family_info const DEFAULT_FAMILY_INFO = {
   .birth_rate_per_day = 10000,
   .minimum_age_at_first_child = 15 * ONE_EARTH_YEAR,
   .childbearing_days = 25 * ONE_EARTH_YEAR,
@@ -43,18 +43,18 @@ myc_family_info const DEFAULT_FAMILY_INFO = {
  * Functions *
  *************/
 
-myc_family_info *myc_create_family_info() {
-  return (myc_family_info*) malloc(sizeof(myc_family_info));
+acy_family_info *acy_create_family_info() {
+  return (acy_family_info*) malloc(sizeof(acy_family_info));
 }
 
 // Destroys a heap-allocated family info object.
-void myc_destroy_family_info(myc_family_info *info) {
+void acy_destroy_family_info(acy_family_info *info) {
   free(info);
 }
 
-void myc_copy_family_info(
-  myc_family_info const * const src,
-  myc_family_info *dst
+void acy_copy_family_info(
+  acy_family_info const * const src,
+  acy_family_info *dst
 ) {
   dst->birth_rate_per_day = src->birth_rate_per_day;
   dst->minimum_age_at_first_child = src->minimum_age_at_first_child;
@@ -65,39 +65,39 @@ void myc_copy_family_info(
   dst->seed = src->seed;
 }
 
-void myc_set_info_seed(myc_family_info *info, id seed) {
+void acy_set_info_seed(acy_family_info *info, id seed) {
   info->seed = seed;
 }
 
-id myc_get_info_seed(myc_family_info *info) {
+id acy_get_info_seed(acy_family_info *info) {
   return info->seed;
 }
 
-id myc_birthdate(id person, myc_family_info const * const info) {
-  return myc_mixed_cohort(person, info->birth_rate_per_day, 0);
+id acy_birthdate(id person, acy_family_info const * const info) {
+  return acy_mixed_cohort(person, info->birth_rate_per_day, 0);
   // TODO: Remove this
-  //return myc_cohort(person, info->birth_rate_per_day, 0);
+  //return acy_cohort(person, info->birth_rate_per_day, 0);
 }
 
-id myc_first_born_on(id day, myc_family_info const * const info) {
-  return myc_mixed_cohort_outer(day, 0, info->birth_rate_per_day, 0);
+id acy_first_born_on(id day, acy_family_info const * const info) {
+  return acy_mixed_cohort_outer(day, 0, info->birth_rate_per_day, 0);
   // TODO: Remove this
-  //return myc_cohort_outer(day, 0, info->birth_rate_per_day, 0);
+  //return acy_cohort_outer(day, 0, info->birth_rate_per_day, 0);
 }
 
-id myc_get_child_id_adjust(myc_family_info const * const info) {
+id acy_get_child_id_adjust(acy_family_info const * const info) {
   return info->birth_rate_per_day * info->minimum_age_at_first_child;
 }
 
-id myc_mother(id person, myc_family_info const * const info) {
+id acy_mother(id person, acy_family_info const * const info) {
   id parent, index;
-  myc_mother_and_index(person, info, &parent, &index);
+  acy_mother_and_index(person, info, &parent, &index);
   return parent;
 }
 
 #define FAMILY_COHORT_LAYERS 4
-static inline id myc_family_children_cohort_size(
-  myc_family_info const * const info
+static inline id acy_family_children_cohort_size(
+  acy_family_info const * const info
 ) {
   return (
     (info->birth_rate_per_day * info->childbearing_days)
@@ -105,9 +105,9 @@ static inline id myc_family_children_cohort_size(
   );
 }
 
-void myc_mother_and_index(
+void acy_mother_and_index(
   id person,
-  myc_family_info const * const info,
+  acy_family_info const * const info,
   id *r_mother,
   id *r_index
 ) {
@@ -118,7 +118,7 @@ void myc_mother_and_index(
   }
 
   // Correct age gap:
-  id adjusted = person - myc_get_child_id_adjust(info);
+  id adjusted = person - acy_get_child_id_adjust(info);
   /*
    * TODO: Check underflow!
   if (adjusted > person) { // underflow
@@ -127,8 +127,8 @@ void myc_mother_and_index(
     return;
   }
   */
-  id cohort_size = myc_family_children_cohort_size(info);
-  myc_select_exp_parent_and_index(
+  id cohort_size = acy_family_children_cohort_size(info);
+  acy_select_exp_parent_and_index(
     adjusted,
     info->average_children_per_mother,
     info->max_children_per_mother,
@@ -149,9 +149,9 @@ void myc_mother_and_index(
   */
 }
 
-id myc_child(id person, id nth, myc_family_info const * const info) {
-  id cohort_size = myc_family_children_cohort_size(info);
-  id child = myc_select_exp_nth_child(
+id acy_child(id person, id nth, acy_family_info const * const info) {
+  id cohort_size = acy_family_children_cohort_size(info);
+  id child = acy_select_exp_nth_child(
     person,
     nth,
     info->average_children_per_mother,
@@ -163,7 +163,7 @@ id myc_child(id person, id nth, myc_family_info const * const info) {
   );
   if (child == NONE) { return NONE; } // mother doesn't have this many children
   // Introduce age gap:
-  id adjusted = person + myc_get_child_id_adjust(info);
+  id adjusted = person + acy_get_child_id_adjust(info);
   /*
    * TODO: Check overflow
   if (adjusted < child || child < person) { return NONE; } // overflow

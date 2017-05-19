@@ -43,15 +43,19 @@ obj/%.o.d: src/%.c
 	$(COMPILE) $(DEBUG_ALL) -c $< -o $@
 
 bin/test: $(ALL_SOURCES) $(OBJS) src/heads/test.c
+	mkdir -p $(@D)
 	$(COMPILE) $(OBJS) src/heads/test.c -o $@
 
 bin/test_debug: $(ALL_SOURCES) $(DBG_OBJS) src/heads/test.c
+	mkdir -p $(@D)
 	$(COMPILE) $(DEBUG_ALL) $(DBG_OBJS) src/heads/test.c -o $@
 
 bin/rng: $(ALL_SOURCES) $(OBJS) src/heads/rng.c
+	mkdir -p $(@D)
 	$(COMPILE) $(OBJS) src/heads/rng.c -o $@
 
 test/%.gv: bin/test
+	mkdir -p $(@D)
 	./bin/test > /dev/null
 
 test/%.svg: test/%.gv
@@ -61,6 +65,7 @@ test/%.svg: test/%.gv
 graphviz: $(SVGS)
 
 test/%.gpt: bin/test
+	mkdir -p $(@D)
 	./bin/test > /dev/null
 
 test/%.png: test/%.gpt test/%.dat

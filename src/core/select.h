@@ -18,7 +18,7 @@
 
 // Identifies a parent, as well as which child of that parent the child is.
 // Returns these values via the r_parent and r_index parameters.
-void myc_select_parent_and_index(
+void acy_select_parent_and_index(
   id child,
   id avg_arity,
   id max_arity,
@@ -32,7 +32,7 @@ void myc_select_parent_and_index(
 // cohort of children to be divided between a number of parents such that on
 // average each parent with have avg_arity children, but integer divisions mean
 // that avg_arity is only roughly respected.
-id myc_select_nth_child(
+id acy_select_nth_child(
   id parent,
   id nth,
   id avg_arity,
@@ -42,7 +42,7 @@ id myc_select_nth_child(
 
 // For exponential cohort selection (see below) returns the earliest possible
 // child of the given parent.
-id myc_select_exp_earliest_possible_child(
+id acy_select_exp_earliest_possible_child(
   id parent,
   id avg_arity,
   id max_arity,
@@ -50,9 +50,9 @@ id myc_select_exp_earliest_possible_child(
   id exp_cohort_layers
 );
 
-// Same as myc_select_exp_earliest_possible_child, but from the child's
+// Same as acy_select_exp_earliest_possible_child, but from the child's
 // perspective.
-id myc_select_exp_child_cohort_start(
+id acy_select_exp_child_cohort_start(
   id child,
   id avg_arity,
   id max_arity,
@@ -60,11 +60,11 @@ id myc_select_exp_child_cohort_start(
   id exp_cohort_layers
 );
 
-// Works like myc_select_parent_and_index, but uses an exponential cohort for
+// Works like acy_select_parent_and_index, but uses an exponential cohort for
 // child selection. The exp_cohort_size parameter controls how large this
 // exponential cohort is, in terms of multiples of max_arity. Returns values
 // via the r_parent and r_index parameters.
-void myc_select_exp_parent_and_index(
+void acy_select_exp_parent_and_index(
   id child,
   id avg_arity,
   id max_arity,
@@ -76,9 +76,9 @@ void myc_select_exp_parent_and_index(
   id *r_index
 );
 
-// Works like myc_select_nth_child, but uses an exponential cohort for
+// Works like acy_select_nth_child, but uses an exponential cohort for
 // children. Note that avg_arity is only roughly respected.
-id myc_select_exp_nth_child(
+id acy_select_exp_nth_child(
   id parent,
   id nth,
   id avg_arity,

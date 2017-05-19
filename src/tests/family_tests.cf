@@ -11,7 +11,7 @@
 
 #include "family/family.h"
 
-int myc_test_mothers() {
+int acy_test_mothers() {
   id test_generations = 7;
   id valid_generations = 0;
   id parents[test_generations]; 
@@ -25,7 +25,7 @@ int myc_test_mothers() {
       valid_generations < test_generations;
       ++valid_generations
     ) {
-      myc_mother_and_index(
+      acy_mother_and_index(
         parents[valid_generations-1],
         &DEFAULT_FAMILY_INFO,
         &parents[valid_generations],
@@ -36,7 +36,7 @@ int myc_test_mothers() {
       }
     }
     for (id i = 0; i < valid_generations - 1; ++i) {
-      if (myc_child(
+      if (acy_child(
            parents[i+1],
            indices[i],
            &DEFAULT_FAMILY_INFO
@@ -49,7 +49,7 @@ int myc_test_mothers() {
           parents[i],
           parents[i+1], indices[i],
           parents[i+1], indices[i],
-          myc_child(
+          acy_child(
             parents[i+1],
             indices[i],
             &DEFAULT_FAMILY_INFO
@@ -62,7 +62,7 @@ int myc_test_mothers() {
   return 0;
 }
 
-int myc_test_mothers_age_stream() {
+int acy_test_mothers_age_stream() {
   id n_patches = 3;
   id n_samples = 15;
   for (
@@ -72,10 +72,10 @@ int myc_test_mothers_age_stream() {
   ) {
     fprintf(stdout, "\nMother/child age gaps [%lu]:\n", start);
     for (id child = start; child < start + n_samples; ++child) {
-      id mother = myc_mother(child, &DEFAULT_FAMILY_INFO);
+      id mother = acy_mother(child, &DEFAULT_FAMILY_INFO);
       id age_diff = (
-        myc_birthdate(child, &DEFAULT_FAMILY_INFO)
-      - myc_birthdate(mother, &DEFAULT_FAMILY_INFO)
+        acy_birthdate(child, &DEFAULT_FAMILY_INFO)
+      - acy_birthdate(mother, &DEFAULT_FAMILY_INFO)
       ) / ONE_EARTH_YEAR;
       fprintf(stdout, "  %lu → %lu [%lu years]\n", mother, child, age_diff);
     }
@@ -84,7 +84,7 @@ int myc_test_mothers_age_stream() {
   return 0;
 }
 
-int myc_test_mothers_age_histogram() {
+int acy_test_mothers_age_histogram() {
   id n_samples = 10000;
   id max_age_diff = 50;
   id max_bucket_length = 60;
@@ -103,10 +103,10 @@ int myc_test_mothers_age_histogram() {
       buckets[i] = 0;
     }
     for (id child = start; child < start + n_samples; ++child) {
-      id mother = myc_mother(child, &DEFAULT_FAMILY_INFO);
+      id mother = acy_mother(child, &DEFAULT_FAMILY_INFO);
       id age_diff = (
-        myc_birthdate(child, &DEFAULT_FAMILY_INFO)
-      - myc_birthdate(mother, &DEFAULT_FAMILY_INFO)
+        acy_birthdate(child, &DEFAULT_FAMILY_INFO)
+      - acy_birthdate(mother, &DEFAULT_FAMILY_INFO)
       ) / ONE_EARTH_YEAR;
       if (age_diff < max_age_diff) {
         buckets[age_diff] += 1;
@@ -136,7 +136,7 @@ int myc_test_mothers_age_histogram() {
   return 0;
 }
 
-int myc_test_mothers_gnuplot() {
+int acy_test_mothers_gnuplot() {
   id n_samples = 1000;
   id stride = 11078;
   id n_batches = 3;
@@ -162,8 +162,8 @@ int myc_test_mothers_gnuplot() {
   fclose(fout);
   chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
   fout = fopen("test/family/mothers-data.dat", "w");
-  myc_family_info *tinfo = myc_create_family_info();
-  myc_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
+  acy_family_info *tinfo = acy_create_family_info();
+  acy_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
   fprintf(fout, "# Child Mother\n");
   id increment = n_samples*stride;
   for (
@@ -171,20 +171,20 @@ int myc_test_mothers_gnuplot() {
     start < 180280193 + increment * n_batches;
     start += increment
   ) {
-    seed = myc_prng(start, start + 120912);
-    myc_set_info_seed(tinfo, seed);
+    seed = acy_prng(start, start + 120912);
+    acy_set_info_seed(tinfo, seed);
     fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
     for (id child = start; child < start + n_samples * stride; child += stride){
-      id mother = myc_mother(child, tinfo);
+      id mother = acy_mother(child, tinfo);
       fprintf(fout, "%lu %lu\n", child, mother);
     }
   }
   fclose(fout);
-  myc_destroy_family_info(tinfo);
+  acy_destroy_family_info(tinfo);
   return 0;
 }
 
-int myc_test_mother_ages_gnuplot() {
+int acy_test_mother_ages_gnuplot() {
   id n_samples = 1000;
   id stride = 10213;
   id n_batches = 2;
@@ -210,8 +210,8 @@ int myc_test_mother_ages_gnuplot() {
   fclose(fout);
   chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
   fout = fopen("test/family/mother-age-data.dat", "w");
-  myc_family_info *tinfo = myc_create_family_info();
-  myc_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
+  acy_family_info *tinfo = acy_create_family_info();
+  acy_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
   fprintf(fout, "# Child Mother\n");
   id increment = n_samples*stride;
   for (
@@ -219,25 +219,25 @@ int myc_test_mother_ages_gnuplot() {
     start < 180280193 + increment * n_batches;
     start += increment
   ) {
-    seed = myc_prng(start, start + 120912);
-    myc_set_info_seed(tinfo, seed);
+    seed = acy_prng(start, start + 120912);
+    acy_set_info_seed(tinfo, seed);
     fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
     for (id child = start; child < start + stride * n_samples; child += stride){
-      id mother = myc_mother(child, tinfo);
+      id mother = acy_mother(child, tinfo);
       fprintf(
         fout,
         "%lu %lu\n",
-        myc_birthdate(child, tinfo),
-        myc_birthdate(mother, tinfo)
+        acy_birthdate(child, tinfo),
+        acy_birthdate(mother, tinfo)
       );
     }
   }
   fclose(fout);
-  myc_destroy_family_info(tinfo);
+  acy_destroy_family_info(tinfo);
   return 0;
 }
 
-int myc_test_mother_age_at_birth_gnuplot() {
+int acy_test_mother_age_at_birth_gnuplot() {
   id n_samples = 1000;
   id n_batches = 5;
   id stride = 31047;
@@ -264,8 +264,8 @@ int myc_test_mother_age_at_birth_gnuplot() {
   fclose(fout);
   chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
   fout = fopen("test/family/mother-age-at-birth-data.dat", "w");
-  myc_family_info *tinfo = myc_create_family_info();
-  myc_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
+  acy_family_info *tinfo = acy_create_family_info();
+  acy_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
   fprintf(fout, "# Child Mother-age-at-birth\n");
   id increment = (n_samples - n_samples/8) * stride;
   for (
@@ -273,42 +273,42 @@ int myc_test_mother_age_at_birth_gnuplot() {
     start < 1911494693 + increment * n_batches;
     start += increment
   ) {
-    seed = myc_prng(start, start + 120912);
-    myc_set_info_seed(tinfo, seed);
+    seed = acy_prng(start, start + 120912);
+    acy_set_info_seed(tinfo, seed);
     fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
     for (id child = start; child < start + n_samples*stride; child += stride) {
-      id mother = myc_mother(child, tinfo);
+      id mother = acy_mother(child, tinfo);
       fprintf(
         fout,
         "%lu %lu\n",
         child,
         mother
-      //   (myc_birthdate(child, tinfo) - myc_birthdate(mother, tinfo))
+      //   (acy_birthdate(child, tinfo) - acy_birthdate(mother, tinfo))
       // / ONE_EARTH_YEAR
       );
     }
   }
   fclose(fout);
-  myc_destroy_family_info(tinfo);
+  acy_destroy_family_info(tinfo);
   return 0;
 }
 
-void myc_print_mothers_recursively(
+void acy_print_mothers_recursively(
   FILE* stream,
   id parent,
-  myc_family_info const * const info,
+  acy_family_info const * const info,
   id depth_limit
 ) {
   id nth = 0;
   id child;
   id mbd, cbd;
   while(1) {
-    child = myc_child(parent, nth, info);
+    child = acy_child(parent, nth, info);
     if (child == NONE) {
       break;
     }
-    mbd = myc_birthdate(parent, info);
-    cbd = myc_birthdate(child, info);
+    mbd = acy_birthdate(parent, info);
+    cbd = acy_birthdate(child, info);
     fprintf(
       stream,
       "  %lu -> %lu [ label=\"%d\" ];\n",
@@ -318,7 +318,7 @@ void myc_print_mothers_recursively(
     );
     nth += 1;
     if (depth_limit > 0) {
-      myc_print_mothers_recursively(
+      acy_print_mothers_recursively(
         stream,
         child,
         info,
@@ -328,17 +328,17 @@ void myc_print_mothers_recursively(
   }
 }
 
-int myc_test_mothers_tree_graphviz() {
+int acy_test_mothers_tree_graphviz() {
   id parent;
   char filename[1024];
-  myc_family_info *tinfo = myc_create_family_info();
-  myc_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
+  acy_family_info *tinfo = acy_create_family_info();
+  acy_copy_family_info(&DEFAULT_FAMILY_INFO, tinfo);
   for (id seed = 78138917; seed < 78138917 + 3; ++seed) {
-    myc_set_info_seed(tinfo, seed);
+    acy_set_info_seed(tinfo, seed);
     parent = 1000000000;
     // find the great-grandmother:
     for (id i = 0; i < 3; ++i) {
-      parent = myc_mother(parent, tinfo);
+      parent = acy_mother(parent, tinfo);
     }
 
     // Print the graph:
@@ -346,7 +346,7 @@ int myc_test_mothers_tree_graphviz() {
     FILE *fout = fopen(filename, "w");
     // print edges
     fprintf(fout, "digraph G {\n");
-    myc_print_mothers_recursively(
+    acy_print_mothers_recursively(
       fout,
       parent,
       tinfo,
@@ -356,7 +356,7 @@ int myc_test_mothers_tree_graphviz() {
     fclose(fout);
   }
 
-  myc_destroy_family_info(tinfo);
+  acy_destroy_family_info(tinfo);
 
   return 0;
 }

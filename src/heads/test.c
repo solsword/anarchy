@@ -15,7 +15,7 @@
 #include "tests/select_tests.cf"
 #include "tests/family_tests.cf"
 
-void myc_unit_test(char const * const name, int (*test)(void)) {
+void acy_unit_test(char const * const name, int (*test)(void)) {
   // TODO: Record failures in a summary.
   int result = test();
   if (result) {

@@ -7,96 +7,96 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-myc_unit_test("find_cohort", &myc_test_find_cohort);
+acy_unit_test("find_cohort", &acy_test_find_cohort);
 
-myc_unit_test("find_cohort_and_inner", &myc_test_find_cohort_and_inner);
+acy_unit_test("find_cohort_and_inner", &acy_test_find_cohort_and_inner);
 
-myc_unit_test("cohort_interleave", &myc_test_cohort_interleave);
+acy_unit_test("cohort_interleave", &acy_test_cohort_interleave);
 
-myc_unit_test("cohort_fold", &myc_test_cohort_fold);
+acy_unit_test("cohort_fold", &acy_test_cohort_fold);
 
-myc_unit_test("cohort_spin", &myc_test_cohort_spin);
+acy_unit_test("cohort_spin", &acy_test_cohort_spin);
 
-myc_unit_test("cohort_flop", &myc_test_cohort_flop);
+acy_unit_test("cohort_flop", &acy_test_cohort_flop);
 
-myc_unit_test("cohort_mix", &myc_test_cohort_mix);
+acy_unit_test("cohort_mix", &acy_test_cohort_mix);
 
-myc_unit_test("cohort_spread", &myc_test_cohort_spread);
+acy_unit_test("cohort_spread", &acy_test_cohort_spread);
 
-myc_unit_test("cohort_upend", &myc_test_cohort_upend);
+acy_unit_test("cohort_upend", &acy_test_cohort_upend);
 
-myc_unit_test("cohort_shuffle", &myc_test_cohort_shuffle);
+acy_unit_test("cohort_shuffle", &acy_test_cohort_shuffle);
 
-myc_unit_test("cohort_shuffle_visual", &myc_test_cohort_shuffle_visual);
+acy_unit_test("cohort_shuffle_visual", &acy_test_cohort_shuffle_visual);
 
-myc_unit_test(
+acy_unit_test(
   "cohort_shuffle_visual_list",
-  &myc_test_cohort_shuffle_visual_list
+  &acy_test_cohort_shuffle_visual_list
 );
 
-myc_unit_test("cohort _shuffle_gnuplot", &myc_test_cohort_shuffle_gnuplot);
+acy_unit_test("cohort _shuffle_gnuplot", &acy_test_cohort_shuffle_gnuplot);
 
-myc_unit_test("find_mixed_cohort", &myc_test_find_mixed_cohort);
+acy_unit_test("find_mixed_cohort", &acy_test_find_mixed_cohort);
 
-myc_unit_test(
+acy_unit_test(
   "find_mixed_cohort_and_inner",
-  &myc_test_find_mixed_cohort_and_inner
+  &acy_test_find_mixed_cohort_and_inner
 );
 
-myc_unit_test("mixed_cohort_visual", &myc_test_mixed_cohort_visual);
+acy_unit_test("mixed_cohort_visual", &acy_test_mixed_cohort_visual);
 
-myc_unit_test(
+acy_unit_test(
   "find_biased_cohort_and_inner",
-  &myc_test_find_biased_cohort_and_inner
+  &acy_test_find_biased_cohort_and_inner
 );
 
-myc_unit_test("biased_cohort_visual", &myc_test_biased_cohort_visual);
+acy_unit_test("biased_cohort_visual", &acy_test_biased_cohort_visual);
 
-myc_unit_test("test_exp_split_visual", &myc_test_exp_split_visual);
+acy_unit_test("test_exp_split_visual", &acy_test_exp_split_visual);
 
-myc_unit_test("test_multiexp_split_visual", &myc_test_multiexp_split_visual);
+acy_unit_test("test_multiexp_split_visual", &acy_test_multiexp_split_visual);
 
-myc_unit_test(
+acy_unit_test(
   "test_multiexp_split_visual_extended",
-  &myc_test_multiexp_split_visual_extended
+  &acy_test_multiexp_split_visual_extended
 );
 
-myc_unit_test(
+acy_unit_test(
   "multiexp_layer_consistency_visual",
-  &myc_test_multiexp_layer_consistency_visual
+  &acy_test_multiexp_layer_consistency_visual
 );
 
-myc_unit_test(
+acy_unit_test(
   "exp_cohort_sections_visual",
-  &myc_test_exp_cohort_sections_visual
+  &acy_test_exp_cohort_sections_visual
 );
 
-myc_unit_test("exp_cohort_visual", &myc_test_exp_cohort_visual);
+acy_unit_test("exp_cohort_visual", &acy_test_exp_cohort_visual);
 
-myc_unit_test("exp_cohort_inners", &myc_test_exp_cohort_inners);
+acy_unit_test("exp_cohort_inners", &acy_test_exp_cohort_inners);
 
-myc_unit_test("find_exp_cohort_and_inner", &myc_test_find_exp_cohort_and_inner);
+acy_unit_test("find_exp_cohort_and_inner", &acy_test_find_exp_cohort_and_inner);
 
-myc_unit_test(
+acy_unit_test(
   "multiexp_cohort_sections_visual",
-  &myc_test_multiexp_cohort_sections_visual
+  &acy_test_multiexp_cohort_sections_visual
 );
 
 /*
  * TODO: Get rid of this?
-myc_unit_test(
+acy_unit_test(
   "find_multiexp_layer_and_inner",
-  &myc_test_find_multiexp_layer_and_inner
+  &acy_test_find_multiexp_layer_and_inner
 );
 */
 
-myc_unit_test(
+acy_unit_test(
   "find_multiexp_cohort_and_inner",
-  &myc_test_find_multiexp_cohort_and_inner
+  &acy_test_find_multiexp_cohort_and_inner
 );
 
-myc_unit_test("multiexp_cohort_counts", &myc_test_count_multiexp_cohorts);
+acy_unit_test("multiexp_cohort_counts", &acy_test_count_multiexp_cohorts);
 
-myc_unit_test("exp_cohort_gnuplot", &myc_test_exp_cohort_gnuplot);
+acy_unit_test("exp_cohort_gnuplot", &acy_test_exp_cohort_gnuplot);
 
-myc_unit_test("multiexp_cohort_gnuplot", &myc_test_multiexp_cohort_gnuplot);
+acy_unit_test("multiexp_cohort_gnuplot", &acy_test_multiexp_cohort_gnuplot);

@@ -7,12 +7,12 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-myc_unit_test("fold", &myc_test_fold);
+acy_unit_test("fold", &acy_test_fold);
 
-myc_unit_test("circular_shift", &myc_test_circular_shift);
+acy_unit_test("circular_shift", &acy_test_circular_shift);
 
-myc_unit_test("flop", &myc_test_flop);
+acy_unit_test("flop", &acy_test_flop);
 
-myc_unit_test("prng", &myc_test_prng);
+acy_unit_test("prng", &acy_test_prng);
 
-myc_unit_test("prng spew", &myc_test_prng_spew);
+acy_unit_test("prng spew", &acy_test_prng_spew);

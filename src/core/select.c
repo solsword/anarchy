@@ -21,7 +21,7 @@
  * Functions *
  *************/
 
-void myc_select_parent_and_index(
+void acy_select_parent_and_index(
   id child,
   id avg_arity,
   id max_arity,
@@ -46,10 +46,10 @@ void myc_select_parent_and_index(
   // Get from absolute-child to child-within-cohort. Note that children in xth
   // child cohort have parents in the xth parent cohort.
   id cohort, inner;
-  myc_mixed_cohort_and_inner(child, max_arity, seed, &cohort, &inner);
+  acy_mixed_cohort_and_inner(child, max_arity, seed, &cohort, &inner);
 
   // Shuffle child ID within children cohort:
-  id shuf = myc_cohort_shuffle(inner, max_arity, seed);
+  id shuf = acy_cohort_shuffle(inner, max_arity, seed);
 
   id from_upper = 0;
   id to_upper = upper_cohort_size;
@@ -65,10 +65,10 @@ void myc_select_parent_and_index(
   while (parents_left > 1) {
 
     half_remaining = parents_left/2;
-    divide_at = myc_irrev_smooth_prng(
+    divide_at = acy_irrev_smooth_prng(
       divide_at,
       children_left,
-      myc_min(2, parents_left),
+      acy_min(2, parents_left),
       seed
     );
 
@@ -88,13 +88,13 @@ void myc_select_parent_and_index(
   *r_index = shuf;
 
   // Unshuffle the parent's index (from_upper)
-  id unshuf = myc_rev_cohort_shuffle(from_upper, upper_cohort_size, seed);
+  id unshuf = acy_rev_cohort_shuffle(from_upper, upper_cohort_size, seed);
 
   // Escape the cohort to get the parent:
-  *r_parent = myc_mixed_cohort_outer(cohort, unshuf, upper_cohort_size, seed);
+  *r_parent = acy_mixed_cohort_outer(cohort, unshuf, upper_cohort_size, seed);
 }
 
-id myc_select_nth_child(
+id acy_select_nth_child(
   id parent,
   id nth,
   id avg_arity,
@@ -107,9 +107,9 @@ id myc_select_nth_child(
   id inner;
   id upper_cohort_size = max_arity / avg_arity; // at least 2, ideally 8+ or so
 
-  myc_mixed_cohort_and_inner(parent, upper_cohort_size, seed, &cohort, &inner);
+  acy_mixed_cohort_and_inner(parent, upper_cohort_size, seed, &cohort, &inner);
 
-  id shuf = myc_cohort_shuffle(inner, upper_cohort_size, seed);
+  id shuf = acy_cohort_shuffle(inner, upper_cohort_size, seed);
 
   id from_upper = 0;
   id to_upper = upper_cohort_size;
@@ -125,10 +125,10 @@ id myc_select_nth_child(
   while (parents_left > 1 && children_left > 0) {
 
     half_remaining = parents_left/2;
-    divide_at = myc_irrev_smooth_prng(
+    divide_at = acy_irrev_smooth_prng(
       divide_at,
       children_left,
-      myc_min(2, parents_left),
+      acy_min(2, parents_left),
       seed
     );
 
@@ -149,17 +149,17 @@ id myc_select_nth_child(
   }
 
   // Unshuffle child ID within children cohort:
-  id unshuf = myc_rev_cohort_shuffle(from_lower + nth, max_arity, seed);
+  id unshuf = acy_rev_cohort_shuffle(from_lower + nth, max_arity, seed);
 
   // Get back from child-within-cohort to absolute-child. Note that children of
   // parents in the xth parent cohort are assigned to the xth child cohort.
-  id child = myc_mixed_cohort_outer(cohort, unshuf, max_arity, seed);
+  id child = acy_mixed_cohort_outer(cohort, unshuf, max_arity, seed);
 
   // Correct child indices so that they're >= parent indices:
   return child + max_arity;
 }
 
-id myc_select_exp_earliest_possible_child(
+id acy_select_exp_earliest_possible_child(
   id parent,
   id avg_arity,
   id max_arity,
@@ -194,7 +194,7 @@ id myc_select_exp_earliest_possible_child(
   */
 }
 
-id myc_select_exp_child_cohort_start(
+id acy_select_exp_child_cohort_start(
   id child,
   id avg_arity,
   id max_arity,
@@ -217,7 +217,7 @@ id myc_select_exp_child_cohort_start(
   */
 }
 
-void myc_select_exp_parent_and_index(
+void acy_select_exp_parent_and_index(
   id child,
   id avg_arity,
   id max_arity,
@@ -263,7 +263,7 @@ void myc_select_exp_parent_and_index(
 #endif
 
   /*
-  id adjusted = child - myc_select_exp_child_cohort_start(
+  id adjusted = child - acy_select_exp_child_cohort_start(
     child,
     avg_arity,
     max_arity,
@@ -286,7 +286,7 @@ void myc_select_exp_parent_and_index(
   // exp_cohort_size.
   id super_cohort, sub_cohort, inner;
   // exponential super-cohort 
-  myc_multiexp_cohort_and_inner(
+  acy_multiexp_cohort_and_inner(
     adjusted,
     exp_cohort_shape,
     lower_cohort_size,
@@ -306,14 +306,14 @@ void myc_select_exp_parent_and_index(
 #endif
 
   // shuffle within the exponential cohort:
-  inner = myc_cohort_shuffle(inner, lower_cohort_size, seed);
+  inner = acy_cohort_shuffle(inner, lower_cohort_size, seed);
 
 #ifdef DEBUG_SELECT
   fprintf(stderr, "select_exp_parent_and_index::shuffled_inner::%lu\n", inner);
 #endif
 
   // Find sub-cohort:
-  myc_cohort_and_inner(inner, max_arity, &sub_cohort, &inner);
+  acy_cohort_and_inner(inner, max_arity, &sub_cohort, &inner);
 
 #ifdef DEBUG_SELECT
   fprintf(
@@ -337,7 +337,7 @@ void myc_select_exp_parent_and_index(
 #endif
 
   // Shuffle child ID within children cohort:
-  id shuf = myc_cohort_shuffle(inner, max_arity, seed);
+  id shuf = acy_cohort_shuffle(inner, max_arity, seed);
 
 #ifdef DEBUG_SELECT
   fprintf(stderr, "select_exp_parent_and_index::child_shuf::%lu\n", shuf);
@@ -356,10 +356,10 @@ void myc_select_exp_parent_and_index(
 
   while (parents_left > 1) {
     half_remaining = parents_left/2;
-    divide_at = myc_irrev_smooth_prng(
+    divide_at = acy_irrev_smooth_prng(
       divide_at,
       children_left,
-      myc_min(2, parents_left),
+      acy_min(2, parents_left),
       seed
     );
 
@@ -383,21 +383,21 @@ void myc_select_exp_parent_and_index(
   *r_index = shuf;
 
   // Unshuffle the parent's index (from_upper)
-  id unshuf = myc_rev_cohort_shuffle(from_upper, upper_cohort_size, seed);
+  id unshuf = acy_rev_cohort_shuffle(from_upper, upper_cohort_size, seed);
 
 #ifdef DEBUG_SELECT
   fprintf(stderr, "select_exp_parent_and_index::parent_unshuf::%lu\n", unshuf);
 #endif
 
   // Escape the cohort to get the parent:
-  *r_parent = myc_cohort_outer(parent_cohort, unshuf, upper_cohort_size);
+  *r_parent = acy_cohort_outer(parent_cohort, unshuf, upper_cohort_size);
 
 #ifdef DEBUG_SELECT
   fprintf(stderr, "select_exp_parent_and_index::parent::%lu\n\n", *r_parent);
 #endif
 }
 
-id myc_select_exp_nth_child(
+id acy_select_exp_nth_child(
   id parent,
   id nth,
   id avg_arity,
@@ -436,8 +436,8 @@ id myc_select_exp_nth_child(
   );
 #endif
 
-  myc_cohort_and_inner(parent, upper_cohort_size, &parent_cohort, &inner);
-  id shuf = myc_cohort_shuffle(inner, upper_cohort_size, seed);
+  acy_cohort_and_inner(parent, upper_cohort_size, &parent_cohort, &inner);
+  id shuf = acy_cohort_shuffle(inner, upper_cohort_size, seed);
 
 #ifdef DEBUG_SELECT
   fprintf(
@@ -462,10 +462,10 @@ id myc_select_exp_nth_child(
 
   while (parents_left > 1 && children_left > 0) {
     half_remaining = parents_left/2;
-    divide_at = myc_irrev_smooth_prng(
+    divide_at = acy_irrev_smooth_prng(
       divide_at,
       children_left,
-      myc_min(2, parents_left),
+      acy_min(2, parents_left),
       seed
     );
 
@@ -495,7 +495,7 @@ id myc_select_exp_nth_child(
 #endif
 
   // Unshuffle child ID within children cohort:
-  id unshuf = myc_rev_cohort_shuffle(from_lower + nth, max_arity, seed);
+  id unshuf = acy_rev_cohort_shuffle(from_lower + nth, max_arity, seed);
 
 #ifdef DEBUG_SELECT
   fprintf(
@@ -509,7 +509,7 @@ id myc_select_exp_nth_child(
   // absolute-child. Note that children of parents in the xth parent cohort are
   // assigned to the x/Nth super cohort and the x%Nth sub cohort, where N is
   // exp_cohort_size.
-  id outer = myc_cohort_outer(
+  id outer = acy_cohort_outer(
     parent_cohort % exp_cohort_size,
     unshuf,
     max_arity
@@ -525,7 +525,7 @@ id myc_select_exp_nth_child(
 #endif
 
   // Unshuffle within exponential cohort
-  unshuf = myc_rev_cohort_shuffle(outer, lower_cohort_size, seed);
+  unshuf = acy_rev_cohort_shuffle(outer, lower_cohort_size, seed);
 
 #ifdef DEBUG_SELECT
   fprintf(
@@ -536,7 +536,7 @@ id myc_select_exp_nth_child(
 #endif
 
   // Escape from exponential cohort
-  id child = myc_multiexp_cohort_outer(
+  id child = acy_multiexp_cohort_outer(
     parent_cohort / exp_cohort_size,
     unshuf,
     exp_cohort_shape,
@@ -556,7 +556,7 @@ id myc_select_exp_nth_child(
 
   /*
   // Adjust index to be >= parent:
-  id adjusted = child + parent - myc_select_exp_earliest_possible_child(
+  id adjusted = child + parent - acy_select_exp_earliest_possible_child(
     parent,
     avg_arity,
     max_arity,

@@ -7,41 +7,41 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-myc_unit_test("select_nth/parent", &myc_test_parent_child_selection);
+acy_unit_test("select_nth/parent", &acy_test_parent_child_selection);
 
-myc_unit_test("select_nth/parent_odd", &myc_test_odd_parent_child_selection);
+acy_unit_test("select_nth/parent_odd", &acy_test_odd_parent_child_selection);
 
-myc_unit_test("selection_visual", &myc_test_parent_child_visual);
+acy_unit_test("selection_visual", &acy_test_parent_child_visual);
 
-myc_unit_test(
+acy_unit_test(
   "select_exponential_nth/parent",
-  &myc_test_exp_parent_child_selection
+  &acy_test_exp_parent_child_selection
 );
 
-myc_unit_test(
+acy_unit_test(
   "select_exponential_nth/parent_odd",
-  &myc_test_odd_exp_parent_child_selection
+  &acy_test_odd_exp_parent_child_selection
 );
 
-myc_unit_test(
+acy_unit_test(
   "exponential_selection_visual",
-  &myc_test_exp_parent_child_visual
+  &acy_test_exp_parent_child_visual
 );
 
-myc_unit_test(
+acy_unit_test(
   "exponential_selection_diff_stream",
-  &myc_test_exp_select_gap_stream
+  &acy_test_exp_select_gap_stream
 );
 
-myc_unit_test("exponential_selection_grahpviz", &myc_test_exp_select_graphviz);
+acy_unit_test("exponential_selection_grahpviz", &acy_test_exp_select_graphviz);
 
-myc_unit_test("selection_average_distances", &myc_test_avg_parent_child_gap);
+acy_unit_test("selection_average_distances", &acy_test_avg_parent_child_gap);
 
-myc_unit_test(
+acy_unit_test(
   "selection_average_exp_distances",
-  &myc_test_avg_exp_parent_child_gap
+  &acy_test_avg_exp_parent_child_gap
 );
 
-myc_unit_test("selection_parent/child_plot", &myc_test_select_gnuplot);
+acy_unit_test("selection_parent/child_plot", &acy_test_select_gnuplot);
 
-myc_unit_test("selection_exp_parent/child_plot", &myc_test_exp_select_gnuplot);
+acy_unit_test("selection_exp_parent/child_plot", &acy_test_exp_select_gnuplot);

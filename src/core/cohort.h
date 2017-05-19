@@ -22,29 +22,29 @@
  ********************/
 
 // Picks out which cohort we're in.
-static inline id myc_cohort(id outer, id cohort_size) {
+static inline id acy_cohort(id outer, id cohort_size) {
   return outer / cohort_size;
 }
 
 // Identifies our within-cohort id.
-static inline id myc_cohort_inner(id outer, id cohort_size) {
+static inline id acy_cohort_inner(id outer, id cohort_size) {
   return outer % cohort_size;
 }
 
 // Combines cohort and cohort_inner, returning both values via return
 // parameters.
-static inline void myc_cohort_and_inner(
+static inline void acy_cohort_and_inner(
   id outer,
   id cohort_size,
   id *r_cohort,
   id *r_inner
 ) {
-  *r_cohort = myc_cohort(outer, cohort_size);
-  *r_inner = myc_cohort_inner(outer, cohort_size);
+  *r_cohort = acy_cohort(outer, cohort_size);
+  *r_inner = acy_cohort_inner(outer, cohort_size);
 }
 
 // Find global ID from cohort & inner ID:
-static inline id myc_cohort_outer(
+static inline id acy_cohort_outer(
   id cohort,
   id inner,
   id cohort_size
@@ -54,7 +54,7 @@ static inline id myc_cohort_outer(
 }
 
 // Interleaves cohort members by folding top half into bottom half.
-static inline id myc_cohort_interleave(id inner, id cohort_size) {
+static inline id acy_cohort_interleave(id inner, id cohort_size) {
   id bottom = (inner < ((cohort_size+1)/2));
   return (
      bottom * (inner*2) // if
@@ -63,7 +63,7 @@ static inline id myc_cohort_interleave(id inner, id cohort_size) {
 }
 
 // Reverse
-static inline id myc_rev_cohort_interleave(id shuffled, id cohort_size) {
+static inline id acy_rev_cohort_interleave(id shuffled, id cohort_size) {
   id odd = (shuffled % 2);
   return (
      odd * (cohort_size - 1 - shuffled/2) // if
@@ -73,7 +73,7 @@ static inline id myc_rev_cohort_interleave(id shuffled, id cohort_size) {
 
 // Folds items past an arbitrary split point into the middle of the cohort.
 // The split will always leave an odd number at the end
-static inline id myc_cohort_fold(id inner, id cohort_size, id seed) {
+static inline id acy_cohort_fold(id inner, id cohort_size, id seed) {
   id half = cohort_size >> 1;
   id split = (seed % half) + half;
   id after = (cohort_size - split);
@@ -91,7 +91,7 @@ static inline id myc_cohort_fold(id inner, id cohort_size, id seed) {
   );
 }
 
-static inline id myc_rev_cohort_fold(id folded, id cohort_size, id seed) {
+static inline id acy_rev_cohort_fold(id folded, id cohort_size, id seed) {
   id half = cohort_size >> 1;
   id split = (seed % half) + half;
   id after = (cohort_size - split);
@@ -110,17 +110,17 @@ static inline id myc_rev_cohort_fold(id folded, id cohort_size, id seed) {
 }
 
 // Offsets cohort members in a circular manner.
-static inline id myc_cohort_spin(id inner, id cohort_size, id seed) {
+static inline id acy_cohort_spin(id inner, id cohort_size, id seed) {
   return (inner + seed) % cohort_size;
 }
 
 // Reverse
-static inline id myc_rev_cohort_spin(id spun, id cohort_size, id seed) {
+static inline id acy_rev_cohort_spin(id spun, id cohort_size, id seed) {
   return (spun + (cohort_size - (seed % cohort_size))) % cohort_size;
 }
 
 // Flops cohort sections with their neighbors.
-static inline id myc_cohort_flop(id inner, id cohort_size, id seed) {
+static inline id acy_cohort_flop(id inner, id cohort_size, id seed) {
   id limit = cohort_size >> 3;
   limit += (limit < 4) * 4;
   id size = (seed % limit) + 2;
@@ -145,35 +145,35 @@ static inline id myc_cohort_flop(id inner, id cohort_size, id seed) {
 // Flop is its own inverse.
 
 // Does a different cohort spin for even and odd items.
-static inline id myc_cohort_mix(id inner, id cohort_size, id seed) {
+static inline id acy_cohort_mix(id inner, id cohort_size, id seed) {
   id even = inner - inner % 2;
   id target;
   if (inner % 2) {
-    target = myc_cohort_spin(
+    target = acy_cohort_spin(
       even/2,
       (cohort_size+(1-cohort_size%2))/2,
       seed + 464185
     );
     return 2 * target + 1;
   } else {
-    target = myc_cohort_spin(even/2, (cohort_size+1)/2, seed + 1048239);
+    target = acy_cohort_spin(even/2, (cohort_size+1)/2, seed + 1048239);
     return 2 * target;
   }
 }
 
 // Reverse
-static inline id myc_rev_cohort_mix(id mixed, id cohort_size, id seed) {
+static inline id acy_rev_cohort_mix(id mixed, id cohort_size, id seed) {
   id even = mixed - mixed % 2;
   id target;
   if (mixed % 2) {
-    target = myc_rev_cohort_spin(
+    target = acy_rev_cohort_spin(
       even/2,
       (cohort_size+(1-cohort_size%2))/2,
       seed + 464185
     );
     return 2 * target + 1;
   } else {
-    target = myc_rev_cohort_spin(even/2, (cohort_size+1)/2, seed + 1048239);
+    target = acy_rev_cohort_spin(even/2, (cohort_size+1)/2, seed + 1048239);
     return 2 * target;
   }
 }
@@ -182,7 +182,7 @@ static inline id myc_rev_cohort_mix(id mixed, id cohort_size, id seed) {
 #define MIN_REGION_SIZE 2
 #define MAX_REGION_COUNT 16
 // TODO: Don't send stuff out-of-range
-static inline id myc_cohort_spread(id inner, id cohort_size, id seed) {
+static inline id acy_cohort_spread(id inner, id cohort_size, id seed) {
   id min_regions = 2 - (cohort_size < 2 * MIN_REGION_SIZE);
   id max_regions = 1 + cohort_size / MIN_REGION_SIZE;
   id regions = (
@@ -204,7 +204,7 @@ static inline id myc_cohort_spread(id inner, id cohort_size, id seed) {
 }
 
 // Reverse
-static inline id myc_rev_cohort_spread(id spread, id cohort_size, id seed) {
+static inline id acy_rev_cohort_spread(id spread, id cohort_size, id seed) {
   id min_regions = 2 - (cohort_size < 2 * MIN_REGION_SIZE);
   id max_regions = 1 + cohort_size / MIN_REGION_SIZE;
   id regions = (
@@ -226,7 +226,7 @@ static inline id myc_rev_cohort_spread(id spread, id cohort_size, id seed) {
 }
 
 // Reverses ordering within each of several fragments.
-static inline id myc_cohort_upend(id inner, id cohort_size, id seed) {
+static inline id acy_cohort_upend(id inner, id cohort_size, id seed) {
   id min_regions = 2 - (cohort_size < 2 * MIN_REGION_SIZE);
   id max_regions = 1 + cohort_size / MIN_REGION_SIZE;
   id regions = (
@@ -249,7 +249,7 @@ static inline id myc_cohort_upend(id inner, id cohort_size, id seed) {
 // Upend is its own inverse
 
 // Uses the above functions to shuffle a cohort
-static inline id myc_cohort_shuffle(id inner, id cohort_size, id seed) {
+static inline id acy_cohort_shuffle(id inner, id cohort_size, id seed) {
 #ifdef DEBUG_COHORT
   if (cohort_size == 1) {
     fprintf(stderr, "Cohort shuffle with size==1!\n");
@@ -258,26 +258,26 @@ static inline id myc_cohort_shuffle(id inner, id cohort_size, id seed) {
 #endif
   id r = inner;
   seed ^= cohort_size/3;
-  r = myc_cohort_spread(r, cohort_size, seed + 453);
-  r = myc_cohort_mix(r, cohort_size, seed + 2891);
-  r = myc_cohort_interleave(r, cohort_size);
-  r = myc_cohort_spin(r, cohort_size, seed + 1982);
-  r = myc_cohort_upend(r, cohort_size, seed + 47);
-  r = myc_cohort_fold(r, cohort_size, seed + 837);
-  r = myc_cohort_interleave(r, cohort_size);
-  r = myc_cohort_flop(r, cohort_size, seed + 53);
-  r = myc_cohort_fold(r, cohort_size, seed + 201);
-  r = myc_cohort_mix(r, cohort_size, seed + 728);
-  r = myc_cohort_spread(r, cohort_size, seed + 881);
-  r = myc_cohort_interleave(r, cohort_size);
-  r = myc_cohort_flop(r, cohort_size, seed + 192);
-  r = myc_cohort_upend(r, cohort_size, seed + 794614);
-  r = myc_cohort_spin(r, cohort_size, seed + 19);
+  r = acy_cohort_spread(r, cohort_size, seed + 453);
+  r = acy_cohort_mix(r, cohort_size, seed + 2891);
+  r = acy_cohort_interleave(r, cohort_size);
+  r = acy_cohort_spin(r, cohort_size, seed + 1982);
+  r = acy_cohort_upend(r, cohort_size, seed + 47);
+  r = acy_cohort_fold(r, cohort_size, seed + 837);
+  r = acy_cohort_interleave(r, cohort_size);
+  r = acy_cohort_flop(r, cohort_size, seed + 53);
+  r = acy_cohort_fold(r, cohort_size, seed + 201);
+  r = acy_cohort_mix(r, cohort_size, seed + 728);
+  r = acy_cohort_spread(r, cohort_size, seed + 881);
+  r = acy_cohort_interleave(r, cohort_size);
+  r = acy_cohort_flop(r, cohort_size, seed + 192);
+  r = acy_cohort_upend(r, cohort_size, seed + 794614);
+  r = acy_cohort_spin(r, cohort_size, seed + 19);
   return r;
 }
 
 // Reverse
-static inline id myc_rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
+static inline id acy_rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
 #ifdef DEBUG_COHORT
   if (cohort_size == 1) {
     fprintf(stderr, "Reverse cohort shuffle with size==1!\n");
@@ -286,21 +286,21 @@ static inline id myc_rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
 #endif
   id r = shuffled;
   seed ^= cohort_size/3;
-  r = myc_rev_cohort_spin(r, cohort_size, seed + 19);
-  r = myc_cohort_upend(r, cohort_size, seed + 794614);
-  r = myc_cohort_flop(r, cohort_size, seed + 192);
-  r = myc_rev_cohort_interleave(r, cohort_size);
-  r = myc_rev_cohort_spread(r, cohort_size, seed + 881);
-  r = myc_rev_cohort_mix(r, cohort_size, seed + 728);
-  r = myc_rev_cohort_fold(r, cohort_size, seed + 201);
-  r = myc_cohort_flop(r, cohort_size, seed + 53);
-  r = myc_rev_cohort_interleave(r, cohort_size);
-  r = myc_rev_cohort_fold(r, cohort_size, seed + 837);
-  r = myc_cohort_upend(r, cohort_size, seed + 47);
-  r = myc_rev_cohort_spin(r, cohort_size, seed + 1982);
-  r = myc_rev_cohort_interleave(r, cohort_size);
-  r = myc_rev_cohort_mix(r, cohort_size, seed + 2891);
-  r = myc_rev_cohort_spread(r, cohort_size, seed + 453);
+  r = acy_rev_cohort_spin(r, cohort_size, seed + 19);
+  r = acy_cohort_upend(r, cohort_size, seed + 794614);
+  r = acy_cohort_flop(r, cohort_size, seed + 192);
+  r = acy_rev_cohort_interleave(r, cohort_size);
+  r = acy_rev_cohort_spread(r, cohort_size, seed + 881);
+  r = acy_rev_cohort_mix(r, cohort_size, seed + 728);
+  r = acy_rev_cohort_fold(r, cohort_size, seed + 201);
+  r = acy_cohort_flop(r, cohort_size, seed + 53);
+  r = acy_rev_cohort_interleave(r, cohort_size);
+  r = acy_rev_cohort_fold(r, cohort_size, seed + 837);
+  r = acy_cohort_upend(r, cohort_size, seed + 47);
+  r = acy_rev_cohort_spin(r, cohort_size, seed + 1982);
+  r = acy_rev_cohort_interleave(r, cohort_size);
+  r = acy_rev_cohort_mix(r, cohort_size, seed + 2891);
+  r = acy_rev_cohort_spread(r, cohort_size, seed + 453);
   return r;
 }
 
@@ -310,11 +310,11 @@ static inline id myc_rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
 // 1/2 indices. Simply re-shuffle the inner results if you wish to have mixed
 // indices (the biased indices are useful for some purposes).
 // TODO: Guarantee that size isn't off-by-one?
-static inline id myc_mixed_cohort(id outer, id cohort_size, id seed) {
-  id strict_cohort = myc_cohort(outer, cohort_size);
-  id strict_inner = myc_cohort_inner(outer, cohort_size);
+static inline id acy_mixed_cohort(id outer, id cohort_size, id seed) {
+  id strict_cohort = acy_cohort(outer, cohort_size);
+  id strict_inner = acy_cohort_inner(outer, cohort_size);
 
-  id shuf = myc_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
+  id shuf = acy_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
   id lower = shuf < cohort_size/2;
 
   return (
@@ -324,28 +324,28 @@ static inline id myc_mixed_cohort(id outer, id cohort_size, id seed) {
 }
 
 // Gets the inner id for a mixed cohort (see above)
-static inline id myc_mixed_cohort_inner(id outer, id cohort_size, id seed) {
-  id strict_cohort = myc_cohort(outer, cohort_size);
-  id strict_inner = myc_cohort_inner(outer, cohort_size);
+static inline id acy_mixed_cohort_inner(id outer, id cohort_size, id seed) {
+  id strict_cohort = acy_cohort(outer, cohort_size);
+  id strict_inner = acy_cohort_inner(outer, cohort_size);
 
-  id shuf = myc_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
+  id shuf = acy_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
 
   return shuf;
 }
 
-// Combines myc_mixed_cohort and myc_mixed_cohort_inner, returning both values
+// Combines acy_mixed_cohort and acy_mixed_cohort_inner, returning both values
 // via return parameters. More efficient if you need both values.
-static inline void myc_mixed_cohort_and_inner(
+static inline void acy_mixed_cohort_and_inner(
   id outer,
   id cohort_size,
   id seed,
   id *r_cohort,
   id *r_inner
 ) {
-  id strict_cohort = myc_cohort(outer, cohort_size);
-  id strict_inner = myc_cohort_inner(outer, cohort_size);
+  id strict_cohort = acy_cohort(outer, cohort_size);
+  id strict_inner = acy_cohort_inner(outer, cohort_size);
 
-  id shuf = myc_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
+  id shuf = acy_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
   id lower = shuf < cohort_size/2;
 
   *r_cohort = (
@@ -357,7 +357,7 @@ static inline void myc_mixed_cohort_and_inner(
 }
 
 // Reverse
-static inline id myc_mixed_cohort_outer(
+static inline id acy_mixed_cohort_outer(
   id cohort,
   id inner,
   id cohort_size,
@@ -369,8 +369,8 @@ static inline id myc_mixed_cohort_outer(
   + !lower * cohort
   );
 
-  id unshuf = myc_rev_cohort_shuffle(inner, cohort_size, seed + strict_cohort);
-  return myc_cohort_outer(strict_cohort, unshuf, cohort_size);
+  id unshuf = acy_rev_cohort_shuffle(inner, cohort_size, seed + strict_cohort);
+  return acy_cohort_outer(strict_cohort, unshuf, cohort_size);
 }
 
 // A special kind of mixed cohort that's biased towards one direction on the
@@ -379,7 +379,7 @@ static inline id myc_mixed_cohort_outer(
 // and r_inner.
 #define MAX_BIAS 32
 #define MID_BIAS 16
-static inline void myc_biased_cohort_and_inner(
+static inline void acy_biased_cohort_and_inner(
   id outer,
   id bias,
   id cohort_size,
@@ -390,10 +390,10 @@ static inline void myc_biased_cohort_and_inner(
   assert(bias > 0);
   assert(bias < MAX_BIAS);
 
-  id strict_cohort = myc_cohort(outer, cohort_size);
-  id strict_inner = myc_cohort_inner(outer, cohort_size);
+  id strict_cohort = acy_cohort(outer, cohort_size);
+  id strict_inner = acy_cohort_inner(outer, cohort_size);
 
-  id shuf = myc_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
+  id shuf = acy_cohort_shuffle(strict_inner, cohort_size, seed + strict_cohort);
   id split = (cohort_size * (MAX_BIAS - bias)) / MAX_BIAS;
   id lower = shuf < split;
 
@@ -405,7 +405,7 @@ static inline void myc_biased_cohort_and_inner(
 }
 
 // Reverse
-static inline id myc_biased_cohort_outer(
+static inline id acy_biased_cohort_outer(
   id cohort,
   id inner,
   id bias,
@@ -424,14 +424,14 @@ static inline id myc_biased_cohort_outer(
   + !lower * cohort
   );
 
-  id unshuf = myc_rev_cohort_shuffle(inner, cohort_size, seed + strict_cohort);
-  return myc_cohort_outer(strict_cohort, unshuf, cohort_size);
+  id unshuf = acy_rev_cohort_shuffle(inner, cohort_size, seed + strict_cohort);
+  return acy_cohort_outer(strict_cohort, unshuf, cohort_size);
 }
 
 // Takes a double (should be between 0 and 1) and returns the nearest
 // corresponding bias value, according to the resolution established by
 // the definition of MAX_BIAS.
-static inline id myc_nearest_bias(double f) {
+static inline id acy_nearest_bias(double f) {
   id result = (id) roundf(MAX_BIAS * f);
   if (result < 1) {
     return 1;
@@ -467,7 +467,7 @@ static inline id myc_nearest_bias(double f) {
 //
 //   which indicates which section's cutoff we're interested in.
 //
-static inline id myc_exp_split(
+static inline id acy_exp_split(
   double shape,
   id section_count,
   id section_width,
@@ -490,7 +490,7 @@ static inline id myc_exp_split(
 #define EXP_SECTION_RESOLUTION 1024
 #define MIN_SECTION_COUNT 8
 #define MIN_SECTION_RESOLUTION 4
-static inline void myc_exp_cohort_and_inner(
+static inline void acy_exp_cohort_and_inner(
   id outer,
   double shape,
   id cohort_size,
@@ -508,8 +508,8 @@ static inline void myc_exp_cohort_and_inner(
     section_count = cohort_size / resolution;
   }
 
-  id strict_cohort = myc_cohort(outer, cohort_size);
-  id strict_inner = myc_cohort_inner(outer, cohort_size);
+  id strict_cohort = acy_cohort(outer, cohort_size);
+  id strict_inner = acy_cohort_inner(outer, cohort_size);
 
 #ifdef DEBUG_COHORT
   fprintf(
@@ -532,12 +532,12 @@ static inline void myc_exp_cohort_and_inner(
   // Note: ID coherency between cohorts is impossible if we also want a smooth
   // distribution of cohort members throughout ID space (which is much more
   // important)
-  id shuf = myc_cohort_shuffle(
+  id shuf = acy_cohort_shuffle(
     in_section,
     resolution,
     seed + section
   );
-  id split = myc_exp_split(shape, section_count, resolution, section);
+  id split = acy_exp_split(shape, section_count, resolution, section);
   id lower = shuf < split;
 
   // TODO: Type here?
@@ -551,7 +551,7 @@ static inline void myc_exp_cohort_and_inner(
   *r_inner = shuf + (section * resolution);
 }
 
-static inline id myc_exp_cohort_outer(
+static inline id acy_exp_cohort_outer(
   id cohort,
   id inner,
   double shape,
@@ -571,25 +571,25 @@ static inline id myc_exp_cohort_outer(
   id in_section = inner % resolution;
   id section = inner / resolution;
 
-  id split = myc_exp_split(shape, section_count, resolution, section);
+  id split = acy_exp_split(shape, section_count, resolution, section);
   id lower = in_section < split;
 
   int adjust = !lower * (-1 + 2*(shape > 0));
 
   id strict_cohort = cohort - adjust;
 
-  id unshuf = myc_rev_cohort_shuffle(in_section, resolution, seed + section);
+  id unshuf = acy_rev_cohort_shuffle(in_section, resolution, seed + section);
 
   id strict_inner = (section * resolution) + unshuf;
 
-  return myc_cohort_outer(strict_cohort, strict_inner, cohort_size);
+  return acy_cohort_outer(strict_cohort, strict_inner, cohort_size);
 }
 
-// Works like myc_exp_split but computes multiple layered splits, using the
+// Works like acy_exp_split but computes multiple layered splits, using the
 // additional layer and n_layers argument to select a layer. Note that section
 // indices (which) are relative to cohort -1, so a section index of
 // section_count is the 0th section of the current cohort.
-static inline id myc_multiexp_split(
+static inline id acy_multiexp_split(
   double shape,
   id section_count,
   id section_width,
@@ -609,7 +609,7 @@ static inline id myc_multiexp_split(
   if (which + adjust >= section_count) {
     return 0;
   }
-  return myc_exp_split(
+  return acy_exp_split(
     shape,
     section_count,
     section_width,
@@ -617,10 +617,10 @@ static inline id myc_multiexp_split(
   );
 }
 
-// Looks up which layer we're in using myc_multiexp_split. Note that the layer
+// Looks up which layer we're in using acy_multiexp_split. Note that the layer
 // ranges from 0 to n_layers*2+1, and the sections are indexed starting from
 // the beginning of the previous cohort.
-static inline id myc_multiexp_get_layer(
+static inline id acy_multiexp_get_layer(
   id section,
   id in_section,
   double shape,
@@ -632,7 +632,7 @@ static inline id myc_multiexp_get_layer(
   id last_split = 0;
   id split;
   do {
-    split = myc_multiexp_split(
+    split = acy_multiexp_split(
       shape,
       section_count,
       section_width,
@@ -651,7 +651,7 @@ static inline id myc_multiexp_get_layer(
 }
 
 // Computes the top and bottom limits of the given layer in the given section.
-static inline void myc_multiexp_limits(
+static inline void acy_multiexp_limits(
   double shape,
   id section_count,
   id section_width,
@@ -663,7 +663,7 @@ static inline void myc_multiexp_limits(
 ) {
   id layer_width = section_count / n_layers; // in sections
   id layer_origin_section = layer_width * layer;
-  id bottom = myc_multiexp_split(
+  id bottom = acy_multiexp_split(
     shape,
     section_count,
     section_width,
@@ -671,7 +671,7 @@ static inline void myc_multiexp_limits(
     layer - 1,
     n_layers
   );
-  id top = myc_multiexp_split(
+  id top = acy_multiexp_split(
     shape,
     section_count,
     section_width,
@@ -691,10 +691,10 @@ static inline void myc_multiexp_limits(
   *r_top = top;
 }
 
-// Works like myc_exp_cohort_and_inner but instead of slicing each cohort into
+// Works like acy_exp_cohort_and_inner but instead of slicing each cohort into
 // two parts, it slices each cohort into multiple parts, and distributes them
 // nearby. This can give a much smoother distribution.
-static inline void myc_multiexp_cohort_and_inner(
+static inline void acy_multiexp_cohort_and_inner(
   id outer,
   double shape,
   id cohort_size,
@@ -715,7 +715,7 @@ static inline void myc_multiexp_cohort_and_inner(
 
   id strict_cohort;
   id strict_inner;
-  myc_cohort_and_inner(outer, cohort_size, &strict_cohort, &strict_inner);
+  acy_cohort_and_inner(outer, cohort_size, &strict_cohort, &strict_inner);
 
 #ifdef DEBUG_COHORT
   fprintf( stderr, "\nmultiexp_cohort::outer::%lu\n", outer);
@@ -734,14 +734,14 @@ static inline void myc_multiexp_cohort_and_inner(
 #endif
 
   // shuffle within super-cohort:
-  // id shuf = myc_cohort_shuffle(strict_inner, cohort_size, seed);
+  // id shuf = acy_cohort_shuffle(strict_inner, cohort_size, seed);
 
   // section information:
   id section = strict_inner / resolution;
   id full_section = section + section_count;
   id in_section = strict_inner % resolution;
 
-  id shuf = myc_cohort_shuffle(in_section, resolution, seed + section);
+  id shuf = acy_cohort_shuffle(in_section, resolution, seed + section);
 
 #ifdef DEBUG_COHORT
   fprintf(
@@ -754,7 +754,7 @@ static inline void myc_multiexp_cohort_and_inner(
 #endif
 
   // find layer:
-  id layer = myc_multiexp_get_layer(
+  id layer = acy_multiexp_get_layer(
     full_section,
     shuf,
     shape,
@@ -793,7 +793,7 @@ static inline void myc_multiexp_cohort_and_inner(
   *r_inner = strict_inner;
 }
 
-static inline id myc_multiexp_cohort_outer(
+static inline id acy_multiexp_cohort_outer(
   id cohort,
   id inner,
   double shape,
@@ -826,7 +826,7 @@ static inline id myc_multiexp_cohort_outer(
   id full_section = section + section_count;
   id in_section = inner % resolution;
 
-  id shuf = myc_cohort_shuffle(in_section, resolution, seed + section);
+  id shuf = acy_cohort_shuffle(in_section, resolution, seed + section);
 
 #ifdef DEBUG_COHORT
   fprintf(
@@ -839,7 +839,7 @@ static inline id myc_multiexp_cohort_outer(
 #endif
 
   // find layer:
-  id layer = myc_multiexp_get_layer(
+  id layer = acy_multiexp_get_layer(
     full_section,
     shuf,
     shape,
@@ -856,7 +856,7 @@ static inline id myc_multiexp_cohort_outer(
   id strict_cohort = (cohort - layer) / n_layers;
 
   // escape super-cohort:
-  id result = myc_cohort_outer(strict_cohort, inner, cohort_size);
+  id result = acy_cohort_outer(strict_cohort, inner, cohort_size);
 
 #ifdef DEBUG_COHORT
   fprintf(
