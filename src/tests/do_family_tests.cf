@@ -7,6 +7,16 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
+// Setup
+mkdir(
+  "test/family",
+  S_IRUSR | S_IWUSR | S_IXUSR
+| S_IRGRP | S_IXGRP
+| S_IROTH | S_IXOTH
+);
+// TODO: Check return value?
+
+// Tests
 acy_unit_test("mothers_&_children", &acy_test_mothers);
 
 acy_unit_test(

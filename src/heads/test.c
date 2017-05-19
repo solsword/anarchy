@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h> // for permissions
 
 #include "tests/unit_tests.cf"
 #include "tests/cohort_tests.cf"
@@ -26,6 +27,16 @@ void acy_unit_test(char const * const name, int (*test)(void)) {
 }
 
 int main(int argc, char** argv) {
+
+  fprintf(stdout, "Creating test directories...\n");
+
+  mkdir(
+    "test",
+    S_IRUSR | S_IWUSR | S_IXUSR
+  | S_IRGRP | S_IXGRP
+  | S_IROTH | S_IXOTH
+  );
+  // TODO: Check errno for non-EEXIST value?
 
   fprintf(stdout, "Testing...\n");
 

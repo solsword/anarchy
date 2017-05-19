@@ -1014,6 +1014,183 @@ int acy_test_multiexp_cohort_sections_visual() {
   return 0;
 }
 
+int acy_test_count_multiexp_cohorts() {
+  id i;
+  id cohort_size = 1037;
+  id cohort_layers = 4;
+  id cohort_seed = 10920192831;
+  float shape = 50;
+  id mxc, mxi;
+  id possible_layers = (cohort_layers * 3 + 1);
+  id cohort_counts[possible_layers];
+  id inner_counts[cohort_size * possible_layers];
+  // zero out stuff:
+  for (i = 0; i < possible_layers; ++i) {
+    cohort_counts[i] = 0;
+    for (id j = 0; j < cohort_size; ++j) {
+      inner_counts[i*cohort_size + j] = 0;
+    }
+  }
+  // count cohorts & indices seen across two cohorts (should fully capture
+  // cohorts 5/6/7 → 1/2/3 when using 4 layers)
+  for (i = 0; i < cohort_size*2; ++i) {
+    acy_multiexp_cohort_and_inner(
+      i,
+      shape,
+      cohort_size,
+      cohort_layers,
+      cohort_seed,
+      &mxc,
+      &mxi
+    );
+    if (mxc >= possible_layers) {
+      fprintf(
+        stderr,
+        "\nMultiexp cohort out-of-bounds while counting: %lu/%lu\n",
+        mxc,
+        possible_layers
+      );
+      return i+1;
+    }
+    cohort_counts[mxc] += 1;
+    if (mxi >= cohort_size) {
+      fprintf(
+        stderr,
+        "\nMultiexp inner out-of-bounds while counting: %lu/%lu\n",
+        mxi,
+        cohort_size
+      );
+      continue;
+      return i+1;
+    }
+    inner_counts[mxc * cohort_size + mxi] += 1;
+  }
+  // print totals:
+  fprintf(stdout, "\nMultiexponential cohort observations:\n");
+  for (i = 0; i < possible_layers; ++i) {
+    fprintf(stdout, " %3lu", i);
+  }
+  fputc('\n', stdout);
+  for (i = 0; i < possible_layers; ++i) {
+    fprintf(stdout, " %3lu", cohort_counts[i]);
+  }
+  fputc('\n', stdout);
+
+  fprintf(stdout, "\nMultiexponential inner observations:\n   ");
+  for (i = 0; i < (80/3)-1; ++i) {
+    fprintf(stdout, " %2lu", i);
+  }
+  fputc('\n', stdout);
+  for (i = 0; i < possible_layers; ++i) {
+    fprintf(stdout, "%-2lu:", i);
+    for (id j = 0; j < (80/3)-1; ++j) {
+      fprintf(stdout, " %2lu", inner_counts[i*cohort_size+j]);
+    }
+    fputc('\n', stdout);
+  }
+  fputc('\n', stdout);
+  // limits on totals:
+  for (i = 0; i < possible_layers; ++i) {
+    /*
+     * TODO: Limits on cohort counts?
+    if (cohort_counts[i] != cohort_size) {
+      fprintf(
+        stderr, 
+        "\nMultiexp cohort counting error: cohort %lu found %lu/%lu times.\n",
+        i, cohort_counts[i], cohort_size
+      );
+      return i+1;
+    }
+    */
+    for (id j = 0; j < cohort_size; ++j) {
+      if (inner_counts[i*cohort_size + j] > 1) {
+        fprintf(
+          stderr, 
+          "\nMultiexp inner over-count error: "
+            "inner %lu in cohort %lu found %lu/1 times.\n",
+          j, i, inner_counts[i*cohort_size + j]
+        );
+        return i+1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+int acy_test_multiexp_baling() {
+  id i;
+  id cohort_size = 1037;
+  id cohort_layers = 4;
+  id cohort_seed = 10920192831;
+  float shape = 50;
+  id mxc, mxi;
+  // Test baling across an entire cohort:
+  for (i = 0; i < cohort_size; ++i) {
+    acy_multiexp_cohort_and_inner(
+      i,
+      shape,
+      cohort_size,
+      cohort_layers,
+      cohort_seed,
+      &mxc,
+      &mxi
+    );
+    id section_count, section_width, leftovers;
+    acy_get_section_info(
+      cohort_size,
+      &section_count,
+      &section_width,
+      &leftovers
+    );
+    // Get the baled index:
+    id section = mxi / section_width;
+    id within_section = mxi % section_width;
+    id layer = mxc % cohort_layers;
+    id baled = acy_multiexp_cohort_bale(
+      section,
+      within_section,
+      shape,
+      cohort_size,
+      cohort_layers,
+      layer
+    );
+    // Reverse it:
+    id section_result, within_section_result;
+    acy_rev_multiexp_cohort_bale(
+      baled,
+      shape,
+      cohort_size,
+      cohort_layers,
+      layer,
+      &section_result,
+      &within_section_result
+    );
+    // Check results:
+    if (section != section_result) {
+      fprintf(
+        stderr,
+        "\nMultiexp baling fumbled the section: %lu → (%lu) → %lu\n",
+        section,
+        baled,
+        section_result
+      );
+      return i + 1;
+    }
+    if (within_section != within_section_result) {
+      fprintf(
+        stderr,
+        "\nMultiexp baling fumbled within section: %lu → (%lu) → %lu\n",
+        within_section,
+        baled,
+        within_section_result
+      );
+      return i + 1;
+    }
+  }
+  return 0;
+}
+
 int acy_test_cohort_shuffle_gnuplot() {
   id n_samples = 1000;
   id n_batches = 3;
@@ -1225,106 +1402,63 @@ int acy_test_multiexp_cohort_gnuplot() {
   return 0;
 }
 
-int acy_test_count_multiexp_cohorts() {
-  id i;
-  id cohort_size = 1037;
+int acy_test_multiexp_generations_gnuplot() {
+  id n_samples = 100;
+  id n_batches = 4;
+  double cohort_shape = 30.0;
+  id cohort_size = 1000;
+  id stride = cohort_size / n_samples;
   id cohort_layers = 4;
-  id cohort_seed = 10920192831;
-  float shape = 50;
-  id mxc, mxi;
-  id possible_layers = (cohort_layers * 3 + 1);
-  id cohort_counts[possible_layers];
-  id inner_counts[cohort_size * possible_layers];
-  // zero out stuff:
-  for (i = 0; i < possible_layers; ++i) {
-    cohort_counts[i] = 0;
-    for (id j = 0; j < cohort_size; ++j) {
-      inner_counts[i*cohort_size + j] = 0;
-    }
-  }
-  // count cohorts & indices seen across two cohorts (should fully capture
-  // cohorts 5/6/7 → 1/2/3 when using 4 layers)
-  for (i = 0; i < cohort_size*2; ++i) {
-    acy_multiexp_cohort_and_inner(
-      i,
-      shape,
-      cohort_size,
-      cohort_layers,
-      cohort_seed,
-      &mxc,
-      &mxi
-    );
-    if (mxc >= possible_layers) {
-      fprintf(
-        stderr,
-        "\nMultiexp cohort out-of-bounds while counting: %lu/%lu\n",
-        mxc,
-        possible_layers
-      );
-      return i+1;
-    }
-    cohort_counts[mxc] += 1;
-    if (mxi >= cohort_size) {
-      fprintf(
-        stderr,
-        "\nMultiexp inner out-of-bounds while counting: %lu/%lu\n",
-        mxi,
-        cohort_size
-      );
-      continue;
-      return i+1;
-    }
-    inner_counts[mxc * cohort_size + mxi] += 1;
-  }
-  // print totals:
-  fprintf(stdout, "\nMultiexponential cohort observations:\n");
-  for (i = 0; i < possible_layers; ++i) {
-    fprintf(stdout, " %3lu", i);
-  }
-  fputc('\n', stdout);
-  for (i = 0; i < possible_layers; ++i) {
-    fprintf(stdout, " %3lu", cohort_counts[i]);
-  }
-  fputc('\n', stdout);
+  id cohort_seed;
+  id parent, cohort, child;
 
-  fprintf(stdout, "\nMultiexponential inner observations:\n   ");
-  for (i = 0; i < (80/3)-1; ++i) {
-    fprintf(stdout, " %2lu", i);
-  }
-  fputc('\n', stdout);
-  for (i = 0; i < possible_layers; ++i) {
-    fprintf(stdout, "%-2lu:", i);
-    for (id j = 0; j < (80/3)-1; ++j) {
-      fprintf(stdout, " %2lu", inner_counts[i*cohort_size+j]);
-    }
-    fputc('\n', stdout);
-  }
-  fputc('\n', stdout);
-  // limits on totals:
-  for (i = 0; i < possible_layers; ++i) {
-    /*
-     * TODO: Limits on cohort counts?
-    if (cohort_counts[i] != cohort_size) {
-      fprintf(
-        stderr, 
-        "\nMultiexp cohort counting error: cohort %lu found %lu/%lu times.\n",
-        i, cohort_counts[i], cohort_size
+  char* scriptfile = "test/cohort/multiexp-data.gpt";
+  FILE *fout = fopen(scriptfile, "w");
+  fprintf(
+    fout,
+    "#!/usr/bin/env gnuplot\n"
+    "# multiexp-data.gpt\n"
+    "# gnuplot script for plotting multiexp-data.dat\n"
+    "set term png\n"
+    "set output \"multiexp-data.png\"\n"
+    "set key off\n"
+    "set title \"Parent/Child IDs\"\n"
+    "set xlabel \"ID\"\n"
+    "set ylabel \"Generation\"\n"
+    "set yrange [0:3]\n"
+    "datafile = 'multiexp-data.dat'\n"
+    "stats datafile\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
+    "quit\n"
+  );
+  fclose(fout);
+  chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
+  fout = fopen("test/cohort/multiexp-data.dat", "w");
+  fprintf(fout, "# ID Generation\n");
+  id increment = cohort_size * 2;
+  for (
+    id start = 10000;
+    start < 10000 + increment * n_batches;
+    start += increment
+  ) {
+    cohort_seed = acy_prng(start, start + 4654681615348494);
+    fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, cohort_seed);
+    for (parent = start; parent < start + cohort_size; parent += stride) {
+      acy_multiexp_cohort_and_inner(
+        parent,
+        cohort_shape,
+        cohort_size,
+        cohort_layers,
+        cohort_seed,
+        &cohort,
+        &child
       );
-      return i+1;
-    }
-    */
-    for (id j = 0; j < cohort_size; ++j) {
-      if (inner_counts[i*cohort_size + j] > 1) {
-        fprintf(
-          stderr, 
-          "\nMultiexp inner over-count error: "
-            "inner %lu in cohort %lu found %lu/1 times.\n",
-          j, i, inner_counts[i*cohort_size + j]
-        );
-        return i+1;
-      }
+      fprintf(fout, "%lu 2\n", parent);
+      fprintf(fout, "%lu 1.5\n", cohort * cohort_size / cohort_layers + child);
+      fprintf(fout, "%lu 1\n", cohort * cohort_size + child);
     }
   }
-
+  fclose(fout);
   return 0;
 }

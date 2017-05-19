@@ -7,6 +7,16 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
+// Setup:
+mkdir(
+  "test/select",
+  S_IRUSR | S_IWUSR | S_IXUSR
+| S_IRGRP | S_IXGRP
+| S_IROTH | S_IXOTH
+);
+// TODO: Check return value?
+
+// Tests:
 acy_unit_test("select_nth/parent", &acy_test_parent_child_selection);
 
 acy_unit_test("select_nth/parent_odd", &acy_test_odd_parent_child_selection);

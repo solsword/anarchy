@@ -484,12 +484,34 @@ static inline id acy_exp_split(
   //return (id) (section_width * exp(-(which/(double)section_count)*-log(shape)));
 }
 
-// Divides a cohort into sections and then sends proportionally more items from
-// each section to the next cohort, forming cohorts with round asymptotic
-// bottoms and long tail tops (or vice versa if shape < 0; see exp_split above).
+// Computes the section count, section width, and leftovers for a cohort of the
+// given size.
 #define EXP_SECTION_RESOLUTION 1024
 #define MIN_SECTION_COUNT 8
 #define MIN_SECTION_RESOLUTION 4
+static inline void acy_get_section_info(
+  id cohort_size,
+  id *r_section_count,
+  id *r_section_width,
+  id *r_leftovers
+) {
+  *r_section_width = EXP_SECTION_RESOLUTION;
+  *r_section_count = cohort_size / *r_section_width;
+  if (*r_section_count < MIN_SECTION_COUNT) {
+    *r_section_width = cohort_size / MIN_SECTION_COUNT;
+    if (*r_section_width < MIN_SECTION_RESOLUTION) {
+      *r_section_width = MIN_SECTION_RESOLUTION;
+    }
+    *r_section_count = cohort_size / *r_section_width;
+  }
+  *r_leftovers = cohort_size - (*r_section_count * *r_section_width);
+}
+
+// Divides a cohort into sections and then sends proportionally more items from
+// each section to the next cohort, forming cohorts with round asymptotic
+// bottoms and long tail tops (or vice versa if shape < 1; see exp_split above).
+// See also acy_multiexp_cohort_and_inner below, which gives nicer
+// distributions.
 static inline void acy_exp_cohort_and_inner(
   id outer,
   double shape,
@@ -498,15 +520,13 @@ static inline void acy_exp_cohort_and_inner(
   id *r_cohort,
   id *r_inner
 ) {
-  id resolution = EXP_SECTION_RESOLUTION;
-  id section_count = cohort_size / resolution;
-  if (section_count < MIN_SECTION_COUNT) {
-    resolution = cohort_size / MIN_SECTION_COUNT;
-    if (resolution < MIN_SECTION_RESOLUTION) {
-      resolution = MIN_SECTION_RESOLUTION;
-    }
-    section_count = cohort_size / resolution;
-  }
+  id section_count, section_width, leftovers;
+  acy_get_section_info(
+    cohort_size,
+    &section_count,
+    &section_width,
+    &leftovers
+  );
 
   id strict_cohort = acy_cohort(outer, cohort_size);
   id strict_inner = acy_cohort_inner(outer, cohort_size);
@@ -527,17 +547,17 @@ static inline void acy_exp_cohort_and_inner(
   );
 #endif
 
-  id section = strict_inner / resolution;
-  id in_section = strict_inner % resolution;
+  id section = strict_inner / section_width;
+  id in_section = strict_inner % section_width;
   // Note: ID coherency between cohorts is impossible if we also want a smooth
   // distribution of cohort members throughout ID space (which is much more
   // important)
   id shuf = acy_cohort_shuffle(
     in_section,
-    resolution,
+    section_width,
     seed + section
   );
-  id split = acy_exp_split(shape, section_count, resolution, section);
+  id split = acy_exp_split(shape, section_count, section_width, section);
   id lower = shuf < split;
 
   // TODO: Type here?
@@ -548,7 +568,7 @@ static inline void acy_exp_cohort_and_inner(
 #endif
 
   *r_cohort = strict_cohort + adjust;
-  *r_inner = shuf + (section * resolution);
+  *r_inner = shuf + (section * section_width);
 }
 
 static inline id acy_exp_cohort_outer(
@@ -558,29 +578,27 @@ static inline id acy_exp_cohort_outer(
   id cohort_size,
   id seed
 ) {
-  id resolution = EXP_SECTION_RESOLUTION;
-  id section_count = cohort_size / resolution;
-  if (section_count < MIN_SECTION_COUNT) {
-    resolution = cohort_size / MIN_SECTION_COUNT;
-    if (resolution < MIN_SECTION_RESOLUTION) {
-      resolution = MIN_SECTION_RESOLUTION;
-    }
-    section_count = cohort_size / resolution;
-  }
+  id section_count, section_width, leftovers;
+  acy_get_section_info(
+    cohort_size,
+    &section_count,
+    &section_width,
+    &leftovers
+  );
 
-  id in_section = inner % resolution;
-  id section = inner / resolution;
+  id in_section = inner % section_width;
+  id section = inner / section_width;
 
-  id split = acy_exp_split(shape, section_count, resolution, section);
+  id split = acy_exp_split(shape, section_count, section_width, section);
   id lower = in_section < split;
 
   int adjust = !lower * (-1 + 2*(shape > 0));
 
   id strict_cohort = cohort - adjust;
 
-  id unshuf = acy_rev_cohort_shuffle(in_section, resolution, seed + section);
+  id unshuf = acy_rev_cohort_shuffle(in_section, section_width, seed + section);
 
-  id strict_inner = (section * resolution) + unshuf;
+  id strict_inner = (section * section_width) + unshuf;
 
   return acy_cohort_outer(strict_cohort, strict_inner, cohort_size);
 }
@@ -691,6 +709,178 @@ static inline void acy_multiexp_limits(
   *r_top = top;
 }
 
+// Computes the maximum number of items that could be assigned to a single
+// cohort from a given section.
+static inline id acy_multiexp_max_per_section(
+  double shape,
+  id section_count,
+  id section_width,
+  id n_layers
+) {
+  id lower, upper;
+  // Find position/cohort of maximum width:
+  id layer_width = section_count / n_layers; // in sections
+  id section = section_count + layer_width - 1;
+  id layer = n_layers + 1;
+  // Compute limits & return:
+  acy_multiexp_limits(
+    shape,
+    section_count,
+    section_width,
+    section,
+    layer,
+    n_layers,
+    &lower,
+    &upper
+  );
+  return upper - lower;
+}
+
+// Takes an item from an exponential section sliced into n_layers layers and
+// returns a unique-within-cohort index between 0 and cohort_size / n_layers.
+// Reversible, so it can be used for cohort correction. Only works with sliced
+// indices because it depends on slicing effects to achieve compression.
+static inline id acy_multiexp_cohort_bale(
+  id section,
+  id within_section,
+  double shape,
+  id cohort_size,
+  id n_layers,
+  id layer
+) {
+  id section_count, section_width, leftovers;
+  acy_get_section_info(
+    cohort_size,
+    &section_count,
+    &section_width,
+    &leftovers
+  );
+  if (n_layers == 1) {
+    // No baling necessary
+    return section * section_width + within_section;
+  }
+
+  id baled_section = section;
+  id order = 0;
+  if (section >= section_count / n_layers) {
+    baled_section = (section_count - section) / (n_layers - 1);
+    order = 1 + ((section_count - section) % (n_layers - 1));
+  }
+  if (order == 0) {
+    return baled_section * section_width + within_section;
+  }
+  id lower, upper;
+  acy_multiexp_limits(
+    shape,
+    section_count,
+    section_width,
+    section,
+    layer,
+    n_layers,
+    &lower,
+    &upper
+  );
+  id result = upper - lower;
+  // TODO: Will things really fit!?!
+  for (id i = 1; i < order; ++i) {
+    acy_multiexp_limits(
+      shape,
+      section_count,
+      section_width,
+      section_count - (section * (n_layers - 1) + i),
+      layer,
+      n_layers,
+      &lower,
+      &upper
+    );
+    result += upper - lower;
+  }
+#ifdef DEBUG_COHORT
+  if (result + within_section >= section_width) {
+    fprintf(
+      stderr,
+      "Error: baling result exceeds section width: %lu/%lu\n",
+      result + within_section,
+      section_width
+    );
+  }
+#endif
+  return result + within_section;
+}
+
+static inline void acy_rev_multiexp_cohort_bale(
+  id baled,
+  double shape,
+  id cohort_size,
+  id n_layers,
+  id layer,
+  id *r_section,
+  id *r_within_section
+) {
+  id section_count, section_width, leftovers;
+  acy_get_section_info(
+    cohort_size,
+    &section_count,
+    &section_width,
+    &leftovers
+  );
+  if (n_layers == 1) {
+    // No unbaling necessary
+    *r_section = baled / section_width;
+    *r_within_section = baled % section_width;
+    return;
+  }
+  id initial_guess = baled / section_width;
+  id section_guess = initial_guess;
+  id within_guess = baled % section_width;
+  id lower, upper;
+  acy_multiexp_limits(
+    shape,
+    section_count,
+    section_width,
+    section_guess,
+    layer,
+    n_layers,
+    &lower,
+    &upper
+  );
+  id slice = upper - lower;
+  id i = 1;
+  while (within_guess >= slice) {
+    // Reduce our guess according to the current slice size:
+    within_guess -= slice;
+    // Figure out the next section to check:
+    section_guess = section_count - (initial_guess * (n_layers - 1) + i),
+    i += 1;
+    // Compute a new slice size:
+    acy_multiexp_limits(
+      shape,
+      section_count,
+      section_width,
+      section_guess,
+      layer,
+      n_layers,
+      &lower,
+      &upper
+    );
+    slice = upper - lower;
+#ifdef DEBUG
+    // Check for overrun:
+    if (i >= n_layers) {
+      fprintf(
+        stderr,
+        "Error: unbaling search exceeded section limit: %lu/%lu\n",
+        i,
+        n_layers
+      );
+      break;
+    }
+#endif
+  }
+  *r_section = section_guess;
+  *r_within_section = within_guess;
+}
+
 // Works like acy_exp_cohort_and_inner but instead of slicing each cohort into
 // two parts, it slices each cohort into multiple parts, and distributes them
 // nearby. This can give a much smoother distribution.
@@ -703,15 +893,13 @@ static inline void acy_multiexp_cohort_and_inner(
   id *r_cohort,
   id *r_inner
 ) {
-  id resolution = EXP_SECTION_RESOLUTION;
-  id section_count = cohort_size / resolution;
-  if (section_count < MIN_SECTION_COUNT) {
-    resolution = cohort_size / MIN_SECTION_COUNT;
-    if (resolution < MIN_SECTION_RESOLUTION) {
-      resolution = MIN_SECTION_RESOLUTION;
-    }
-    section_count = cohort_size / resolution;
-  }
+  id section_count, section_width, leftovers;
+  acy_get_section_info(
+    cohort_size,
+    &section_count,
+    &section_width,
+    &leftovers
+  );
 
   id strict_cohort;
   id strict_inner;
@@ -737,11 +925,11 @@ static inline void acy_multiexp_cohort_and_inner(
   // id shuf = acy_cohort_shuffle(strict_inner, cohort_size, seed);
 
   // section information:
-  id section = strict_inner / resolution;
+  id section = strict_inner / section_width;
   id full_section = section + section_count;
-  id in_section = strict_inner % resolution;
+  id in_section = strict_inner % section_width;
 
-  id shuf = acy_cohort_shuffle(in_section, resolution, seed + section);
+  id shuf = acy_cohort_shuffle(in_section, section_width, seed + section);
 
 #ifdef DEBUG_COHORT
   fprintf(
@@ -759,16 +947,16 @@ static inline void acy_multiexp_cohort_and_inner(
     shuf,
     shape,
     section_count,
-    resolution,
+    section_width,
     n_layers
   );
 
 #ifdef DEBUG_COHORT
   fprintf(
     stderr,
-    "multiexp_cohort::sections/resolution::%lu/%lu\n",
+    "multiexp_cohort::sections/section_width::%lu/%lu\n",
     section_count,
-    resolution
+    section_width
   );
   fprintf(stderr, "multiexp_cohort::layer::%lu\n", layer);
 #endif
@@ -801,15 +989,13 @@ static inline id acy_multiexp_cohort_outer(
   id n_layers,
   id seed
 ) {
-  id resolution = EXP_SECTION_RESOLUTION;
-  id section_count = cohort_size / resolution;
-  if (section_count < MIN_SECTION_COUNT) {
-    resolution = cohort_size / MIN_SECTION_COUNT;
-    if (resolution < MIN_SECTION_RESOLUTION) {
-      resolution = MIN_SECTION_RESOLUTION;
-    }
-    section_count = cohort_size / resolution;
-  }
+  id section_count, section_width, leftovers;
+  acy_get_section_info(
+    cohort_size,
+    &section_count,
+    &section_width,
+    &leftovers
+  );
 
 #ifdef DEBUG_COHORT
   fprintf(stderr, "\nmultiexp_outer::cohort/inner::%lu/%lu\n", cohort, inner);
@@ -822,11 +1008,11 @@ static inline id acy_multiexp_cohort_outer(
 #endif
 
   // section information:
-  id section = inner / resolution;
+  id section = inner / section_width;
   id full_section = section + section_count;
-  id in_section = inner % resolution;
+  id in_section = inner % section_width;
 
-  id shuf = acy_cohort_shuffle(in_section, resolution, seed + section);
+  id shuf = acy_cohort_shuffle(in_section, section_width, seed + section);
 
 #ifdef DEBUG_COHORT
   fprintf(
@@ -844,7 +1030,7 @@ static inline id acy_multiexp_cohort_outer(
     shuf,
     shape,
     section_count,
-    resolution,
+    section_width,
     n_layers
   );
 

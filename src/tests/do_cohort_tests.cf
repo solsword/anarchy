@@ -7,6 +7,17 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
+// Setup
+mkdir(
+  "test/cohort",
+  S_IRUSR | S_IWUSR | S_IXUSR
+| S_IRGRP | S_IXGRP
+| S_IROTH | S_IXOTH
+);
+// TODO: Check return value?
+
+// Tests
+
 acy_unit_test("find_cohort", &acy_test_find_cohort);
 
 acy_unit_test("find_cohort_and_inner", &acy_test_find_cohort_and_inner);
@@ -56,6 +67,8 @@ acy_unit_test("test_exp_split_visual", &acy_test_exp_split_visual);
 
 acy_unit_test("test_multiexp_split_visual", &acy_test_multiexp_split_visual);
 
+acy_unit_test("test_multiexp_baling", &acy_test_multiexp_baling);
+
 acy_unit_test(
   "test_multiexp_split_visual_extended",
   &acy_test_multiexp_split_visual_extended
@@ -100,3 +113,8 @@ acy_unit_test("multiexp_cohort_counts", &acy_test_count_multiexp_cohorts);
 acy_unit_test("exp_cohort_gnuplot", &acy_test_exp_cohort_gnuplot);
 
 acy_unit_test("multiexp_cohort_gnuplot", &acy_test_multiexp_cohort_gnuplot);
+
+acy_unit_test(
+  "multiexp_generations_gnuplot",
+  &acy_test_multiexp_generations_gnuplot
+);
