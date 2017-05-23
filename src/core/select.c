@@ -159,6 +159,58 @@ id acy_select_nth_child(
   return child + max_arity;
 }
 
+id acy_count_select_children(
+  id parent,
+  id avg_arity,
+  id max_arity,
+  id seed
+) {
+  // Otherwise we have just one parent per child cohort
+  assert(avg_arity < (max_arity/2));
+  id cohort;
+  id inner;
+  id upper_cohort_size = max_arity / avg_arity; // at least 2, ideally 8+ or so
+
+  acy_mixed_cohort_and_inner(parent, upper_cohort_size, seed, &cohort, &inner);
+
+  id shuf = acy_cohort_shuffle(inner, upper_cohort_size, seed);
+
+  id from_upper = 0;
+  id to_upper = upper_cohort_size;
+  id parents_left = upper_cohort_size;
+  id half_remaining;
+
+  id from_lower = 0;
+  id to_lower = max_arity;
+  id children_left = max_arity;
+
+  id divide_at = cohort + seed;
+
+  while (parents_left > 1 && children_left > 0) {
+
+    half_remaining = parents_left/2;
+    divide_at = acy_irrev_smooth_prng(
+      divide_at,
+      children_left,
+      acy_min(2, parents_left),
+      seed
+    );
+
+    if (shuf >= half_remaining) {
+      shuf -= half_remaining;
+      from_lower += divide_at;
+      from_upper += half_remaining;
+    } else {
+      to_lower -= (children_left - divide_at);
+      to_upper -= (parents_left - half_remaining);
+    }
+    parents_left = to_upper - from_upper;
+    children_left = to_lower - from_lower;
+  }
+
+  return children_left;
+}
+
 id acy_select_exp_earliest_possible_child(
   id parent,
   id avg_arity,
@@ -209,6 +261,7 @@ id acy_select_exp_child_cohort_start(
   return mega_cohort_size * (child / mega_cohort_size);
 
   /*
+   * TODO: Get rid of this?
   // Compute child cohort
   id child_cohort = child / lower_cohort_size;
 

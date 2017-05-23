@@ -669,6 +669,8 @@ static inline id acy_multiexp_get_layer(
 }
 
 // Computes the top and bottom limits of the given layer in the given section.
+// Uses full section indices, so add section_count to within-section indices
+// before passing to this function.
 static inline void acy_multiexp_limits(
   double shape,
   id section_count,
@@ -738,8 +740,10 @@ static inline id acy_multiexp_max_per_section(
 
 // Takes an item from an exponential section sliced into n_layers layers and
 // returns a unique-within-cohort index between 0 and cohort_size / n_layers.
-// Reversible, so it can be used for cohort correction. Only works with sliced
-// indices because it depends on slicing effects to achieve compression.
+// Requires a within-cohort section index, not a full index. Reversible, so it
+// can be used for cohort correction. Only works with sliced indices because it
+// depends on slicing effects to achieve compression.
+// TODO: Fix and/or dismantle baling!
 static inline id acy_multiexp_cohort_bale(
   id section,
   id within_section,
@@ -759,14 +763,47 @@ static inline id acy_multiexp_cohort_bale(
     // No baling necessary
     return section * section_width + within_section;
   }
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "\nmultiexp_baling::section/within::%lu/%lu\n",
+    section,
+    within_section
+  );
+  fprintf(
+    stderr,
+    "multiexp_baling::layer/count/width::%lu/%lu/%lu\n",
+    layer,
+    section_count,
+    section_width
+  );
+#endif
 
   id baled_section = section;
   id order = 0;
+  id beyond = 0;
   if (section >= section_count / n_layers) {
-    baled_section = (section_count - section) / (n_layers - 1);
-    order = 1 + ((section_count - section) % (n_layers - 1));
+    beyond = section - (section_count / n_layers);
+    baled_section = beyond / (n_layers - 1);
+    order = 1 + (beyond % (n_layers - 1));
   }
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_baling::baled/beyond/order::%lu/%lu/%lu\n",
+    baled_section,
+    beyond,
+    order
+  );
+#endif
   if (order == 0) {
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_baling::early_final::%lu\n\n",
+    baled_section * section_width + within_section
+  );
+#endif
     return baled_section * section_width + within_section;
   }
   id lower, upper;
@@ -774,38 +811,52 @@ static inline id acy_multiexp_cohort_bale(
     shape,
     section_count,
     section_width,
-    section,
+    section_count + baled_section,
     layer,
     n_layers,
     &lower,
     &upper
   );
-  id result = upper - lower;
   // TODO: Will things really fit!?!
-  for (id i = 1; i < order; ++i) {
+  beyond = baled_section * (n_layers - 1) + (section_count / n_layers);
+  for (id i = 0; i < order; ++i) {
+#ifdef DEBUG_COHORT
+    fprintf(
+      stderr,
+      "multiexp_baling::here/size/result::%lu/%lu/%lu\n",
+      beyond + i,
+      upper - lower,
+      within_section
+    );
+#endif
+    within_section += upper - lower;
     acy_multiexp_limits(
       shape,
       section_count,
       section_width,
-      section_count - (section * (n_layers - 1) + i),
+      section_count + beyond + i,
       layer,
       n_layers,
       &lower,
       &upper
     );
-    result += upper - lower;
   }
 #ifdef DEBUG_COHORT
-  if (result + within_section >= section_width) {
+  if (within_section >= section_width) {
     fprintf(
       stderr,
       "Error: baling result exceeds section width: %lu/%lu\n",
-      result + within_section,
+      within_section,
       section_width
     );
   }
+  fprintf(
+    stderr,
+    "multiexp_baling::final::%lu\n\n",
+    within_section
+  );
 #endif
-  return result + within_section;
+  return within_section;
 }
 
 static inline void acy_rev_multiexp_cohort_bale(
@@ -824,6 +875,16 @@ static inline void acy_rev_multiexp_cohort_bale(
     &section_width,
     &leftovers
   );
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "\nmultiexp_unbaling::baled/layer/count/width::%lu/%lu/%lu/%lu\n",
+    baled,
+    layer,
+    section_count,
+    section_width
+  );
+#endif
   if (n_layers == 1) {
     // No unbaling necessary
     *r_section = baled / section_width;
@@ -833,50 +894,85 @@ static inline void acy_rev_multiexp_cohort_bale(
   id initial_guess = baled / section_width;
   id section_guess = initial_guess;
   id within_guess = baled % section_width;
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_unbaling::initial_guess/within::%lu/%lu\n",
+    initial_guess,
+    within_guess
+  );
+#endif
   id lower, upper;
   acy_multiexp_limits(
     shape,
     section_count,
     section_width,
-    section_guess,
+    section_count + section_guess,
     layer,
     n_layers,
     &lower,
     &upper
   );
   id slice = upper - lower;
-  id i = 1;
+  id beyond = (section_guess * (n_layers - 1)) + (section_count / n_layers);
+#ifdef DEBUG_COHORT
+    fprintf(
+      stderr,
+      "multiexp_unbaling::section_count/n_layers/beyond::%lu/%lu/%lu\n",
+      section_count,
+      n_layers,
+      beyond
+    );
+#endif
+  id i = 0;
   while (within_guess >= slice) {
+#ifdef DEBUG_COHORT
+    fprintf(
+      stderr,
+      "multiexp_unbaling::guess/slice/within::%lu/%lu/%lu\n",
+      section_guess,
+      slice,
+      within_guess
+    );
+#endif
     // Reduce our guess according to the current slice size:
     within_guess -= slice;
     // Figure out the next section to check:
-    section_guess = section_count - (initial_guess * (n_layers - 1) + i),
+    section_guess = beyond + i;
     i += 1;
     // Compute a new slice size:
     acy_multiexp_limits(
       shape,
       section_count,
       section_width,
-      section_guess,
+      section_count + section_guess,
       layer,
       n_layers,
       &lower,
       &upper
     );
     slice = upper - lower;
-#ifdef DEBUG
+#ifdef DEBUG_COHORT
     // Check for overrun:
-    if (i >= n_layers) {
+    if (i >= n_layers - 1) {
       fprintf(
         stderr,
         "Error: unbaling search exceeded section limit: %lu/%lu\n",
         i,
-        n_layers
+        n_layers - 1
       );
       break;
     }
 #endif
   }
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_unbaling::result/within::%lu/%lu\n\n",
+    section_guess,
+    within_guess
+  );
+#endif
   *r_section = section_guess;
   *r_within_section = within_guess;
 }

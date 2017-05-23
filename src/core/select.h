@@ -40,6 +40,15 @@ id acy_select_nth_child(
   id seed
 );
 
+// Given a parent, returns the number of children that that parent will have
+// using acy_select_nth_child. Returns 0 for out-of-bounds values.
+id acy_count_select_children(
+  id parent,
+  id avg_arity,
+  id max_arity,
+  id seed
+);
+
 // For exponential cohort selection (see below) returns the earliest possible
 // child of the given parent.
 id acy_select_exp_earliest_possible_child(

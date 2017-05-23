@@ -67,7 +67,8 @@ acy_unit_test("test_exp_split_visual", &acy_test_exp_split_visual);
 
 acy_unit_test("test_multiexp_split_visual", &acy_test_multiexp_split_visual);
 
-acy_unit_test("test_multiexp_baling", &acy_test_multiexp_baling);
+// TODO: Re-enable or remove this test.
+// acy_unit_test("test_multiexp_baling", &acy_test_multiexp_baling);
 
 acy_unit_test(
   "test_multiexp_split_visual_extended",

@@ -1143,13 +1143,34 @@ int acy_test_multiexp_baling() {
       &section_width,
       &leftovers
     );
-    // Get the baled index:
+    // Find the section and layer information:
     id section = mxi / section_width;
     id within_section = mxi % section_width;
-    id layer = mxc % cohort_layers;
+    id adj_within = acy_cohort_shuffle(
+      within_section,
+      section_width, 
+      cohort_seed + section
+    );
+    id layer = acy_multiexp_get_layer(
+      section + section_count, // full section
+      adj_within,
+      shape,
+      section_count,
+      section_width,
+      cohort_layers
+    );
+    id within_relative = adj_within - acy_multiexp_split(
+      shape,
+      section_count,
+      section_width,
+      section + section_count,
+      layer - 1,
+      cohort_layers
+    );
+    // Get the baled index:
     id baled = acy_multiexp_cohort_bale(
       section,
-      within_section,
+      within_relative,
       shape,
       cohort_size,
       cohort_layers,
@@ -1177,7 +1198,7 @@ int acy_test_multiexp_baling() {
       );
       return i + 1;
     }
-    if (within_section != within_section_result) {
+    if (within_relative != within_section_result) {
       fprintf(
         stderr,
         "\nMultiexp baling fumbled within section: %lu → (%lu) → %lu\n",

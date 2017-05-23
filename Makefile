@@ -10,7 +10,7 @@ SOURCES:=$(shell find src -path "src/heads" -prune -o -name "*.[ch]" -print)
 FRAGMENTS:=$(shell find src -path "src/heads" -prune -o -name "*.[ch]f" -print)
 ALL_SOURCES:=$(SOURCES) $(FRAGMENTS)
 HEADS:=$(shell find src/heads -name "*.c" -print)
-DEBUG_ALL:=-DDEBUG_SELECT -DDEBUG_COHORT
+DEBUG_ALL:=-DDEBUG_SELECT -DDEBUG_COHORT -DDEBUG_FAMILY
 
 SVGS:=$(shell find test -name "*.gv" | sed -e "s/\.gv$$/.svg/")
 PLOTS:=$(shell find test -name "*.gpt" | sed -e "s/\.gpt$$/.png/")
@@ -80,7 +80,7 @@ test: bin/test
 
 .PHONY: test_quiet
 test_quiet: bin/test
-	./bin/test | grep "\.\.\."
+	./bin/test | grep " \.\.\. "
 
 .PHONY: test_debug
 test_debug: bin/test_debug

@@ -34,6 +34,32 @@ extern acy_family_info const DEFAULT_FAMILY_INFO;
  * Inline Functions *
  ********************/
 
+// Functions to select the child-bearing/non-child-bearing half of a duo, using
+// either separated or non-separated IDs.
+static inline id acy_child_bearer(id non_normalized) {
+  return 2 * (non_normalized / 2);
+}
+
+static inline id acy_sep_child_bearer(id normalized) {
+  return 2 * normalized;
+}
+
+static inline id acy_non_child_bearer(id non_normalized) {
+  return 2 * (non_normalized / 2) + 1;
+}
+
+static inline id acy_sep_non_child_bearer(id normalized) {
+  return 2 * normalized + 1;
+}
+
+static inline int acy_separated(id person) {
+  return person / 2;
+}
+
+// Whether or not someone is a child-bearer.
+static inline int acy_is_child_bearer(id non_normalized) {
+  return non_normalized % 2 == 0;
+}
 
 /*************
  * Functions *
@@ -76,8 +102,36 @@ void acy_mother_and_index(
   id *r_index
 );
 
-// Returns the nth child of the given person. Returns NONE if that person
-// doesn't have that many children.
+// Returns the nth direct child of the given person. Returns NONE if that
+// person doesn't have that many direct children. Note that non-child-bearers
+// have no direct children (see acy_child below).
+id acy_direct_child(id person, id nth, acy_family_info const * const info);
+
+// Returns the number of direct children that the given person has. Note that
+// this function only takes into account children borne by this person, so
+// non-child-bearers don't have any direct children (see acy_num_children
+// below).
+id acy_num_direct_children(id person, acy_family_info const * const info);
+
+// For child-bearers, decides the number of partners that they have. For
+// non-child-bearers, counts partners.
+id acy_num_partners(id person, acy_family_info const * const info);
+
+// Returns the partner with which this person created their nth child. The
+// number of partners for each child-bearer is the same as the number of direct
+// children, but the number of partners for non-child-bearers varies
+// independently (although of course, the average must still be the same). Note
+// that it is impossible for a child-bearer to bear a child with another
+// child-bearer. This is a programming shortcut, but is apparently true enough
+// to-date even given modern medical technology.
+id acy_nth_partner(id person, id nth, acy_family_info const * const info);
+
+// Returns the nth child of the given person, including children borne by
+// partners.
 id acy_child(id person, id nth, acy_family_info const * const info);
+
+// Returns the true number of children a person has, including children borne
+// by partners.
+id acy_num_children(id person, acy_family_info const * const info);
 
 #endif // INCLUDE_FAMILY_H

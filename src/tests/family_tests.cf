@@ -16,7 +16,13 @@ int acy_test_mothers() {
   id valid_generations = 0;
   id parents[test_generations]; 
   id indices[test_generations];
-  for (id child = 781312757; child < 1288912891; child += 19842411) {
+  id n_samples = 100000;
+  id step = 918203813;
+  for (
+    id child = 44878132757;
+    child < 44878132757 + n_samples * step;
+    child += step
+  ) {
     valid_generations = 0;
     parents[0] = child;
     // find the parent:
@@ -36,7 +42,7 @@ int acy_test_mothers() {
       }
     }
     for (id i = 0; i < valid_generations - 1; ++i) {
-      if (acy_child(
+      if (acy_direct_child(
            parents[i+1],
            indices[i],
            &DEFAULT_FAMILY_INFO
@@ -49,7 +55,7 @@ int acy_test_mothers() {
           parents[i],
           parents[i+1], indices[i],
           parents[i+1], indices[i],
-          acy_child(
+          acy_direct_child(
             parents[i+1],
             indices[i],
             &DEFAULT_FAMILY_INFO
@@ -300,21 +306,30 @@ void acy_print_mothers_recursively(
   id depth_limit
 ) {
   id nth = 0;
-  id child;
-  id mbd, cbd;
+  id child, partner;
+  id mbd, pbd, cbd;
   while(1) {
-    child = acy_child(parent, nth, info);
+    child = acy_direct_child(parent, nth, info);
+    partner = acy_nth_partner(parent, nth, info);
     if (child == NONE) {
       break;
     }
+    if (child != NONE && !acy_is_child_bearer(parent)) {
+      fprintf(stderr, "BAD!\n");
+    }
     mbd = acy_birthdate(parent, info);
+    pbd = acy_birthdate(partner, info);
     cbd = acy_birthdate(child, info);
     fprintf(
       stream,
-      "  %lu -> %lu [ label=\"%d\" ];\n",
-      parent,
-      child,
-      ((int) cbd - (int) mbd) / (int) ONE_EARTH_YEAR
+      //"    %lu -> %lu [ dir=none, label=\"%d\" ];\n"
+      "    %lu -> %lu [ label=\"%d\" ];\n"
+      "    %lu -> %lu [ label=\"%d\", style=dotted ];\n",
+      //"    { rank=same; %lu; %lu; }\n",
+      //partner, parent, ((int) mbd - (int) pbd) / (int) ONE_EARTH_YEAR,
+      parent, child, ((int) cbd - (int) mbd) / (int) ONE_EARTH_YEAR,
+      partner, child, ((int) cbd - (int) pbd) / (int) ONE_EARTH_YEAR
+      //partner, parent
     );
     nth += 1;
     if (depth_limit > 0) {
@@ -345,14 +360,14 @@ int acy_test_mothers_tree_graphviz() {
     snprintf(filename, 1024, "test/family/mothers-graph-%lu.gv", seed);
     FILE *fout = fopen(filename, "w");
     // print edges
-    fprintf(fout, "digraph G {\n");
+    fprintf(fout, "digraph G {\n  rankdir=TB;\n  subgraph {\n");
     acy_print_mothers_recursively(
       fout,
       parent,
       tinfo,
       4 // stop at grandchildren of initial person
     );
-    fprintf(fout, "}\n");
+    fprintf(fout, "  }\n}\n");
     fclose(fout);
   }
 
