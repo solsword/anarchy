@@ -113,6 +113,20 @@ id acy_direct_child(id person, id nth, acy_family_info const * const info);
 // below).
 id acy_num_direct_children(id person, acy_family_info const * const info);
 
+// Returns the ID of the nth potential partner of a non-child-bearer (always
+// returns NONE for child-bearers, who don't have potential partners, just
+// actual partners). Each non-child-bearer has 4 * max_partners_per_mother
+// potential partners, many of whom aren't actual partners because they didn't
+// select that non-child-bearer as a partner. Via return parameters, this
+// returns the partner candidate and which child of its parent it would be.
+void acy_nth_potential_partner_and_index(
+  id person,
+  id nth,
+  acy_family_info const * const info,
+  id *r_partner,
+  id *r_nth
+);
+
 // For child-bearers, decides the number of partners that they have. For
 // non-child-bearers, counts partners.
 id acy_num_partners(id person, acy_family_info const * const info);
