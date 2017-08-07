@@ -511,7 +511,7 @@ static inline void acy_get_section_info(
 // each section to the next cohort, forming cohorts with round asymptotic
 // bottoms and long tail tops (or vice versa if shape < 1; see exp_split above).
 // See also acy_multiexp_cohort_and_inner below, which gives nicer
-// distributions.
+// distributions at the expense of inner ID completeness/continuity.
 static inline void acy_exp_cohort_and_inner(
   id outer,
   double shape,
@@ -738,245 +738,6 @@ static inline id acy_multiexp_max_per_section(
   return upper - lower;
 }
 
-// Takes an item from an exponential section sliced into n_layers layers and
-// returns a unique-within-cohort index between 0 and cohort_size / n_layers.
-// Requires a within-cohort section index, not a full index. Reversible, so it
-// can be used for cohort correction. Only works with sliced indices because it
-// depends on slicing effects to achieve compression.
-// TODO: Fix and/or dismantle baling!
-static inline id acy_multiexp_cohort_bale(
-  id section,
-  id within_section,
-  double shape,
-  id cohort_size,
-  id n_layers,
-  id layer
-) {
-  id section_count, section_width, leftovers;
-  acy_get_section_info(
-    cohort_size,
-    &section_count,
-    &section_width,
-    &leftovers
-  );
-  if (n_layers == 1) {
-    // No baling necessary
-    return section * section_width + within_section;
-  }
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "\nmultiexp_baling::section/within::%lu/%lu\n",
-    section,
-    within_section
-  );
-  fprintf(
-    stderr,
-    "multiexp_baling::layer/count/width::%lu/%lu/%lu\n",
-    layer,
-    section_count,
-    section_width
-  );
-#endif
-
-  id baled_section = section;
-  id order = 0;
-  id beyond = 0;
-  if (section >= section_count / n_layers) {
-    beyond = section - (section_count / n_layers);
-    baled_section = beyond / (n_layers - 1);
-    order = 1 + (beyond % (n_layers - 1));
-  }
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "multiexp_baling::baled/beyond/order::%lu/%lu/%lu\n",
-    baled_section,
-    beyond,
-    order
-  );
-#endif
-  if (order == 0) {
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "multiexp_baling::early_final::%lu\n\n",
-    baled_section * section_width + within_section
-  );
-#endif
-    return baled_section * section_width + within_section;
-  }
-  id lower, upper;
-  acy_multiexp_limits(
-    shape,
-    section_count,
-    section_width,
-    section_count + baled_section,
-    layer,
-    n_layers,
-    &lower,
-    &upper
-  );
-  // TODO: Will things really fit!?!
-  beyond = baled_section * (n_layers - 1) + (section_count / n_layers);
-  for (id i = 0; i < order; ++i) {
-#ifdef DEBUG_COHORT
-    fprintf(
-      stderr,
-      "multiexp_baling::here/size/result::%lu/%lu/%lu\n",
-      beyond + i,
-      upper - lower,
-      within_section
-    );
-#endif
-    within_section += upper - lower;
-    acy_multiexp_limits(
-      shape,
-      section_count,
-      section_width,
-      section_count + beyond + i,
-      layer,
-      n_layers,
-      &lower,
-      &upper
-    );
-  }
-#ifdef DEBUG_COHORT
-  if (within_section >= section_width) {
-    fprintf(
-      stderr,
-      "Error: baling result exceeds section width: %lu/%lu\n",
-      within_section,
-      section_width
-    );
-  }
-  fprintf(
-    stderr,
-    "multiexp_baling::final::%lu\n\n",
-    within_section
-  );
-#endif
-  return within_section;
-}
-
-static inline void acy_rev_multiexp_cohort_bale(
-  id baled,
-  double shape,
-  id cohort_size,
-  id n_layers,
-  id layer,
-  id *r_section,
-  id *r_within_section
-) {
-  id section_count, section_width, leftovers;
-  acy_get_section_info(
-    cohort_size,
-    &section_count,
-    &section_width,
-    &leftovers
-  );
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "\nmultiexp_unbaling::baled/layer/count/width::%lu/%lu/%lu/%lu\n",
-    baled,
-    layer,
-    section_count,
-    section_width
-  );
-#endif
-  if (n_layers == 1) {
-    // No unbaling necessary
-    *r_section = baled / section_width;
-    *r_within_section = baled % section_width;
-    return;
-  }
-  id initial_guess = baled / section_width;
-  id section_guess = initial_guess;
-  id within_guess = baled % section_width;
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "multiexp_unbaling::initial_guess/within::%lu/%lu\n",
-    initial_guess,
-    within_guess
-  );
-#endif
-  id lower, upper;
-  acy_multiexp_limits(
-    shape,
-    section_count,
-    section_width,
-    section_count + section_guess,
-    layer,
-    n_layers,
-    &lower,
-    &upper
-  );
-  id slice = upper - lower;
-  id beyond = (section_guess * (n_layers - 1)) + (section_count / n_layers);
-#ifdef DEBUG_COHORT
-    fprintf(
-      stderr,
-      "multiexp_unbaling::section_count/n_layers/beyond::%lu/%lu/%lu\n",
-      section_count,
-      n_layers,
-      beyond
-    );
-#endif
-  id i = 0;
-  while (within_guess >= slice) {
-#ifdef DEBUG_COHORT
-    fprintf(
-      stderr,
-      "multiexp_unbaling::guess/slice/within::%lu/%lu/%lu\n",
-      section_guess,
-      slice,
-      within_guess
-    );
-#endif
-    // Reduce our guess according to the current slice size:
-    within_guess -= slice;
-    // Figure out the next section to check:
-    section_guess = beyond + i;
-    i += 1;
-    // Compute a new slice size:
-    acy_multiexp_limits(
-      shape,
-      section_count,
-      section_width,
-      section_count + section_guess,
-      layer,
-      n_layers,
-      &lower,
-      &upper
-    );
-    slice = upper - lower;
-#ifdef DEBUG_COHORT
-    // Check for overrun:
-    if (i >= n_layers - 1) {
-      fprintf(
-        stderr,
-        "Error: unbaling search exceeded section limit: %lu/%lu\n",
-        i,
-        n_layers - 1
-      );
-      break;
-    }
-#endif
-  }
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "multiexp_unbaling::result/within::%lu/%lu\n\n",
-    section_guess,
-    within_guess
-  );
-#endif
-  *r_section = section_guess;
-  *r_within_section = within_guess;
-}
-
 // Works like acy_exp_cohort_and_inner but instead of slicing each cohort into
 // two parts, it slices each cohort into multiple parts, and distributes them
 // nearby. This can give a much smoother distribution.
@@ -984,6 +745,205 @@ static inline void acy_multiexp_cohort_and_inner(
   id outer,
   double shape,
   id cohort_size,
+  id n_layers,
+  id seed,
+  id *r_cohort,
+  id *r_inner
+) {
+  id section_count, section_width, leftovers;
+  acy_get_section_info(
+    cohort_size,
+    &section_count,
+    &section_width,
+    &leftovers
+  );
+
+  id strict_cohort;
+  id strict_inner;
+  acy_cohort_and_inner(outer, cohort_size, &strict_cohort, &strict_inner);
+
+#ifdef DEBUG_COHORT
+  fprintf( stderr, "\nmultiexp_cohort::outer::%lu\n", outer);
+  fprintf(
+    stderr,
+    "multiexp_cohort::shape/size::%.3f/%lu\n",
+    shape,
+    cohort_size
+  );
+  fprintf(
+    stderr,
+    "multiexp_cohort::strict_cohort/inner::%lu/%lu\n",
+    strict_cohort,
+    strict_inner
+  );
+#endif
+
+  // shuffle within super-cohort:
+  // id shuf = acy_cohort_shuffle(strict_inner, cohort_size, seed);
+
+  // section information:
+  id section = strict_inner / section_width;
+  id full_section = section + section_count;
+  id in_section = strict_inner % section_width;
+
+  id shuf = acy_cohort_shuffle(in_section, section_width, seed + section);
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_cohort::section/in_section/shuffled::%lu/%lu/%lu\n",
+    section,
+    in_section,
+    shuf
+  );
+#endif
+
+  // find layer:
+  id layer = acy_multiexp_get_layer(
+    full_section,
+    shuf,
+    shape,
+    section_count,
+    section_width,
+    n_layers
+  );
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_cohort::sections/section_width::%lu/%lu\n",
+    section_count,
+    section_width
+  );
+  fprintf(stderr, "multiexp_cohort::layer::%lu\n", layer);
+#endif
+
+  id adjusted_cohort = strict_cohort * n_layers + layer;
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_cohort::adjusted_cohort/shuffled_inner::%lu/%lu\n\n",
+    adjusted_cohort,
+    strict_inner
+  );
+#endif
+
+  if (adjusted_cohort < strict_cohort) { // overflow
+    *r_cohort = NONE;
+    *r_inner = NONE;
+    return;
+  }
+  *r_cohort = adjusted_cohort;
+  *r_inner = strict_inner;
+}
+
+static inline id acy_multiexp_cohort_outer(
+  id cohort,
+  id inner,
+  double shape,
+  id cohort_size,
+  id n_layers,
+  id seed
+) {
+  id section_count, section_width, leftovers;
+  acy_get_section_info(
+    cohort_size,
+    &section_count,
+    &section_width,
+    &leftovers
+  );
+
+#ifdef DEBUG_COHORT
+  fprintf(stderr, "\nmultiexp_outer::cohort/inner::%lu/%lu\n", cohort, inner);
+  fprintf(
+    stderr,
+    "multiexp_outer::shape/size::%.3f/%lu\n",
+    shape,
+    cohort_size
+  );
+#endif
+
+  // section information:
+  id section = inner / section_width;
+  id full_section = section + section_count;
+  id in_section = inner % section_width;
+
+  id shuf = acy_cohort_shuffle(in_section, section_width, seed + section);
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_outer::section/in_section/shuffled::%lu/%lu/%lu\n",
+    section,
+    in_section,
+    shuf
+  );
+#endif
+
+  // find layer:
+  id layer = acy_multiexp_get_layer(
+    full_section,
+    shuf,
+    shape,
+    section_count,
+    section_width,
+    n_layers
+  );
+
+#ifdef DEBUG_COHORT
+  fprintf(stderr, "multiexp_outer::layer::%lu\n", layer);
+#endif
+
+  // Back out the strict cohort and layer:
+  id strict_cohort = (cohort - layer) / n_layers;
+
+  // escape super-cohort:
+  id result = acy_cohort_outer(strict_cohort, inner, cohort_size);
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multiexp_outer::strict_cohort/inner/result::%lu/%lu/%lu\n\n",
+    strict_cohort,
+    inner,
+    result
+  );
+#endif
+
+  return result;
+}
+
+// Computes the sum from k=1 to n of (1 + k*shape), which folds down to:
+//
+//   (shape * (n - 1) + 2) * (shape / 2)
+//
+static inline id quadsum(id n, id shape) {
+  return ((shape * (n - 1) + 2) * n) / 2;
+}
+
+// For a given cohort shape and desired cohort size, computes the nearest
+// workable size for acy_multipoly_cohort_and_inner/acy_multipoly_cohort_outer
+// and returns (via return parameters) the computed size and the appropriate
+// base to use as an argument to get that size.
+static inline void acy_multipoly_nearest_cohort_size(
+  id cohort_shape
+  id cohort_size,
+  id *r_nearest,
+  id *r_base
+) {
+  // TODO: HERE!
+}
+
+// Works like acy_multiexp_cohort_and_inner but restricts possible cohort sizes
+// and uses a merely polynomial distribution to ensure inner cohort ID
+// completeness & continuity. See acy_multipoly_nearest_cohort_size above for
+// details on the cohort_size_base parameter.
+// TODO: Find a telescoping exponential sum!!
+static inline void acy_multipoly_cohort_and_inner(
+  id outer,
+  double shape,
+  id cohort_size_base,
   id n_layers,
   id seed,
   id *r_cohort,

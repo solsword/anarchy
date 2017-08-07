@@ -52,6 +52,8 @@ static inline id acy_sep_non_child_bearer(id normalized) {
   return 2 * normalized + 1;
 }
 
+// Takes a full person ID and returns the corresponding separated ID for child
+// bearer / non-child-bearer separation.
 static inline int acy_separated(id person) {
   return person / 2;
 }
@@ -118,7 +120,8 @@ id acy_num_direct_children(id person, acy_family_info const * const info);
 // actual partners). Each non-child-bearer has 4 * max_partners_per_mother
 // potential partners, many of whom aren't actual partners because they didn't
 // select that non-child-bearer as a partner. Via return parameters, this
-// returns the partner candidate and which child of its parent it would be.
+// returns the partner candidate and which partner of that candidate it would
+// be.
 void acy_nth_potential_partner_and_index(
   id person,
   id nth,

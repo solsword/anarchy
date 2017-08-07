@@ -2,7 +2,7 @@
  * @file: test.c
  *
  * @description: Runs unit tests from the src/tests folder. Add #includes here
- * for each .c file there.
+ * for each .cf file there.
  *
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
