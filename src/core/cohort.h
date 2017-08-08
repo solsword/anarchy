@@ -914,12 +914,81 @@ static inline id acy_multiexp_cohort_outer(
   return result;
 }
 
-// Computes the sum from k=1 to n of (1 + k*shape), which folds down to:
+// Computes the sum from k=1 to n of k*shape, which folds down to:
 //
-//   (shape * (n - 1) + 2) * (shape / 2)
+//   sum = shape/2 * n * (n + 1)
 //
-static inline id quadsum(id n, id shape) {
-  return ((shape * (n - 1) + 2) * n) / 2;
+static inline id acy_quadsum(id n, id shape) {
+  return (shape * n * (n + 1)) / 2;
+  // Note: Integer division by 2 here is fine (see proto/sum_formulae.py).
+}
+
+// Computes the inverse of the function above (technically, returns the
+// positive root of the quadratic, but we don't care about the negative one).
+// So given a sum, computes the iterations N that would result in that sum.
+// Rounds the result towards zero, so for inexact sums, returns an N that would
+// result in the next-lower possible sum, while adding one to the result will
+// be the next-higher sum.
+//
+// Solution:
+//   https://www.wolframalpha.com/input/?i=x+%3D+1%2F2+g+n+(n%2B1)+solve+for+n
+// 
+//   n = ( sqrt(g + 8x) - sqrt(g) ) / 2 sqrt(g)
+//   n = ( sqrt(g * (1 + 8x/g)) - sqrt(g) ) / 2 sqrt(g)
+//   n = ( sqrt(g) * sqrt(1 + 8x/g) - sqrt(g) ) / 2 sqrt(g)
+//   n = sqrt(g) * ( sqrt(1 + 8x/g) - 1 ) / 2 sqrt(g)
+//   n = ( sqrt(4 * (1/4 + 2x/g)) - 1 ) / 2
+//   n = ( sqrt(4) * sqrt(1/4 + 2x/g) - 2 * 1/2 ) / 2
+//   n = 2 * ( sqrt(1/4 + 2x/g) - 1/2 ) / 2
+//   n = sqrt(1/4 + 2x/g) - 1/2
+//
+static inline id acy_inv_quadsum(id sum, id shape) {
+  return (int) floor(sqrt(0.25 + 2 * sum / shape) - 0.5);
+  // Note: integer division of sum by shape should be okay here (see
+  // proto/sum_formulae.py).
+}
+
+// Take the equation spread = sum * acy_inv_quadsum(sum, shape) and  searches
+// for a sum that will result in the desired spread, returning both the sum and
+// the acy_inv_quadsum result for that sum (via the return parameters).
+//
+// The full equation isn't easily solved, but we start with an approximate
+// solution of sum = (spread * shape / 2)^(2/3) and explore from there.
+//
+// For spread values <= 1 it just returns 1, in which case depending on the
+// shape the actual spread may be larger than he desired spread, but that's
+// unavoidable.
+static inline void acy_inv_quadspread(
+  id spread,
+  id shape,
+  id *r_size,
+  id *r_base
+) {
+  id sum_approx = pow(
+    (2 * spread + 1) * shape / 2.0,
+    2.0/3.0
+  ) / pow(2, 2.0/3.0);
+
+  id base_approx = acy_inv_quadsum(sum_approx, shape);
+
+  if (sum_approx * base_approx > spread) {
+    // This case should be quite rare.
+    while (sum_approx * base_approx > spread && base_approx > 1) {
+      base_approx -= 1;
+      sum_approx = acy_quadsum(base_approx, shape);
+    }
+  } else {
+    // Hopefully the usual number of steps in this case is 1 or 2.
+    while (sum_approx * base_approx < spread) {
+      base_approx += 1;
+      sum_approx = acy_quadsum(base_approx, shape);
+    }
+    base_approx -= 1;
+    sum_approx = acy_quadsum(base_approx, shape);
+  }
+
+  *r_size = sum_approx;
+  *r_base = base_approx;
 }
 
 // For a given cohort shape and desired cohort size, computes the nearest
@@ -927,185 +996,236 @@ static inline id quadsum(id n, id shape) {
 // and returns (via return parameters) the computed size and the appropriate
 // base to use as an argument to get that size.
 static inline void acy_multipoly_nearest_cohort_size(
-  id cohort_shape
-  id cohort_size,
+  id cohort_shape,
+  id desired_size,
   id *r_nearest,
   id *r_base
 ) {
-  // TODO: HERE!
+  id lower = acy_inv_quadsum(desired_size, cohort_shape);
+  id lsize = acy_quadsum(lower, cohort_shape);
+  id usize = acy_quadsum(lower + 1, cohort_shape);
+  id ldiff = desired_size - lsize;
+  id udiff = usize - desired_size;
+  if (ldiff < udiff) {
+    *r_nearest = lsize;
+    *r_base = lower;
+  } else {
+    *r_nearest = usize;
+    *r_base = lower + 1;
+  }
+}
+
+// Works like acy_multipoly_nearest_cohort_size but always returns the
+// next-smaller size even if a larger size is closer to the desired size, so
+// that the result is guaranteed to be no larger than the desired size. To get
+// a size that's guaranteed to be larger than the desired size (but still as
+// close as possible), just add one to the base result here.
+static inline void acy_multipoly_smaller_cohort_size(
+  id cohort_shape,
+  id desired_size,
+  id *r_sufficient,
+  id *r_base
+) {
+  id lower = acy_inv_quadsum(desired_size, cohort_shape);
+  *r_sufficient = acy_quadsum(lower, cohort_shape);
+  *r_base = lower;
 }
 
 // Works like acy_multiexp_cohort_and_inner but restricts possible cohort sizes
 // and uses a merely polynomial distribution to ensure inner cohort ID
 // completeness & continuity. See acy_multipoly_nearest_cohort_size above for
-// details on the cohort_size_base parameter.
+// details on computing the cohort_size_base parameter, which indirectly
+// determines the cohort size. You can use acy_quadsum to determine the actual
+// cohort size yourself, but note that the members of the cohort are spread
+// over a region that's potentially as large as the cohort size times the
+// cohort size base, so if you want to control distribution rather than cohort
+// size, use acy_inv_quadspread.
+//
 // TODO: Find a telescoping exponential sum!!
+// TODO: Support negative shapes?
 static inline void acy_multipoly_cohort_and_inner(
   id outer,
-  double shape,
   id cohort_size_base,
-  id n_layers,
+  id cohort_shape,
   id seed,
   id *r_cohort,
   id *r_inner
 ) {
-  id section_count, section_width, leftovers;
-  acy_get_section_info(
-    cohort_size,
-    &section_count,
-    &section_width,
-    &leftovers
-  );
+  id cohort_size = acy_quadsum(cohort_size_base, cohort_shape);
+  id super_size = cohort_size * cohort_size_base;
 
-  id strict_cohort;
-  id strict_inner;
-  acy_cohort_and_inner(outer, cohort_size, &strict_cohort, &strict_inner);
+  id super_cohort;
+  id super_inner;
+  acy_cohort_and_inner(outer, super_size, &super_cohort, &super_inner);
 
 #ifdef DEBUG_COHORT
-  fprintf( stderr, "\nmultiexp_cohort::outer::%lu\n", outer);
+  fprintf( stderr, "\nmultipoly_cohort::outer::%lu\n", outer);
   fprintf(
     stderr,
-    "multiexp_cohort::shape/size::%.3f/%lu\n",
-    shape,
-    cohort_size
+    "multipoly_cohort::shape/base/size/super::%lu/%lu/%lu/%lu\n",
+    cohort_shape,
+    cohort_size_base,
+    cohort_size,
+    super_size
   );
   fprintf(
     stderr,
-    "multiexp_cohort::strict_cohort/inner::%lu/%lu\n",
-    strict_cohort,
-    strict_inner
+    "multipoly_cohort::super_cohort/inner::%lu/%lu\n",
+    super_cohort,
+    super_inner
   );
 #endif
 
-  // shuffle within super-cohort:
-  // id shuf = acy_cohort_shuffle(strict_inner, cohort_size, seed);
-
   // section information:
-  id section = strict_inner / section_width;
-  id full_section = section + section_count;
-  id in_section = strict_inner % section_width;
+  id section = super_inner / cohort_size;
+  id in_section = super_inner % cohort_size;
 
-  id shuf = acy_cohort_shuffle(in_section, section_width, seed + section);
+  // shuffle within each section
+  id shuf = acy_cohort_shuffle(in_section, cohort_size, seed + section);
 
 #ifdef DEBUG_COHORT
   fprintf(
     stderr,
-    "multiexp_cohort::section/in_section/shuffled::%lu/%lu/%lu\n",
+    "multipoly_cohort::section/in_section/shuffled::%lu/%lu/%lu\n",
     section,
     in_section,
     shuf
   );
 #endif
 
-  // find layer:
-  id layer = acy_multiexp_get_layer(
-    full_section,
-    shuf,
-    shape,
-    section_count,
-    section_width,
-    n_layers
-  );
+  // Figure out which slice we fall into:
+  id slice = acy_inv_quadsum(shuf, cohort_shape);
+  // ...and where we are in that slice:
+  id before_slice = acy_quadsum(slice, cohort_shape);
+  id in_slice = shuf - before_slice;
 
 #ifdef DEBUG_COHORT
   fprintf(
     stderr,
-    "multiexp_cohort::sections/section_width::%lu/%lu\n",
-    section_count,
-    section_width
+    "multipoly_cohort::slice/before_slice/in_slice::%lu/%lu/%lu\n",
+    slice,
+    before_slice,
+    in_slice
   );
-  fprintf(stderr, "multiexp_cohort::layer::%lu\n", layer);
 #endif
 
-  id adjusted_cohort = strict_cohort * n_layers + layer;
+  // TODO: Double-check this math
+  // We know that there are cohort_size_base cohorts per super_cohort, so
+  // before the previous super_cohort, there were cohort_size_base *
+  // (super_cohort - 1) cohorts. Now if we're slice 0 of section 0, we're
+  // actually in the very last segment of the second cohort introduced during
+  // the previous super_cohort. Similarly, slice 1 of section 0 is the
+  // second-to-last segment of the second cohort introduced in the previous
+  // super cohort. Additionally, for each section we move over, we're also
+  // shifting a cohort. So section + slice + 1 gets added to find the cohort
+  // we're in.
+  *r_cohort = cohort_size_base * (super_cohort - 1) + section + slice + 1;
+  // TODO: Detect underflow here?
+
+  // The sum of all things previous to us within our cohort is just the
+  // difference of two quadsums: the quadsum for the full cohort minus the
+  // quadsum for our segment, and notice that our slice is the same as our
+  // segment. So:
+  id inner = cohort_size - acy_quadsum(slice, cohort_shape) - in_slice - 1;
+
+  // TODO: DEBUG
+  *r_inner = acy_cohort_shuffle(inner, cohort_size, seed + *r_cohort);
+  //*r_inner = inner;
 
 #ifdef DEBUG_COHORT
   fprintf(
     stderr,
-    "multiexp_cohort::adjusted_cohort/shuffled_inner::%lu/%lu\n\n",
-    adjusted_cohort,
-    strict_inner
+    "multipoly_cohort::cohort/inner::%lu/%lu\n",
+    *r_cohort,
+    *r_inner
   );
 #endif
-
-  if (adjusted_cohort < strict_cohort) { // overflow
-    *r_cohort = NONE;
-    *r_inner = NONE;
-    return;
-  }
-  *r_cohort = adjusted_cohort;
-  *r_inner = strict_inner;
 }
 
-static inline id acy_multiexp_cohort_outer(
+static inline id acy_multipoly_cohort_outer(
   id cohort,
   id inner,
-  double shape,
-  id cohort_size,
-  id n_layers,
+  id cohort_size_base,
+  id cohort_shape,
   id seed
 ) {
-  id section_count, section_width, leftovers;
-  acy_get_section_info(
-    cohort_size,
-    &section_count,
-    &section_width,
-    &leftovers
-  );
+  id cohort_size = acy_quadsum(cohort_size_base, cohort_shape);
+  id super_size = cohort_size * cohort_size_base;
+
+  // TODO: DEBUG
+  inner = acy_rev_cohort_shuffle(inner, cohort_size, seed + cohort);
 
 #ifdef DEBUG_COHORT
-  fprintf(stderr, "\nmultiexp_outer::cohort/inner::%lu/%lu\n", cohort, inner);
+  fprintf(stderr, "\nmultipoly_outer::cohort/inner::%lu/%lu\n", cohort, inner);
   fprintf(
     stderr,
-    "multiexp_outer::shape/size::%.3f/%lu\n",
-    shape,
-    cohort_size
+    "multipoly_outer::shape/base/size/super::%lu/%lu/%lu/%lu\n",
+    cohort_shape,
+    cohort_size_base,
+    cohort_size,
+    super_size
   );
 #endif
 
-  // section information:
-  id section = inner / section_width;
-  id full_section = section + section_count;
-  id in_section = inner % section_width;
+  id inv_inner = cohort_size - 1 - inner;
 
-  id shuf = acy_cohort_shuffle(in_section, section_width, seed + section);
+  id segment = acy_inv_quadsum(inv_inner, cohort_shape);
+  id after = acy_quadsum(segment, cohort_shape);
 
 #ifdef DEBUG_COHORT
   fprintf(
     stderr,
-    "multiexp_outer::section/in_section/shuffled::%lu/%lu/%lu\n",
+    "multipoly_outer::segment/after::%lu/%lu\n",
+    segment,
+    after
+  );
+#endif
+
+  id super_cohort = cohort / cohort_size_base;
+  id section = (cohort % cohort_size_base) + (cohort_size_base - segment) - 1;
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multipoly_outer::super_cohort/full_section::%lu/%lu\n",
+    super_cohort,
+    section
+  );
+#endif
+
+  id in_segment = inv_inner - after;
+
+  if (section >= cohort_size_base) {
+    super_cohort += 1;
+    section -= cohort_size_base;
+  }
+
+  id shuf = after + in_segment;
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multipoly_outer::new_super/section/in_segment/shuffled::%lu/%lu/%lu/%lu\n",
+    super_cohort,
     section,
-    in_section,
+    in_segment,
     shuf
   );
 #endif
 
-  // find layer:
-  id layer = acy_multiexp_get_layer(
-    full_section,
-    shuf,
-    shape,
-    section_count,
-    section_width,
-    n_layers
+  id in_section = acy_rev_cohort_shuffle(shuf, cohort_size, seed + section);
+
+  id result = acy_cohort_outer(
+    super_cohort,
+    section * cohort_size + in_section,
+    super_size
   );
-
-#ifdef DEBUG_COHORT
-  fprintf(stderr, "multiexp_outer::layer::%lu\n", layer);
-#endif
-
-  // Back out the strict cohort and layer:
-  id strict_cohort = (cohort - layer) / n_layers;
-
-  // escape super-cohort:
-  id result = acy_cohort_outer(strict_cohort, inner, cohort_size);
 
 #ifdef DEBUG_COHORT
   fprintf(
     stderr,
-    "multiexp_outer::strict_cohort/inner/result::%lu/%lu/%lu\n\n",
-    strict_cohort,
-    inner,
+    "multipoly_outer::inner/result::%lu/%lu\n\n",
+    section * cohort_size + in_section,
     result
   );
 #endif

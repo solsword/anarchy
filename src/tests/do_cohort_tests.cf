@@ -67,9 +67,6 @@ acy_unit_test("test_exp_split_visual", &acy_test_exp_split_visual);
 
 acy_unit_test("test_multiexp_split_visual", &acy_test_multiexp_split_visual);
 
-// TODO: Re-enable or remove this test.
-// acy_unit_test("test_multiexp_baling", &acy_test_multiexp_baling);
-
 acy_unit_test(
   "test_multiexp_split_visual_extended",
   &acy_test_multiexp_split_visual_extended
@@ -118,4 +115,24 @@ acy_unit_test("multiexp_cohort_gnuplot", &acy_test_multiexp_cohort_gnuplot);
 acy_unit_test(
   "multiexp_generations_gnuplot",
   &acy_test_multiexp_generations_gnuplot
+);
+
+
+acy_unit_test(
+  "find_multipoly_cohort_and_inner",
+  &acy_test_find_multipoly_cohort_and_inner
+);
+
+acy_unit_test(
+  "multipoly_cohort_sections_visual",
+  &acy_test_multipoly_cohort_sections_visual
+);
+
+acy_unit_test("multipoly_cohort_counts", &acy_test_count_multipoly_cohorts);
+
+acy_unit_test("multipoly_cohort_gnuplot", &acy_test_multipoly_cohort_gnuplot);
+
+acy_unit_test(
+  "multipoly_generations_gnuplot",
+  &acy_test_multipoly_generations_gnuplot
 );

@@ -1118,100 +1118,6 @@ int acy_test_count_multiexp_cohorts() {
   return 0;
 }
 
-int acy_test_multiexp_baling() {
-  id i;
-  id cohort_size = 1037;
-  id cohort_layers = 4;
-  id cohort_seed = 10920192831;
-  float shape = 50;
-  id mxc, mxi;
-  // Test baling across an entire cohort:
-  for (i = 0; i < cohort_size; ++i) {
-    acy_multiexp_cohort_and_inner(
-      i,
-      shape,
-      cohort_size,
-      cohort_layers,
-      cohort_seed,
-      &mxc,
-      &mxi
-    );
-    id section_count, section_width, leftovers;
-    acy_get_section_info(
-      cohort_size,
-      &section_count,
-      &section_width,
-      &leftovers
-    );
-    // Find the section and layer information:
-    id section = mxi / section_width;
-    id within_section = mxi % section_width;
-    id adj_within = acy_cohort_shuffle(
-      within_section,
-      section_width, 
-      cohort_seed + section
-    );
-    id layer = acy_multiexp_get_layer(
-      section + section_count, // full section
-      adj_within,
-      shape,
-      section_count,
-      section_width,
-      cohort_layers
-    );
-    id within_relative = adj_within - acy_multiexp_split(
-      shape,
-      section_count,
-      section_width,
-      section + section_count,
-      layer - 1,
-      cohort_layers
-    );
-    // Get the baled index:
-    id baled = acy_multiexp_cohort_bale(
-      section,
-      within_relative,
-      shape,
-      cohort_size,
-      cohort_layers,
-      layer
-    );
-    // Reverse it:
-    id section_result, within_section_result;
-    acy_rev_multiexp_cohort_bale(
-      baled,
-      shape,
-      cohort_size,
-      cohort_layers,
-      layer,
-      &section_result,
-      &within_section_result
-    );
-    // Check results:
-    if (section != section_result) {
-      fprintf(
-        stderr,
-        "\nMultiexp baling fumbled the section: %lu → (%lu) → %lu\n",
-        section,
-        baled,
-        section_result
-      );
-      return i + 1;
-    }
-    if (within_relative != within_section_result) {
-      fprintf(
-        stderr,
-        "\nMultiexp baling fumbled within section: %lu → (%lu) → %lu\n",
-        within_section,
-        baled,
-        within_section_result
-      );
-      return i + 1;
-    }
-  }
-  return 0;
-}
-
 int acy_test_cohort_shuffle_gnuplot() {
   id n_samples = 1000;
   id n_batches = 3;
@@ -1349,20 +1255,20 @@ int acy_test_multiexp_cohort_gnuplot() {
   id seed;
   id outer, inner, cohort;
 
-  char* scriptfile = "test/cohort/multi-exp-cohort-data.gpt";
+  char* scriptfile = "test/cohort/multiexp-cohort-data.gpt";
   FILE *fout = fopen(scriptfile, "w");
   fprintf(
     fout,
     "#!/usr/bin/env gnuplot\n"
-    "# multi-exp-cohort-data.gpt\n"
-    "# gnuplot script for plotting multi-exp-cohort-data.dat\n"
+    "# multiexp-cohort-data.gpt\n"
+    "# gnuplot script for plotting multiexp-cohort-data.dat\n"
     "set term png\n"
-    "set output \"multi-exp-cohort-data.png\"\n"
+    "set output \"multiexp-cohort-data.png\"\n"
     "set title \"Multi-Exponential Cohorts\"\n"
     "set key off\n"
     "set xlabel \"Outer\"\n"
     "set ylabel \"Relative Inner\"\n"
-    "datafile = 'multi-exp-cohort-data.dat'\n"
+    "datafile = 'multiexp-cohort-data.dat'\n"
     "stats datafile\n"
     "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
       "with points title columnheader(1)\n"
@@ -1370,7 +1276,7 @@ int acy_test_multiexp_cohort_gnuplot() {
   );
   fclose(fout);
   chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
-  fout = fopen("test/cohort/multi-exp-cohort-data.dat", "w");
+  fout = fopen("test/cohort/multiexp-cohort-data.dat", "w");
   fprintf(fout, "# Original Shuffled\n");
   id increment = n_samples;
   id outers[n_samples*n_batches];
@@ -1477,6 +1383,436 @@ int acy_test_multiexp_generations_gnuplot() {
       );
       fprintf(fout, "%lu 2\n", parent);
       fprintf(fout, "%lu 1.5\n", cohort * cohort_size / cohort_layers + child);
+      fprintf(fout, "%lu 1\n", cohort * cohort_size + child);
+    }
+  }
+  fclose(fout);
+  return 0;
+}
+
+
+int acy_test_find_multipoly_cohort_and_inner() {
+  id i;
+  id my_cohort, inner; 
+  id cohort_size = 10000;
+  id cohort_shape = 3;
+  id cohort_seed = 1728;
+
+  id cohort_size_base;
+
+  acy_multipoly_nearest_cohort_size(
+    cohort_shape,
+    cohort_size,
+    &cohort_size,
+    &cohort_size_base
+  );
+
+  id reversed;
+  for (i = 89898128; i < 89898128 + 3921831; i += 12817) {
+    acy_multipoly_cohort_and_inner(
+      i,
+      cohort_size_base,
+      cohort_shape,
+      cohort_seed,
+      &my_cohort,
+      &inner
+    );
+    if (inner >= cohort_size) {
+      fprintf(
+        stderr,
+        "Multi-polynomial cohort index out-of-bounds: %lu → %lu/%lu [%lu]\n",
+        i, my_cohort, inner, cohort_size
+      );
+      return (int) i+1;
+    }
+    reversed = acy_multipoly_cohort_outer(
+      my_cohort,
+      inner,
+      cohort_size_base,
+      cohort_shape,
+      cohort_seed
+    );
+    if (reversed != i) {
+      fprintf(
+        stderr,
+        "Multi-polynomial cohort reversibility failed: %lu → %lu/%lu → %lu\n",
+        i, my_cohort, inner, reversed
+      );
+      return (int) i+1;
+    }
+  }
+
+  return 0;
+}
+
+int acy_test_multipoly_cohort_sections_visual() {
+  id i;
+  id cohort_size = 38;
+  id cohort_shape = 3;
+  id cohort_seed = 1728;
+
+  id cohort_size_base;
+
+  acy_multipoly_smaller_cohort_size(
+    cohort_shape,
+    cohort_size,
+    &cohort_size,
+    &cohort_size_base
+  );
+
+  id mxc, mxi;
+  size_t lines = cohort_size_base * 2;
+  char cohorts[lines*cohort_size+1];
+  char inners[lines*cohort_size+1];
+  id first_mxc = UNLIKELY;
+  for (i = 0; i < lines*cohort_size; ++i) {
+    acy_multipoly_cohort_and_inner(
+      i,
+      cohort_size_base,
+      cohort_shape,
+      cohort_seed,
+      &mxc,
+      &mxi
+    );
+    if (first_mxc == UNLIKELY) { first_mxc = mxc; }
+    cohorts[i] = (char) (0x30 + mxc - first_mxc);
+    inners[i] = (char) (0x41 + (mxi % 26) + ((mxc - first_mxc)%2)*0x20);
+  }
+  cohorts[lines*cohort_size] = '\0';
+  inners[lines*cohort_size] = '\0';
+  fputc('\n', stdout);
+  for (i = 0; i < lines; ++i) {
+    fputs("    ", stdout);
+    for (int j = 0; j < cohort_size; ++j) {
+      fputc(cohorts[j + cohort_size*i], stdout);
+    }
+    fputs("    ", stdout);
+    for (int j = 0; j < cohort_size; ++j) {
+      fputc(inners[j + cohort_size*i], stdout);
+    }
+    fputc('\n', stdout);
+    if (i % cohort_size == cohort_size - 1) {
+      fputc('\n', stdout);
+    }
+  }
+  fputc('\n', stdout);
+
+  return 0;
+}
+
+int acy_test_count_multipoly_cohorts() {
+  id i;
+  id cohort_size;
+  id cohort_shape;
+  id cohort_size_base;
+
+  id cohort_seed = 10920192831;
+
+  id target_sizes[]  = { 24, 48, 1025, 9472, 30458 };
+  id target_shapes[] = {  2,  5,    3,    8,    32 };
+
+  id target;
+  for (target = 0; target < 5; ++target) {
+    cohort_size = target_sizes[target];
+    cohort_shape = target_shapes[target];
+
+    acy_multipoly_smaller_cohort_size(
+      cohort_shape,
+      cohort_size,
+      &cohort_size,
+      &cohort_size_base
+    );
+
+    id sample_start = cohort_size * cohort_size_base * 300;
+
+    fprintf(
+      stdout,
+      "\nMulipoly cohort size/base: %lu/%lu\n",
+      cohort_size,
+      cohort_size_base
+    );
+
+    // count cohorts & indices seen across two super-cohorts
+    id mxc, mxi;
+    id explore = cohort_size * cohort_size_base * 2;
+    id possible_cohorts = cohort_size_base * 3 + 1; // a bit liberal
+
+    id* cohort_counts = (id*) malloc(
+      sizeof(id) * possible_cohorts
+    );
+    id* inner_counts = (id*) malloc(
+      sizeof(id) * cohort_size * possible_cohorts
+    );
+
+    // zero out stuff:
+    for (i = 0; i < possible_cohorts; ++i) {
+      cohort_counts[i] = 0;
+      for (id j = 0; j < cohort_size; ++j) {
+        inner_counts[i*cohort_size + j] = 0;
+      }
+    }
+
+    // counting occurrences:
+    id first_mxc = UNLIKELY;
+    for (i = sample_start; i < sample_start + explore; ++i) {
+      acy_multipoly_cohort_and_inner(
+        i,
+        cohort_size_base,
+        cohort_shape,
+        cohort_seed,
+        &mxc,
+        &mxi
+      );
+      if (first_mxc == UNLIKELY) { first_mxc = mxc; }
+      mxc -= first_mxc;
+      if (mxc >= possible_cohorts) {
+        fprintf(
+          stderr,
+          "\nMulipoly cohort out-of-bounds while counting: %lu/%lu\n",
+          mxc,
+          possible_cohorts
+        );
+        return i+1;
+      }
+      cohort_counts[mxc] += 1;
+      if (mxi >= cohort_size) {
+        fprintf(
+          stderr,
+          "\nMulipoly inner out-of-bounds while counting: %lu/%lu\n",
+          mxi,
+          cohort_size
+        );
+        continue;
+        return i+1;
+      }
+      inner_counts[mxc * cohort_size + mxi] += 1;
+    }
+    // print totals for first few targets:
+    if (target < 2) {
+      fprintf(stdout, "\nMultipolynomial cohort observations:\n");
+      for (i = 0; i < possible_cohorts; ++i) {
+        fprintf(stdout, " %3lu", i);
+      }
+      fputc('\n', stdout);
+      for (i = 0; i < possible_cohorts; ++i) {
+        fprintf(stdout, " %3lu", cohort_counts[i]);
+      }
+      fputc('\n', stdout);
+
+      fprintf(stdout, "\nMultipolynomial inner observations:\n   ");
+      id width = (80/3)-1;
+      if (width > cohort_size) {
+        width = cohort_size;
+      }
+      for (i = 0; i < width; ++i) {
+        fprintf(stdout, " %2lu", i);
+      }
+      fputc('\n', stdout);
+      for (i = 0; i < possible_cohorts; ++i) {
+        fprintf(stdout, "%-2lu", i);
+        if (cohort_counts[i] == cohort_size) {
+          fputc('~', stdout);
+        } else {
+          fputc(':', stdout);
+        }
+        for (id j = 0; j < width; ++j) {
+          fprintf(stdout, " %2lu", inner_counts[i*cohort_size+j]);
+        }
+        fputc('\n', stdout);
+      }
+    }
+    fputc('\n', stdout);
+    // limits on totals:
+    for (i = 0; i < possible_cohorts; ++i) {
+      if (
+      i >= cohort_size_base - 1
+   && i < 2*cohort_size_base - 1
+   && cohort_counts[i] != cohort_size
+      ) {
+        fprintf(
+          stderr, 
+          "\nMulipoly cohort counting error: cohort %lu found %lu/%lu times.\n",
+          i, cohort_counts[i], cohort_size
+        );
+        return i+1;
+      }
+      for (id j = 0; j < cohort_size; ++j) {
+        if (inner_counts[i*cohort_size + j] > 1) {
+          fprintf(
+            stderr, 
+            "\nMulipoly inner over-count error: "
+              "inner %lu in cohort %lu found %lu/1 times.\n",
+            j, i, inner_counts[i*cohort_size + j]
+          );
+          return i+1;
+        }
+      }
+    }
+
+    free(cohort_counts);
+    free(inner_counts);
+  }
+
+  return 0;
+}
+
+int acy_test_multipoly_cohort_gnuplot() {
+  id cohort_size = 200;
+  id cohort_shape = 16;
+
+  id cohort_size_base;
+
+  acy_multipoly_nearest_cohort_size(
+    cohort_shape,
+    cohort_size,
+    &cohort_size,
+    &cohort_size_base
+  );
+
+  id n_batches = 2 * cohort_size_base;
+
+  id n_samples = cohort_size;
+
+  id seed;
+  id outer, inner, cohort;
+
+  char* scriptfile = "test/cohort/multipoly-cohort-data.gpt";
+  FILE *fout = fopen(scriptfile, "w");
+  fprintf(
+    fout,
+    "#!/usr/bin/env gnuplot\n"
+    "# multipoly-cohort-data.gpt\n"
+    "# gnuplot script for plotting multipoly-cohort-data.dat\n"
+    "set term png\n"
+    "set output \"multipoly-cohort-data.png\"\n"
+    "set title \"Multi-Polynomial Cohorts\"\n"
+    "set key off\n"
+    "set xlabel \"Relative Outer\"\n"
+    "set ylabel \"Relative Inner\"\n"
+    "datafile = 'multipoly-cohort-data.dat'\n"
+    "stats datafile\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
+    "quit\n"
+  );
+  fclose(fout);
+  chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
+  fout = fopen("test/cohort/multipoly-cohort-data.dat", "w");
+  fprintf(fout, "# Original Shuffled\n");
+  id increment = n_samples;
+  id outers[n_samples*n_batches];
+  id inners[n_samples*n_batches];
+  id cohorts[n_samples*n_batches];
+  id batch = 0;
+  id min_cohort = 0 - 1;
+  id max_cohort = 0;
+  id idx = 0;
+  id beginning = 3298019;
+  for (
+    id start = beginning;
+    start < beginning + increment * n_batches;
+    start += increment
+  ) {
+    idx = n_samples*batch;
+    seed = acy_prng(start, start + 66489419814);
+    for (outer = start; outer < start + n_samples; ++outer) {
+      acy_multipoly_cohort_and_inner(
+        outer,
+        cohort_size_base,
+        cohort_shape,
+        seed,
+        &cohort,
+        &inner
+      );
+      outers[idx] = outer - beginning;
+      cohorts[idx] = cohort;
+      inners[idx] = inner;
+      if (cohort < min_cohort) { min_cohort = cohort; }
+      if (cohort > max_cohort) { max_cohort = cohort; }
+      idx += 1;
+    }
+    batch += 1;
+  }
+  for (id coh = min_cohort; coh < max_cohort+1; ++coh) {
+    fprintf(fout, "\n\n\"Inners for cohort %lu:\"\n", coh);
+    for (idx = 0; idx < n_samples*n_batches; ++idx) {
+      if (cohorts[idx] == coh) {
+        fprintf(
+          fout,
+          "%lu %lu\n",
+          outers[idx],
+          // coh - min_cohort
+          // inners[idx]
+          inners[idx] + (coh - min_cohort) * cohort_size
+        );
+      }
+    }
+  }
+  fclose(fout);
+  return 0;
+}
+
+int acy_test_multipoly_generations_gnuplot() {
+  id n_batches = 4;
+  id stride = 10;
+
+  id cohort_size = 1000;
+  id cohort_shape = 4;
+
+  id cohort_size_base;
+
+  acy_multipoly_nearest_cohort_size(
+    cohort_shape,
+    cohort_size,
+    &cohort_size,
+    &cohort_size_base
+  );
+
+  id seed;
+  id parent, cohort, child;
+
+  char* scriptfile = "test/cohort/multipoly-data.gpt";
+  FILE *fout = fopen(scriptfile, "w");
+  fprintf(
+    fout,
+    "#!/usr/bin/env gnuplot\n"
+    "# multipoly-data.gpt\n"
+    "# gnuplot script for plotting multipoly-data.dat\n"
+    "set term png\n"
+    "set output \"multipoly-data.png\"\n"
+    "set key off\n"
+    "set title \"Parent/Child IDs\"\n"
+    "set xlabel \"ID\"\n"
+    "set ylabel \"Generation\"\n"
+    "set yrange [0:3]\n"
+    "datafile = 'multipoly-data.dat'\n"
+    "stats datafile\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
+    "quit\n"
+  );
+  fclose(fout);
+  chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
+  fout = fopen("test/cohort/multipoly-data.dat", "w");
+  fprintf(fout, "# ID Generation\n");
+  id increment = cohort_size * 2;
+  for (
+    id start = 10000;
+    start < 10000 + increment * n_batches;
+    start += increment
+  ) {
+    seed = acy_prng(start, start + 4654681615348494);
+    fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
+    for (parent = start; parent < start + cohort_size; parent += stride) {
+      acy_multipoly_cohort_and_inner(
+        parent,
+        cohort_size_base,
+        cohort_shape,
+        seed,
+        &cohort,
+        &child
+      );
+      fprintf(fout, "%lu 2\n", parent);
       fprintf(fout, "%lu 1\n", cohort * cohort_size + child);
     }
   }
