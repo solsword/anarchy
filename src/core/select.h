@@ -102,20 +102,20 @@ id acy_select_exp_nth_child(
 // child of the given parent.
 id acy_select_poly_earliest_possible_child(
   id parent,
-  id avg_arity,
-  id max_arity,
-  id poly_cohort_size,
-  id poly_cohort_layers
+  id parent_cohort_size,
+  id child_cohort_size,
+  id poly_cohort_base,
+  id poly_cohort_shape,
+  id seed
 );
 
 // Same as acy_select_poly_earliest_possible_child, but from the child's
 // perspective.
 id acy_select_poly_child_cohort_start(
   id child,
-  id avg_arity,
-  id max_arity,
-  id poly_cohort_size,
-  id poly_cohort_layers
+  id poly_cohort_base,
+  id poly_cohort_shape,
+  id seed
 );
 
 // Works like acy_select_parent_and_index, but uses a polynomial cohort for
@@ -124,11 +124,10 @@ id acy_select_poly_child_cohort_start(
 // via the r_parent and r_index parameters.
 void acy_select_poly_parent_and_index(
   id child,
-  id avg_arity,
-  id max_arity,
-  double poly_cohort_shape,
-  id poly_cohort_size,
-  id poly_cohort_layers,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id poly_cohort_base,
+  id poly_cohort_shape,
   id seed,
   id *r_parent,
   id *r_index
