@@ -98,4 +98,53 @@ id acy_select_exp_nth_child(
   id seed
 );
 
+// For polynomial cohort selection (see below) returns the earliest possible
+// child of the given parent.
+id acy_select_poly_earliest_possible_child(
+  id parent,
+  id avg_arity,
+  id max_arity,
+  id poly_cohort_size,
+  id poly_cohort_layers
+);
+
+// Same as acy_select_poly_earliest_possible_child, but from the child's
+// perspective.
+id acy_select_poly_child_cohort_start(
+  id child,
+  id avg_arity,
+  id max_arity,
+  id poly_cohort_size,
+  id poly_cohort_layers
+);
+
+// Works like acy_select_parent_and_index, but uses a polynomial cohort for
+// child selection. The poly_cohort_size parameter controls how large this
+// polynomial cohort is, in terms of multiples of max_arity. Returns values
+// via the r_parent and r_index parameters.
+void acy_select_poly_parent_and_index(
+  id child,
+  id avg_arity,
+  id max_arity,
+  double poly_cohort_shape,
+  id poly_cohort_size,
+  id poly_cohort_layers,
+  id seed,
+  id *r_parent,
+  id *r_index
+);
+
+// Works like acy_select_nth_child, but uses a polynomial cohort for
+// children. Note that avg_arity is only roughly respected.
+id acy_select_poly_nth_child(
+  id parent,
+  id nth,
+  id avg_arity,
+  id max_arity,
+  double poly_cohort_shape,
+  id poly_cohort_size,
+  id poly_cohort_layers,
+  id seed
+);
+
 #endif // INCLUDE_SELECT_H

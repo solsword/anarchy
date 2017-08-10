@@ -1129,8 +1129,8 @@ static inline void acy_multipoly_cohort_and_inner(
   id inner = cohort_size - acy_quadsum(slice, cohort_shape) - in_slice - 1;
 
   // TODO: DEBUG
-  *r_inner = acy_cohort_shuffle(inner, cohort_size, seed + *r_cohort);
-  //*r_inner = inner;
+  //*r_inner = acy_cohort_shuffle(inner, cohort_size, seed + *r_cohort);
+  *r_inner = inner;
 
 #ifdef DEBUG_COHORT
   fprintf(
@@ -1153,7 +1153,7 @@ static inline id acy_multipoly_cohort_outer(
   id super_size = cohort_size * cohort_size_base;
 
   // TODO: DEBUG
-  inner = acy_rev_cohort_shuffle(inner, cohort_size, seed + cohort);
+  // inner = acy_rev_cohort_shuffle(inner, cohort_size, seed + cohort);
 
 #ifdef DEBUG_COHORT
   fprintf(stderr, "\nmultipoly_outer::cohort/inner::%lu/%lu\n", cohort, inner);
@@ -1232,5 +1232,7 @@ static inline id acy_multipoly_cohort_outer(
 
   return result;
 }
+
+// TODO: Add acy_multipoly_outer_min function?
 
 #endif // INCLUDE_COHORT_H
