@@ -282,7 +282,7 @@ int acy_test_exp_parent_child_visual() {
   return 0;
 }
 
-void acy_print_edges_recursively(
+void acy_print_exp_edges_recursively(
   FILE* stream,
   id parent,
   id avg_arity,
@@ -312,7 +312,7 @@ void acy_print_edges_recursively(
     fprintf(stream, "  %lu -> %lu;\n", parent, child);
     nth += 1;
     if (depth_limit > 0) {
-      acy_print_edges_recursively(
+      acy_print_exp_edges_recursively(
         stream,
         child,
         avg_arity,
@@ -321,6 +321,48 @@ void acy_print_edges_recursively(
         exp_cohort_shape,
         exp_cohort_size,
         exp_cohort_layers,
+        depth_limit - 1
+      );
+    }
+  }
+}
+
+void acy_print_poly_edges_recursively(
+  FILE* stream,
+  id parent,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id poly_cohort_base,
+  id poly_cohort_shape,
+  id seed,
+  id depth_limit
+) {
+  id nth = 0;
+  id child;
+  while(1) {
+    child = acy_select_poly_nth_child(
+      parent,
+      nth,
+      parent_cohort_size,
+      child_cohort_size,
+      poly_cohort_base,
+      poly_cohort_shape,
+      seed
+    );
+    if (child == NONE) {
+      break;
+    }
+    fprintf(stream, "  %lu -> %lu;\n", parent, child);
+    nth += 1;
+    if (depth_limit > 0) {
+      acy_print_poly_edges_recursively(
+        stream,
+        child,
+        parent_cohort_size,
+        child_cohort_size,
+        poly_cohort_base,
+        poly_cohort_shape,
+        seed,
         depth_limit - 1
       );
     }
@@ -356,7 +398,7 @@ int acy_test_exp_select_graphviz() {
     FILE *fout = fopen(filename, "w");
     // print edges
     fprintf(fout, "digraph G {\n");
-    acy_print_edges_recursively(
+    acy_print_exp_edges_recursively(
       fout,
       parent,
       avg_arity,
@@ -813,6 +855,246 @@ int acy_test_poly_parent_child_selection() {
       } while (child != NONE);
       return tin;
     }
+  }
+  return 0;
+}
+
+int acy_test_odd_poly_parent_child_selection() {
+  id parent, index;
+  id parent_cohort_size = 37;
+  id child_cohort_size = 45;
+  id seed = 94199832;
+  id poly_cohort_base = 17;
+  id poly_cohort_shape = 9;
+  id result;
+  id accum = 1;
+  for (id tin = 389238; tin < 581201; tin += accum) {
+    if (tin % 300 == 0) {
+      accum = 3801;
+    } else {
+      accum = 1;
+    }
+    acy_select_poly_parent_and_index(
+      tin,
+      parent_cohort_size,
+      child_cohort_size,
+      poly_cohort_base,
+      poly_cohort_shape,
+      seed,
+      &parent,
+      &index
+    );
+    result = acy_select_poly_nth_child(
+      parent,
+      index,
+      parent_cohort_size,
+      child_cohort_size,
+      poly_cohort_base,
+      poly_cohort_shape,
+      seed
+    );
+    if (result != tin) {
+      fprintf(
+        stderr,
+        "Poly. selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        tin, parent, index, parent, index, result
+      );
+      fprintf(stderr, "All children of %lu:\n", parent);
+      id nth = 0;
+      id child = NONE;
+      do {
+        child = acy_select_poly_nth_child(
+          parent,
+          nth,
+          parent_cohort_size,
+          child_cohort_size,
+          poly_cohort_base,
+          poly_cohort_shape,
+          seed
+        );
+        fprintf(stderr, "  #%lu: %lu\n", nth, child);
+        nth += 1;
+      } while (child != NONE);
+      return tin;
+    }
+  }
+  return 0;
+}
+
+int acy_test_poly_parent_child_visual() {
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id poly_cohort_base = 32;
+  id poly_cohort_shape = 8;
+
+  id parent = 46548464;
+  id seed = 172911;
+  id nth = 0;
+  id child = NONE;
+
+  // Try to guarantee at least one generation:
+  id grandparent, index;
+  acy_select_poly_parent_and_index(
+    parent,
+    parent_cohort_size,
+    child_cohort_size,
+    poly_cohort_base,
+    poly_cohort_shape,
+    seed,
+    &grandparent,
+    &index
+  );
+  fprintf(stdout, "\n  %lu ^ %lu (%lu)", parent, grandparent, index);
+  parent = grandparent;
+  fprintf(stdout, "\n  %lu", parent);
+  for (id i = 0; i < 7; ++i) {
+      nth = 0;
+      fprintf(stdout, "\n    |\n  ");
+      while(1) {
+        child = acy_select_poly_nth_child(
+          parent,
+          nth,
+          parent_cohort_size,
+          child_cohort_size,
+          poly_cohort_base,
+          poly_cohort_shape,
+          seed
+        );
+        if (child == NONE) {
+          fprintf(stdout, "|");
+          break;
+        }
+        fprintf(stdout, "%lu---", child);
+        nth += 1;
+      }
+      parent = acy_select_poly_nth_child(
+        parent,
+        0,
+        parent_cohort_size,
+        child_cohort_size,
+        poly_cohort_base,
+        poly_cohort_shape,
+        seed
+      );
+      if (parent == NONE) {
+        break;
+      }
+  }
+  fprintf(stdout, "\n\n");
+  return 0;
+}
+
+int acy_test_poly_select_gap_stream() {
+  id n_patches = 200;
+  id n_samples = 8;
+
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id poly_cohort_base = 32;
+  id poly_cohort_shape = 8;
+
+  id seed = 71829812983;
+
+  for (
+    //*
+    id start = 372221831718;
+    start < 372221831718 + 4587518831*n_patches;
+    start += 4587518831
+    // */
+    /*
+    id start = 10000;
+    start < 10000 + 1000*n_patches;
+    start += 1000
+    // */
+  ) {
+    fprintf(stdout, "\nParent/child gaps [%lu]:\n", start);
+    for (id child = start; child < start + n_samples; ++child) {
+      id parent, index;
+      acy_select_poly_parent_and_index(
+        child,
+        parent_cohort_size,
+        child_cohort_size,
+        poly_cohort_base,
+        poly_cohort_shape,
+        seed,
+        &parent,
+        &index
+      );
+      id epc = acy_select_poly_earliest_possible_child(
+        parent,
+        parent_cohort_size,
+        child_cohort_size,
+        poly_cohort_base,
+        poly_cohort_shape,
+        seed
+      );
+      id ccs = acy_select_poly_child_cohort_start(
+        child,
+        poly_cohort_base,
+        poly_cohort_shape,
+        seed
+      );
+      int64_t diff = child - epc;
+      int64_t diff2 = child - ccs;
+#ifdef DEBUG_SELECT
+      if (diff != diff2) {
+        fprintf(stderr, "Bad diffs: %ld != %ld!\n", diff, diff2);
+      }
+#endif
+      fprintf(
+        stdout,
+        "  %lu → %lu [%lu→%ld//%lu→%ld]\n",
+        parent, child,
+        epc, diff,
+        ccs, diff2
+      );
+    }
+  }
+  fputc('\n', stdout);
+  return 0;
+}
+
+int acy_test_poly_select_graphviz() {
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id poly_cohort_base = 32;
+  id poly_cohort_shape = 8;
+
+  id parent;
+  id index = 0;
+
+  char filename[1024];
+  for (id seed = 172741; seed < 172746; seed += 1) {
+    parent = 10000000;
+    // find the great-grandparent:
+    for (id i = 0; i < 3; ++i) {
+      acy_select_poly_parent_and_index(
+        parent,
+        parent_cohort_size,
+        child_cohort_size,
+        poly_cohort_base,
+        poly_cohort_shape,
+        seed,
+        &parent,
+        &index
+      );
+    }
+
+    snprintf(filename, 1024, "test/select/poly_select-graph-%lu.gv", seed);
+    FILE *fout = fopen(filename, "w");
+    // print edges
+    fprintf(fout, "digraph G {\n");
+    acy_print_poly_edges_recursively(
+      fout,
+      parent,
+      parent_cohort_size,
+      child_cohort_size,
+      poly_cohort_base,
+      poly_cohort_shape,
+      seed,
+      5
+    );
+    fprintf(fout, "}\n");
   }
   return 0;
 }
