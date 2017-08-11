@@ -1390,7 +1390,7 @@ static inline id acy_tablesum(id n, id *sumtable) {
 static inline id acy_inv_tablesum(id sum, id *inv_sumtree, id tree_size) {
   id idx = 0;
   while (!acy_tree_isleaf(idx, tree_size)) {
-    if (sum <= inv_sumtree[idx]) {
+    if (sum < inv_sumtree[idx]) {
       idx = acy_tree_left(idx);
     } else {
       idx = acy_tree_right(idx);

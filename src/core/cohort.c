@@ -167,16 +167,15 @@ void acy_tabulated_cohort_and_inner(
   );
 #endif
 
-  // We know that there are (sumtable_size - 1) cohorts per super_cohort, so
-  // before the previous super_cohort, there were (sumtable_size - 1) *
-  // (super_cohort - 1) cohorts. Now if we're slice 0 of section 0, we're
-  // actually in the very last segment of the second cohort introduced during
-  // the previous super_cohort. Similarly, slice 1 of section 0 is the
-  // second-to-last segment of the second cohort introduced in the previous
-  // super cohort. Additionally, for each section we move over, we're also
-  // shifting a cohort. So section + slice + 1 gets added to find the cohort
-  // we're in.
-  *r_cohort = (sumtable_size - 1) * (super_cohort - 1) + section + slice + 1;
+  // We know that there are sumtable_size cohorts per super_cohort, so before
+  // the previous super_cohort, there were sumtable_size * (super_cohort - 1)
+  // cohorts. Now if we're slice 0 of section 0, we're actually in the very
+  // last segment of the second cohort introduced during the previous
+  // super_cohort. Similarly, slice 1 of section 0 is the second-to-last
+  // segment of the second cohort introduced in the previous super cohort.
+  // Additionally, for each section we move over, we're also shifting a cohort.
+  // So section + slice + 1 gets added to find the cohort we're in.
+  *r_cohort = sumtable_size * (super_cohort - 1) + section + slice + 1;
   // TODO: Detect underflow here?
 
   // The sum of all things previous to us within our cohort is just the

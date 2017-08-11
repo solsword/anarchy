@@ -1962,6 +1962,10 @@ int acy_test_table_use() {
         "Inverse sum lookup [%lu] failed: %lu != %lu.\n",
         i, invsum, inv_results[i]
       );
+      fprintf(stderr, "Full tree: ");
+      for (id j = 0; j < inv_sumtree_size; ++j) {
+        fprintf(stderr, "%lu ", inv_sumtree[j]);
+      }
       return i + 100;
     }
   }
