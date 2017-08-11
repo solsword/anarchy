@@ -67,7 +67,7 @@ void acy_create_tables(
   id **r_inv_sumtree,
   id *r_inv_sumtree_size
 ) {
-  *r_sumtable = (id*) malloc(sizeof(id)*table_size);
+  *r_sumtable = (id*) malloc(sizeof(id)*(table_size+1));
   *r_inv_sumtree_size = acy_inv_sumtree_size(table_size);
   *r_inv_sumtree = (id*) malloc(sizeof(id)*(*r_inv_sumtree_size));
 
@@ -95,15 +95,15 @@ void acy_cleanup_tables(
 void acy_tabulated_cohort_and_inner(
   id outer,
   id *sumtable,
-  id sumtable_size,
+  id table_size,
   id *inv_sumtree,
   id inv_sumtree_size,
   id seed,
   id *r_cohort,
   id *r_inner
 ) {
-  id cohort_size = acy_tablesum(sumtable_size - 1, sumtable);
-  id super_size = cohort_size * sumtable_size;
+  id cohort_size = acy_tablesum(table_size, sumtable);
+  id super_size = cohort_size * table_size;
 
   id super_cohort;
   id super_inner;
@@ -114,7 +114,7 @@ void acy_tabulated_cohort_and_inner(
   fprintf(
     stderr,
     "tabulated_cohort::tsize/size/super::%lu/%lu/%lu\n",
-    sumtable_size,
+    table_size,
     cohort_size,
     super_size
   );
@@ -167,15 +167,15 @@ void acy_tabulated_cohort_and_inner(
   );
 #endif
 
-  // We know that there are sumtable_size cohorts per super_cohort, so before
-  // the previous super_cohort, there were sumtable_size * (super_cohort - 1)
+  // We know that there are table_size cohorts per super_cohort, so before
+  // the previous super_cohort, there were table_size * (super_cohort - 1)
   // cohorts. Now if we're slice 0 of section 0, we're actually in the very
   // last segment of the second cohort introduced during the previous
   // super_cohort. Similarly, slice 1 of section 0 is the second-to-last
   // segment of the second cohort introduced in the previous super cohort.
   // Additionally, for each section we move over, we're also shifting a cohort.
   // So section + slice + 1 gets added to find the cohort we're in.
-  *r_cohort = sumtable_size * (super_cohort - 1) + section + slice + 1;
+  *r_cohort = table_size * (super_cohort - 1) + section + slice + 1;
   // TODO: Detect underflow here?
 
   // The sum of all things previous to us within our cohort is just the
@@ -198,20 +198,20 @@ id acy_tabulated_cohort_outer(
   id cohort,
   id inner,
   id *sumtable,
-  id sumtable_size,
+  id table_size,
   id *inv_sumtree,
   id inv_sumtree_size,
   id seed
 ) {
-  id cohort_size = acy_tablesum(sumtable_size - 1, sumtable);
-  id super_size = cohort_size * sumtable_size;
+  id cohort_size = acy_tablesum(table_size, sumtable);
+  id super_size = cohort_size * table_size;
 
 #ifdef DEBUG_COHORT
   fprintf(stderr, "\ntabulated_outer::cohort/inner::%lu/%lu\n", cohort, inner);
   fprintf(
     stderr,
     "tabulated_outer::tsize/size/super::%lu/%lu/%lu\n",
-    sumtable_size,
+    table_size,
     cohort_size,
     super_size
   );
@@ -231,9 +231,9 @@ id acy_tabulated_cohort_outer(
   );
 #endif
 
-  id super_cohort = cohort / sumtable_size;
+  id super_cohort = cohort / table_size;
   // TODO: Double-check this math (-1 in the second half?)!
-  id section = (cohort % sumtable_size) + (sumtable_size - segment) - 1;
+  id section = (cohort % table_size) + (table_size - segment) - 1;
 
 #ifdef DEBUG_COHORT
   fprintf(
@@ -246,9 +246,9 @@ id acy_tabulated_cohort_outer(
 
   id in_segment = inv_inner - after;
 
-  if (section >= sumtable_size) {
+  if (section >= table_size) {
     super_cohort += 1;
-    section -= sumtable_size;
+    section -= table_size;
   }
 
   id shuf = after + in_segment;

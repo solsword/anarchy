@@ -1314,18 +1314,25 @@ static inline id acy_multipoly_outer_min(
 // Reads the supplied distribution table and overwrites values in the given sum
 // table so that the sum table accurately describes the distribution table.
 // Each entry in the sum table will be the sum of all entries in the
-// distribution table up to that index, so that the sum table can be used for
-// the acy_tablesum function (see below).
+// distribution table up to but not including that index, so that the sum table
+// can be used for the acy_tablesum function (see below). Note that the given
+// table size should be the distribution table size, which is one smaller than
+// the sum table size.
+// Note that for arcane reasons, the distribution table needs to be reversed
+// here for the distribution shape to be correct.
 static inline void acy_fill_sumtable(
   id *disttable,
   id table_size,
   id *sumtable
 ) {
   id sum = 0;
-  for (id i = 0; i < table_size; ++i) {
+  id i;
+  for (i = 0; i < table_size; ++i) {
     sumtable[i] = sum;
-    sum += disttable[i];
+    sum += disttable[table_size - i - 1];
+    // TODO: Avoid reversing here?
   }
+  sumtable[i] = sum; // extra entry for the total sum
 }
 
 // The parent and left and right children of a tree index in an array heap

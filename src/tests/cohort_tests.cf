@@ -620,7 +620,11 @@ int acy_test_exp_cohort_sections_visual() {
     acy_exp_cohort_and_inner(i, shape, cohort_size, cohort_seed, &mxc, &mxi);
     if (first_mxc == UNLIKELY) { first_mxc = mxc; }
     cohorts[i] = (char) (0x30 + mxc - first_mxc);
-    inners[i] = (char) (0x41 + (mxi % 26) + ((mxc - first_mxc)%2)*0x20);
+    if (cohorts[i] == '1') {
+      inners[i] = (char) (0x41 + (mxi % 26));
+    } else {
+      inners[i] = '-';
+    }
   }
   cohorts[lines*section_width] = '\0';
   inners[lines*section_width] = '\0';
@@ -990,7 +994,11 @@ int acy_test_multiexp_cohort_sections_visual() {
     );
     if (first_mxc == UNLIKELY) { first_mxc = mxc; }
     cohorts[i] = (char) (0x30 + mxc - first_mxc);
-    inners[i] = (char) (0x41 + (mxi % 26) + ((mxc - first_mxc)%2)*0x20);
+    if (cohorts[i] == '1') {
+      inners[i] = (char) (0x41 + (mxi % 26));
+    } else {
+      inners[i] = '-';
+    }
   }
   cohorts[lines*section_width] = '\0';
   inners[lines*section_width] = '\0';
@@ -1476,7 +1484,11 @@ int acy_test_multipoly_cohort_sections_visual() {
     );
     if (first_mxc == UNLIKELY) { first_mxc = mxc; }
     cohorts[i] = (char) (0x30 + mxc - first_mxc);
-    inners[i] = (char) (0x41 + (mxi % 26) + ((mxc - first_mxc)%2)*0x20);
+    if (cohorts[i] == '1') {
+      inners[i] = (char) (0x41 + (mxi % 26));
+    } else {
+      inners[i] = '-';
+    }
   }
   cohorts[lines*cohort_size] = '\0';
   inners[lines*cohort_size] = '\0';
@@ -1838,18 +1850,18 @@ int acy_test_table_construction() {
   );
 
   id sumtable_result[] = {
-    0, 1, 2, 3, 5, 7, 10, 14, 19, 25, 33, 45, 54, 60, 63, 65
+    0, 1, 3, 6, 12, 21, 33, 41, 47, 52, 56, 59, 61, 63, 64, 65, 66
   };
 
   id inv_sumtree_result[] = {
-    19,
-    5,                             54,
-    2,              10,            33,               63,
-    1,       3,     7,     14,     25,      45,      60,      65,
-    0,   1,  2, 3,  4, 5,   6, 7,   8,  9,  10, 11,  12, 13,  14, 15,
+    47,
+    12,                    61,
+    3,          33,        56,            64,
+    1,    6,    21,   41,  52,    59,     63,     65,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
   };
 
-  for (id i = 0; i < table_size; ++i) {
+  for (id i = 0; i < table_size + 1; ++i) {
     if (sumtable[i] != sumtable_result[i]) {
       fprintf(
         stderr,
@@ -1857,12 +1869,12 @@ int acy_test_table_construction() {
         i, sumtable[i], sumtable_result[i]
       );
       fprintf(stderr, "Full table: ");
-      for (id j = 0; j < table_size; ++j) {
+      for (id j = 0; j < table_size + 1; ++j) {
         fprintf(stderr, "%lu ", sumtable[j]);
       }
       fprintf(stderr, "\n");
       fprintf(stderr, "Correct:    ");
-      for (id j = 0; j < table_size; ++j) {
+      for (id j = 0; j < table_size + 1; ++j) {
         fprintf(stderr, "%lu ", sumtable_result[j]);
       }
       fprintf(stderr, "\n");
@@ -1919,30 +1931,31 @@ int acy_test_table_use() {
   );
 
   id sumtable_result[] = {
-    0, 1, 2, 3, 5, 7, 10, 14, 19, 25, 33, 45, 54, 60, 63, 65
+    0, 1, 3, 6, 12, 21, 33, 41, 47, 52, 56, 59, 61, 63, 64, 65, 66
   };
 
   id inv_results[] = {
     0,
-    1,
-    2,
-    3, 3,
-    4, 4,
-    5, 5, 5,
-    6, 6, 6, 6,
-    7, 7, 7, 7, 7,
-    8, 8, 8, 8, 8, 8,
-    9, 9, 9, 9, 9, 9, 9, 9,
-    10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-    11, 11, 11, 11, 11, 11, 11, 11, 11,
-    12, 12, 12, 12, 12, 12, 
-    13, 13, 13,
-    14, 14,
+    1, 1,
+    2, 2, 2,
+    3, 3, 3, 3, 3, 3,
+    4, 4, 4, 4, 4, 4, 4, 4, 4,
+    5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+    6, 6, 6, 6, 6, 6, 6, 6,
+    7, 7, 7, 7, 7, 7,
+    8, 8, 8, 8, 8,
+    9, 9, 9, 9,
+    10, 10, 10,
+    11, 11,
+    12, 12,
+    13,
+    14,
     15,
-    16 // extra out-of-band result
+    15, // extra out-of-band results
+    16,
   };
 
-  for (id i = 0; i < table_size; ++i) {
+  for (id i = 0; i < table_size + 1; ++i) {
     id sum = acy_tablesum(i, sumtable);
     if (sum != sumtable_result[i]) {
       fprintf(
@@ -1954,7 +1967,7 @@ int acy_test_table_use() {
     }
   }
 
-  for (id i = 0; i < sumtable_result[table_size - 1] + 1; ++i) {
+  for (id i = 0; i < sumtable_result[table_size] + 1; ++i) {
     id invsum = acy_inv_tablesum(i, inv_sumtree, inv_sumtree_size);
     if (invsum != inv_results[i]) {
       fprintf(
@@ -1994,7 +2007,7 @@ int acy_test_find_tabulated_cohort_and_inner() {
     &inv_sumtree_size
   );
 
-  id cohort_size = acy_tablesum(table_size-1, sumtable);
+  id cohort_size = acy_tablesum(table_size, sumtable);
 
   id reversed;
   for (i = 89898128; i < 89898128 + 3921831; i += 12817) {
@@ -2038,39 +2051,57 @@ int acy_test_find_tabulated_cohort_and_inner() {
   return 0;
 }
 
-/*
-int acy_test_multipoly_cohort_sections_visual() {
+int acy_test_tabulated_cohort_sections_visual() {
   id i;
-  id cohort_size = 38;
-  id cohort_shape = 3;
+
   id seed = 1728;
+  id disttable[] = {
+    6, 16, 3, 1
+  };
+  id table_size = 4;
+  id inv_sumtree_size;
+  id *sumtable, *inv_sumtree;
 
-  id cohort_size_base;
-
-  acy_multipoly_smaller_cohort_size(
-    cohort_shape,
-    cohort_size,
-    &cohort_size,
-    &cohort_size_base
+  // Turn our distribution table into a sum table and an inverse sum tree:
+  acy_create_tables(
+    disttable,
+    table_size,
+    &sumtable,
+    &inv_sumtree,
+    &inv_sumtree_size
   );
 
+  fprintf(stdout, "\nSumtable: ");
+  for (int i = 0; i < table_size+1; ++i) {
+    fprintf(stdout, "%lu, ", sumtable[i]);
+  }
+  fprintf(stdout, "\n");
+  id cohort_size = sumtable[table_size];
+  fprintf(stdout, "Cohort size: %lu\n", cohort_size);
+
   id mxc, mxi;
-  size_t lines = cohort_size_base * 2;
+  size_t lines = table_size * 2;
   char cohorts[lines*cohort_size+1];
   char inners[lines*cohort_size+1];
   id first_mxc = UNLIKELY;
   for (i = 0; i < lines*cohort_size; ++i) {
-    acy_multipoly_cohort_and_inner(
+    acy_tabulated_cohort_and_inner(
       i,
-      cohort_size_base,
-      cohort_shape,
+      sumtable,
+      table_size,
+      inv_sumtree,
+      inv_sumtree_size,
       seed,
       &mxc,
       &mxi
     );
     if (first_mxc == UNLIKELY) { first_mxc = mxc; }
     cohorts[i] = (char) (0x30 + mxc - first_mxc);
-    inners[i] = (char) (0x41 + (mxi % 26) + ((mxc - first_mxc)%2)*0x20);
+    if (cohorts[i] == '1') {
+      inners[i] = (char) (0x41 + (mxi % 26));
+    } else {
+      inners[i] = '-';
+    }
   }
   cohorts[lines*cohort_size] = '\0';
   inners[lines*cohort_size] = '\0';
@@ -2094,6 +2125,7 @@ int acy_test_multipoly_cohort_sections_visual() {
   return 0;
 }
 
+/*
 int acy_test_count_multipoly_cohorts() {
   id i;
   id cohort_size;
