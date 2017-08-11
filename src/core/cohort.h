@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include <math.h> // for roundf
+#include <malloc.h> // for allocating sum tables and inverse sum trees
 #ifdef DEBUG_COHORT
   #include <stdio.h>
 #endif
@@ -1041,7 +1042,7 @@ static inline void acy_multipoly_smaller_cohort_size(
 // cohort size base, so if you want to control distribution rather than cohort
 // size, use acy_inv_quadspread.
 //
-// TODO: Find a telescoping exponential sum!!
+// TODO: Make an exponential version using Σ 2ⁿ = 2ⁿ⁺¹ - 1
 // TODO: Support negative shapes?
 static inline void acy_multipoly_cohort_and_inner(
   id outer,
@@ -1228,8 +1229,8 @@ static inline id acy_multipoly_cohort_outer(
   return result;
 }
 
-// Works like acy_multiexp_cohort_outer above, but returns the minimum possible
-// outer ID for any inner ID in this cohort.
+// Works like acy_multipoly_cohort_outer above, but returns the minimum
+// possible outer ID for any inner ID in this cohort.
 static inline id acy_multipoly_outer_min(
   id cohort,
   id cohort_size_base,
@@ -1308,5 +1309,133 @@ static inline id acy_multipoly_outer_min(
 
   return result;
 }
+
+
+// Reads the supplied distribution table and overwrites values in the given sum
+// table so that the sum table accurately describes the distribution table.
+// Each entry in the sum table will be the sum of all entries in the
+// distribution table up to that index, so that the sum table can be used for
+// the acy_tablesum function (see below).
+static inline void acy_fill_sumtable(
+  id *disttable,
+  id table_size,
+  id *sumtable
+) {
+  id sum = 0;
+  for (id i = 0; i < table_size; ++i) {
+    sumtable[i] = sum;
+    sum += disttable[i];
+  }
+}
+
+// The parent and left and right children of a tree index in an array heap
+// layout:
+static inline id acy_tree_parent(id idx) { return ((idx + 1) / 2) - 1; }
+static inline id acy_tree_left(id idx) { return idx * 2 + 1; }
+static inline id acy_tree_right(id idx) { return idx * 2 + 2; }
+
+// Test for whether an index is a leaf:
+static inline id acy_tree_isleaf(id idx, id tree_size) {
+  return acy_tree_left(idx) >= tree_size;
+}
+
+// Computes the required inverse sum tree size for a sum table of the given
+// size. For an inverse sumtree, each sum table entry except the first has a
+// spot in the tree, and each possible distribution index also has a spot.
+// Because the number of distribution indices is equal to the number of table
+// entries, the total is just twice the size of the sum table minus one.
+static inline id acy_inv_sumtree_size(id table_size) {
+  return table_size*2 - 1;
+}
+
+// Fills in an inverse sumtree for the given sum table. Each non-leaf entry is
+// a test value. Not inline because it's recursive.
+void acy_fill_inv_sumtree(
+  id *sumtable,
+  id table_size,
+  id *inv_sumtree
+);
+
+// Takes a distribution table of the given size and allocates and returns (via
+// return parameters) a corresponding sum table and inverse sum tree. Also
+// returns the size of the inverse sum tree created.
+void acy_create_tables(
+  id *disttable,
+  id table_size,
+  id **r_sumtable,
+  id **r_inv_sumtree,
+  id *r_inv_sumtree_size
+);
+
+// Cleans up the memory allocated by acy_create_tables.
+void acy_cleanup_tables(
+  id *sumtable,
+  id *inv_sumtree
+);
+
+// Looks up the desired distribution sum in a sum table (see acy_fill_sumtable
+// above). Note that the given index 'n' isn't checked for validity; you can
+// use valgrind if you're worried about uninitialized access as a result.
+static inline id acy_tablesum(id n, id *sumtable) {
+  return sumtable[n];
+}
+
+// Uses an inverse sum tree to look up the index 'n' that results in the
+// greatest sum less than or equal to the given value in a sum table for the
+// given distribution, which must be specified as an inverse sum tree (see
+// acy_fill_inv_sumtree above). Note that this algorithm takes time
+// proportional to the log of the number of table entries, not the log of the
+// table sum, so coarser tables with equivalent sums can potentially be used to
+// speed things up.
+static inline id acy_inv_tablesum(id sum, id *inv_sumtree, id tree_size) {
+  id idx = 0;
+  while (!acy_tree_isleaf(idx, tree_size)) {
+    if (sum <= inv_sumtree[idx]) {
+      idx = acy_tree_left(idx);
+    } else {
+      idx = acy_tree_right(idx);
+    }
+  }
+  return inv_sumtree[idx];
+}
+
+// Works like acy_multipoly_cohort_and_inner above, but the cohort distribution
+// is specified by a sum table and an inverse sum tree instead of being a
+// specific polynomial function with just a shape parameter. Note that both the
+// sum table and inverse sum tree can be computed from a distribution table
+// using the functions above. This gives fine-grained control over the
+// resulting relative distribution.
+void acy_tabulated_cohort_and_inner(
+  id outer,
+  id *sumtable,
+  id sumtable_size,
+  id *inv_sumtree,
+  id inv_sumtree_size,
+  id seed,
+  id *r_cohort,
+  id *r_inner
+);
+
+// The inverse of acy_tabulated_cohort_and_inner, finds the outer ID given a
+// cohort and inner ID.
+id acy_tabulated_cohort_outer(
+  id cohort,
+  id inner,
+  id *sumtable,
+  id sumtable_size,
+  id *inv_sumtree,
+  id inv_sumtree_size,
+  id seed
+);
+
+// Works like acy_tabulated_cohort_outer above, but returns the minimum
+// possible outer ID for any inner ID in this cohort.
+id acy_tabulated_outer_min(
+  id cohort,
+  id *sumtable,
+  id sumtable_size,
+  id *inv_sumtree,
+  id inv_sumtree_size
+);
 
 #endif // INCLUDE_COHORT_H

@@ -136,3 +136,23 @@ acy_unit_test(
   "multipoly_generations_gnuplot",
   &acy_test_multipoly_generations_gnuplot
 );
+
+acy_unit_test("table_construction", &acy_test_table_construction);
+
+acy_unit_test("table_use", &acy_test_table_use);
+
+acy_unit_test(
+  "find_tabulated_cohort_and_inner",
+  &acy_test_find_tabulated_cohort_and_inner
+);
+
+/*
+acy_unit_test(
+  "tabulated_cohort_sections_visual",
+  &acy_test_tabulated_cohort_sections_visual
+);
+
+acy_unit_test("tabulated_cohort_counts", &acy_test_count_tabulated_cohorts);
+
+acy_unit_test("tabulated_cohort_gnuplot", &acy_test_tabulated_cohort_gnuplot);
+*/
