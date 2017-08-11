@@ -138,11 +138,10 @@ void acy_select_poly_parent_and_index(
 id acy_select_poly_nth_child(
   id parent,
   id nth,
-  id avg_arity,
-  id max_arity,
-  double poly_cohort_shape,
-  id poly_cohort_size,
-  id poly_cohort_layers,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id poly_cohort_base,
+  id poly_cohort_shape,
   id seed
 );
 

@@ -580,7 +580,7 @@ id acy_nth_partner(id person, id nth, acy_family_info const * const info) {
         inner,
         cohort_size,
         info->seed + (28999 * which_partner)
-      ); it
+      );
       if (shuf < cohort_fraction) {
         continue; // look in another cohort case
       }

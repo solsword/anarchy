@@ -55,3 +55,8 @@ acy_unit_test(
 acy_unit_test("selection_parent/child_plot", &acy_test_select_gnuplot);
 
 acy_unit_test("selection_exp_parent/child_plot", &acy_test_exp_select_gnuplot);
+
+acy_unit_test(
+  "select_polynomial_nth/parent",
+  &acy_test_poly_parent_child_selection
+);

@@ -254,20 +254,9 @@ id acy_select_exp_child_cohort_start(
   id exp_cohort_layers
 ) {
   // Cohort sizes
-  // id upper_cohort_size = max_arity / avg_arity;
-  id lower_cohort_size = max_arity * exp_cohort_size;
   id mega_cohort_size = max_arity * exp_cohort_size * exp_cohort_layers;
 
   return mega_cohort_size * (child / mega_cohort_size);
-
-  /*
-   * TODO: Get rid of this?
-  // Compute child cohort
-  id child_cohort = child / lower_cohort_size;
-
-  // Escape at the bottom of the exponential child cohort
-  return lower_cohort_size * child_cohort;
-  */
 }
 
 void acy_select_exp_parent_and_index(
@@ -683,6 +672,7 @@ id acy_select_poly_child_cohort_start(
   id seed
 ) {
   // TODO: HERE
+  return child;
 }
 
 void acy_select_poly_parent_and_index(
@@ -738,9 +728,32 @@ void acy_select_poly_parent_and_index(
   );
 #endif
 
-  // reverse shuffle within cohort
   id child_super_cohort_size = acy_quadsum(poly_cohort_base, poly_cohort_shape);
-  shuf = acy_rev_cohort_shuffle(
+  id parent_super_cohort_size = (
+    parent_cohort_size
+  * (child_super_cohort_size / child_cohort_size)
+  );
+  id child_leftovers = (
+    child_super_cohort_size
+  - (child_super_cohort_size / child_cohort_size) * child_cohort_size
+  );
+  if (child_leftovers > 0) {
+    // add a cohort to parent the leftover children
+    parent_super_cohort_size += parent_cohort_size;
+  }
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+  "select_poly_parent_and_index::parent_scs/child_scs/leftovers::%lu/%lu/%lu\n",
+    parent_super_cohort_size,
+    child_super_cohort_size,
+    child_leftovers
+  );
+#endif
+
+  // reverse shuffle within cohort
+  id shuf = acy_rev_cohort_shuffle(
     super_inner,
     child_super_cohort_size,
     seed + super_cohort
@@ -841,6 +854,14 @@ void acy_select_poly_parent_and_index(
     parent_cohort_size
   );
 
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_poly_parent_and_index::parent_super_inner::%lu\n",
+    parent_super_inner
+  );
+#endif
+
   *r_parent = acy_cohort_outer(
     super_cohort,
     parent_super_inner,
@@ -864,12 +885,12 @@ id acy_select_poly_nth_child(
 #ifdef DEBUG_SELECT
   fprintf(
     stderr,
-    "\nselect_poly_nth_child::parent/nth/pcs/ccs::%lu/%lu\n",
+    "\nselect_poly_nth_child::parent/nth::%lu/%lu\n",
     parent, nth
   );
   fprintf(
     stderr,
-    "select_poly_nth_child::base/shape::%.3f/%lu\n",
+    "select_poly_nth_child::base/shape::%lu/%lu\n",
     poly_cohort_base, poly_cohort_shape
   );
 #endif
@@ -897,6 +918,16 @@ id acy_select_poly_nth_child(
     // add a cohort to parent the leftover children
     parent_super_cohort_size += parent_cohort_size;
   }
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_poly_nth_child::parent_scs/child_scs/leftovers::%lu/%lu/%lu\n",
+    parent_super_cohort_size,
+    child_super_cohort_size,
+    child_leftovers
+  );
+#endif
 
   // Find parent super/sub cohort information:
   id parent_super_cohort;
@@ -940,7 +971,7 @@ id acy_select_poly_nth_child(
   id to_lower = child_cohort_size;
   id children_left = child_cohort_size;
 
-  id divide_at = sub_cohort + seed;
+  id divide_at = parent_sub_cohort + seed;
 
   while (parents_left > 1 && children_left > 0) {
     half_remaining = parents_left/2;
@@ -1000,16 +1031,17 @@ id acy_select_poly_nth_child(
     child_cohort_size
   );
 
-  acy_cohort_shuffle(
+  // shuffle within child super cohort:
+  id shuf = acy_cohort_shuffle(
     child_super_inner,
-    child_cohort_size,
+    child_super_cohort_size,
     seed + parent_super_cohort
   );
 
   // Escape from polynomial cohort:
   id child = acy_multipoly_cohort_outer(
-    child_super_cohort,
-    child_super_inner,
+    parent_super_cohort,
+    shuf,
     poly_cohort_base,
     poly_cohort_shape,
     seed
@@ -1018,17 +1050,8 @@ id acy_select_poly_nth_child(
 #ifdef DEBUG_SELECT
   fprintf(
     stderr,
-    "select_poly_nth_child::super_cohort/child::%lu/%lu\n",
-    child_super_cohort,
-    child
-  );
-#endif
-
-#ifdef DEBUG_SELECT
-  fprintf(
-    stderr,
-    "select_poly_nth_child::super/result::%lu/%lu\n",
-    parent_cohort/poly_cohort_size,
+    "select_poly_nth_child::super_cohort/result::%lu/%lu\n",
+    parent_super_cohort,
     child
   );
 #endif
