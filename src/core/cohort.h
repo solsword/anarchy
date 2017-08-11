@@ -1310,6 +1310,35 @@ static inline id acy_multipoly_outer_min(
   return result;
 }
 
+// Accepts a floating point table representing a relative distribution and a
+// desired cohort size, and fills in the supplied integer distribution table
+// with an approximation of the target distribution that has exactly the target
+// size. Note that in particular, small values may be rounded down to zero. The
+// approximation is constructed by approximating each cell of the target table
+// in turn, so identical values may round differently depending on their
+// position in the table. Also, the input distribution will be normalized, so
+// it need not be normalized beforehand.
+// TODO: Test this function!
+static inline void acy_fill_disttable(
+  float *distribution,
+  id table_size,
+  id cohort_size,
+  id *disttable
+) {
+  // first, compute the total:
+  float total = 0;
+  for (id i = 0; i < table_size; ++i) {
+    total += distribution[i];
+  }
+  // next, iterate and compute norms/assign values:
+  for (id i = 0; i < table_size; ++i) {
+    float norm = distribution[i] / total;
+    id approx = (id) roundf(norm * cohort_size);
+    disttable[i] = approx;
+    cohort_size -= approx;
+    total -= (approx / (float) cohort_size);
+  }
+}
 
 // Reads the supplied distribution table and overwrites values in the given sum
 // table so that the sum table accurately describes the distribution table.
