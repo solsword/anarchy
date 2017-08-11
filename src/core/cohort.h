@@ -1126,11 +1126,7 @@ static inline void acy_multipoly_cohort_and_inner(
   // difference of two quadsums: the quadsum for the full cohort minus the
   // quadsum for our segment, and notice that our slice is the same as our
   // segment. So:
-  id inner = cohort_size - acy_quadsum(slice, cohort_shape) - in_slice - 1;
-
-  // TODO: DEBUG
-  //*r_inner = acy_cohort_shuffle(inner, cohort_size, seed + *r_cohort);
-  *r_inner = inner;
+  *r_inner = cohort_size - acy_quadsum(slice, cohort_shape) - in_slice - 1;
 
 #ifdef DEBUG_COHORT
   fprintf(
@@ -1142,6 +1138,8 @@ static inline void acy_multipoly_cohort_and_inner(
 #endif
 }
 
+// The inverse of acy_multipoly_cohort_and_inner, finds the outer ID given a
+// cohort and inner ID.
 static inline id acy_multipoly_cohort_outer(
   id cohort,
   id inner,
@@ -1151,9 +1149,6 @@ static inline id acy_multipoly_cohort_outer(
 ) {
   id cohort_size = acy_quadsum(cohort_size_base, cohort_shape);
   id super_size = cohort_size * cohort_size_base;
-
-  // TODO: DEBUG
-  // inner = acy_rev_cohort_shuffle(inner, cohort_size, seed + cohort);
 
 #ifdef DEBUG_COHORT
   fprintf(stderr, "\nmultipoly_outer::cohort/inner::%lu/%lu\n", cohort, inner);
@@ -1233,6 +1228,85 @@ static inline id acy_multipoly_cohort_outer(
   return result;
 }
 
-// TODO: Add acy_multipoly_outer_min function?
+// Works like acy_multiexp_cohort_outer above, but returns the minimum possible
+// outer ID for any inner ID in this cohort.
+static inline id acy_multipoly_outer_min(
+  id cohort,
+  id cohort_size_base,
+  id cohort_shape
+) {
+  id cohort_size = acy_quadsum(cohort_size_base, cohort_shape);
+  id super_size = cohort_size * cohort_size_base;
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "\nmultipoly_outer_min::cohort::%lu\n",
+    cohort
+  );
+  fprintf(
+    stderr,
+    "multipoly_outer_min::shape/base/size/super::%lu/%lu/%lu/%lu\n",
+    cohort_shape,
+    cohort_size_base,
+    cohort_size,
+    super_size
+  );
+#endif
+
+  id inv_inner = cohort_size - 1;
+
+  id segment = acy_inv_quadsum(inv_inner, cohort_shape);
+
+#ifdef DEBUG_COHORT
+  fprintf(stderr, "multipoly_outer_min::segment::%lu\n", segment);
+#endif
+
+  id super_cohort = cohort / cohort_size_base;
+  id section = (cohort % cohort_size_base) + (cohort_size_base - segment) - 1;
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multipoly_outer_min::super_cohort/full_section::%lu/%lu\n",
+    super_cohort,
+    section
+  );
+#endif
+
+  if (section >= cohort_size_base) {
+    super_cohort += 1;
+    section -= cohort_size_base;
+  }
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multipoly_outer_min::new_super/section::%lu/%lu\n",
+    super_cohort,
+    section
+  );
+#endif
+
+  // minimum possible
+  id in_section = 0;
+
+  id result = acy_cohort_outer(
+    super_cohort,
+    section * cohort_size + in_section,
+    super_size
+  );
+
+#ifdef DEBUG_COHORT
+  fprintf(
+    stderr,
+    "multipoly_outer_min::inner/result::%lu/%lu\n\n",
+    section * cohort_size + in_section,
+    result
+  );
+#endif
+
+  return result;
+}
 
 #endif // INCLUDE_COHORT_H

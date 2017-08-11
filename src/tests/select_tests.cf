@@ -604,7 +604,7 @@ int acy_test_avg_exp_parent_child_gap() {
 }
 
 int acy_test_exp_select_gap_stream() {
-  id n_patches = 200;
+  id n_patches = 20;
   id n_samples = 8;
   id avg_arity = 1;
   id max_arity = 32;
@@ -985,7 +985,7 @@ int acy_test_poly_parent_child_visual() {
 }
 
 int acy_test_poly_select_gap_stream() {
-  id n_patches = 200;
+  id n_patches = 20;
   id n_samples = 8;
 
   id parent_cohort_size = 32;
@@ -1036,18 +1036,20 @@ int acy_test_poly_select_gap_stream() {
       );
       int64_t diff = child - epc;
       int64_t diff2 = child - ccs;
-#ifdef DEBUG_SELECT
-      if (diff != diff2) {
-        fprintf(stderr, "Bad diffs: %ld != %ld!\n", diff, diff2);
-      }
-#endif
       fprintf(
         stdout,
-        "  %lu → %lu [%lu→%ld//%lu→%ld]\n",
+        "  %lu → %lu [%lu ⇒ %ld]\n",
         parent, child,
-        epc, diff,
-        ccs, diff2
+        epc, diff
       );
+      if (diff != diff2) {
+        fprintf(stderr, "Diffs differ: %ld != %ld!\n", diff, diff2);
+        return parent;
+      }
+      if (diff < 0 || diff2 < 0) {
+        fprintf(stderr, "Negative diff! %ld/%ld!\n", diff, diff2);
+        return parent;
+      }
     }
   }
   fputc('\n', stdout);
@@ -1096,5 +1098,167 @@ int acy_test_poly_select_graphviz() {
     );
     fprintf(fout, "}\n");
   }
+  return 0;
+}
+
+int acy_test_avg_poly_parent_child_gap() {
+  id parent, index, child;
+
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id poly_cohort_base = 32;
+  id poly_cohort_shape = 8;
+
+  double avg_parent_distance = 0; 
+  double avg_child_distance = 0; 
+  id parent_dist_count = 0;
+  id child_dist_count = 0;
+  id n_samples = 10000;
+  int64_t parent_distances[n_samples];
+  int64_t child_distances[n_samples];
+  int64_t dist;
+  id seeds_to_check = 3;
+  for (id seed = 301910239812; seed < 301910239812 + seeds_to_check; ++seed) {
+    avg_parent_distance = 0; 
+    avg_child_distance = 0; 
+    parent_dist_count = 0;
+    child_dist_count = 0;
+    for (id here = 5646461354679; here < 5646461354679 + n_samples; ++here) {
+      acy_select_poly_parent_and_index(
+        here,
+        parent_cohort_size,
+        child_cohort_size,
+        poly_cohort_base,
+        poly_cohort_shape,
+        seed,
+        &parent,
+        &index
+      );
+      dist = (int64_t) here - (int64_t) parent;
+      parent_distances[parent_dist_count] = dist;
+      avg_parent_distance += dist; parent_dist_count += 1;
+      child = acy_select_poly_nth_child(
+        here,
+        0,
+        parent_cohort_size,
+        child_cohort_size,
+        poly_cohort_base,
+        poly_cohort_shape,
+        seed
+      );
+      if (child != NONE) {
+        dist = (int64_t) child - (int64_t) here;
+        child_distances[child_dist_count] = dist;
+        avg_child_distance += dist;
+        child_dist_count += 1;
+      }
+    }
+    fprintf(
+      stdout,
+      "\nSampled %lu parent distances and %lu child distances.\n",
+      parent_dist_count,
+      child_dist_count
+    );
+    fprintf(
+      stdout,
+      "Average parent/child distances [%lu]: %.2f/%.2f\n",
+      seed,
+      avg_parent_distance / (double) parent_dist_count,
+      avg_child_distance / (double) child_dist_count
+    );
+    int64_t min_parent_dist = parent_distances[0];
+    int64_t max_parent_dist = parent_distances[0];
+    int64_t min_child_dist = child_distances[0];
+    int64_t max_child_dist = child_distances[0];
+    for (id i = 0; i < parent_dist_count; ++i) {
+      if (parent_distances[i] < min_parent_dist) {
+        min_parent_dist = parent_distances[i];
+      }
+      if (parent_distances[i] > max_parent_dist) {
+        max_parent_dist = parent_distances[i];
+      }
+    }
+    for (id i = 0; i < child_dist_count; ++i) {
+      if (child_distances[i] < min_child_dist) {
+        min_child_dist = child_distances[i];
+      }
+      if (child_distances[i] > max_child_dist) {
+        max_child_dist = child_distances[i];
+      }
+    }
+    fprintf(
+      stdout,
+      "Min--max parent/child distances [%lu]: %ld--%ld / %ld--%ld\n\n",
+      seed,
+      min_parent_dist,
+      max_parent_dist,
+      min_child_dist,
+      max_child_dist
+    );
+  }
+  return 0;
+}
+
+int acy_test_poly_select_gnuplot() {
+  id n_samples = 2500;
+  id n_batches = 5;
+
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id poly_cohort_base = 32;
+  id poly_cohort_shape = 8;
+
+  id seed;
+  id parent, child, index;
+
+  char* scriptfile = "test/select/poly-data.gpt";
+  FILE *fout = fopen(scriptfile, "w");
+  fprintf(
+    fout,
+    "#!/usr/bin/env gnuplot\n"
+    "# poly-data.gpt\n"
+    "# gnuplot script for plotting poly-data.dat\n"
+    "set term png\n"
+    "set output \"poly-data.png\"\n"
+    "set title \"Polynomial Parent/Child IDs\"\n"
+    "set xlabel \"Child\"\n"
+    "set ylabel \"Parent\"\n"
+    "datafile = 'poly-data.dat'\n"
+    "stats datafile\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
+    "quit\n"
+  );
+  fclose(fout);
+  chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
+  fout = fopen("test/select/poly-data.dat", "w");
+  fprintf(fout, "# Parent child\n");
+  id min_parent = 0 - 1;
+  id max_parent = 0;
+  id increment = n_samples;
+  for (
+    id start = 3298019;
+    start < 3298019 + increment*n_batches;
+    start += increment
+  ) {
+    seed = acy_prng(start, start + 4654681615348494);
+    fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
+    for (child = start; child < start + n_samples; ++child) {
+      acy_select_poly_parent_and_index(
+        child,
+        parent_cohort_size,
+        child_cohort_size,
+        poly_cohort_base,
+        poly_cohort_shape,
+        seed,
+        &parent,
+        &index
+      );
+      if (parent < min_parent) { min_parent = parent; }
+      if (parent > max_parent) { max_parent = parent; }
+      fprintf(fout, "%lu %lu\n", child, parent);
+    }
+  }
+  fclose(fout);
   return 0;
 }

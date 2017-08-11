@@ -78,15 +78,12 @@ acy_unit_test(
 
 acy_unit_test("polynomial_selection_grahpviz", &acy_test_poly_select_graphviz);
 
-/*
-acy_unit_test("selection_average_distances", &acy_test_avg_parent_child_gap);
-
 acy_unit_test(
-  "selection_average_poly_distances",
+  "polynomial_selection_average_distances",
   &acy_test_avg_poly_parent_child_gap
 );
 
-acy_unit_test("selection_parent/child_plot", &acy_test_select_gnuplot);
-
-acy_unit_test("selection_poly_parent/child_plot", &acy_test_poly_select_gnuplot);
-*/
+acy_unit_test(
+  "selection_poly_parent/child_plot",
+  &acy_test_poly_select_gnuplot
+);

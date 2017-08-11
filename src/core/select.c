@@ -654,16 +654,17 @@ id acy_select_poly_earliest_possible_child(
   id child_super_cohort = parent_super_cohort;
 
   // Get minimum possible outside value 
-  id child_cohort_start = acy_multipoly_cohort_outer(
+  id child_cohort_start = acy_multipoly_outer_min(
     child_super_cohort,
-    poly_cohort_base - 1,
     poly_cohort_base,
-    poly_cohort_shape,
-    seed
+    poly_cohort_shape
   );
 
   return child_cohort_start;
 }
+
+// TODO: DEBUG
+#include <stdio.h>
 
 id acy_select_poly_child_cohort_start(
   id child,
@@ -671,8 +672,28 @@ id acy_select_poly_child_cohort_start(
   id poly_cohort_shape,
   id seed
 ) {
-  // TODO: HERE
-  return child;
+  // Get from absolute-child to child-within-cohort. For polynomial child
+  // super-cohorts, parents in the xth super-cohort have children drawn from
+  // the xth polynomial super-cohort.
+  id super_cohort, super_inner;
+  // polynomial super-cohort 
+  acy_multipoly_cohort_and_inner(
+    child,
+    poly_cohort_base,
+    poly_cohort_shape,
+    seed,
+    &super_cohort,
+    &super_inner
+  );
+
+  // Get minimum possible outside value 
+  id child_cohort_start = acy_multipoly_outer_min(
+    super_cohort,
+    poly_cohort_base,
+    poly_cohort_shape
+  );
+
+  return child_cohort_start;
 }
 
 void acy_select_poly_parent_and_index(
