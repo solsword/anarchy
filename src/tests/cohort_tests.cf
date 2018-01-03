@@ -1910,6 +1910,49 @@ int acy_test_table_construction() {
       return i + 100;
     }
   }
+  acy_cleanup_tables(sumtable, inv_sumtree);
+  return 0;
+}
+
+int acy_test_show_default_table() {
+  id disttable[] = { // default age-at-birth-of-first-child for sci-fi
+     1,  1,  2,  3,  9, // ages 15--19
+    17, 23, 25, 27, 29, // ages 20--25
+    31, 34, 35, 36, 37, // ages 26--30
+    38, 39, 40, 39, 37, // ages 31--35
+    35, 32, 30, 27, 24, // ages 36--40
+    20, 16, 11, 10,  9, // ages 41--45
+     7,  4,  2,  1,  1, // ages 46--50
+     1,  1,  1,  1,  1, // ages 51--55
+  };
+  id table_size = 40;
+  id inv_sumtree_size;
+  id *sumtable, *inv_sumtree;
+
+  // Turn our distribution table into a sum table and an inverse sum tree:
+  acy_create_tables(
+    disttable,
+    table_size,
+    &sumtable,
+    &inv_sumtree,
+    &inv_sumtree_size
+  );
+
+  fprintf(stdout, "\nSumtable:\n");
+  fprintf(stdout, "{ ");
+  for (id i = 0; i < table_size; ++i) {
+    fprintf(stdout, "%lu, ", sumtable[i]);
+  }
+  fprintf(stdout, "%lu }\n", sumtable[table_size]);
+
+  fprintf(stdout, "\nInverse Sumtree (size %lu):\n", inv_sumtree_size);
+  fprintf(stdout, "{ ");
+  for (id i = 0; i < inv_sumtree_size - 1; ++i) {
+    fprintf(stdout, "%lu, ", inv_sumtree[i]);
+  }
+  fprintf(stdout, "%lu }\n", inv_sumtree[inv_sumtree_size - 1]);
+
+  acy_cleanup_tables(sumtable, inv_sumtree);
   return 0;
 }
 
@@ -1983,6 +2026,7 @@ int acy_test_table_use() {
     }
   }
 
+  acy_cleanup_tables(sumtable, inv_sumtree);
   return 0;
 }
 
@@ -2048,6 +2092,7 @@ int acy_test_find_tabulated_cohort_and_inner() {
     }
   }
 
+  acy_cleanup_tables(sumtable, inv_sumtree);
   return 0;
 }
 
@@ -2122,6 +2167,7 @@ int acy_test_tabulated_cohort_sections_visual() {
   }
   fputc('\n', stdout);
 
+  acy_cleanup_tables(sumtable, inv_sumtree);
   return 0;
 }
 

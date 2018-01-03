@@ -141,6 +141,8 @@ acy_unit_test("table_construction", &acy_test_table_construction);
 
 acy_unit_test("table_use", &acy_test_table_use);
 
+acy_unit_test("acy_test_show_default_table", &acy_test_show_default_table);
+
 acy_unit_test(
   "find_tabulated_cohort_and_inner",
   &acy_test_find_tabulated_cohort_and_inner

@@ -179,7 +179,8 @@ static inline id acy_rev_cohort_mix(id mixed, id cohort_size, id seed) {
   }
 }
 
-// Spreads items out between a number of different regions.
+// Spreads items out between a random number of different regions within the
+// cohort.
 #define MIN_REGION_SIZE 2
 #define MAX_REGION_COUNT 16
 // TODO: Don't send stuff out-of-range

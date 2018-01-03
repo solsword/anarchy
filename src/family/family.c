@@ -28,7 +28,12 @@ struct acy_family_info_s {
   id average_children_per_mother; // so that population is stable TODO: gender!?
   // TODO: Deal with the doubling of this value!
   id max_children_per_mother;
-  double child_age_distribution_shape; // TODO: Still use this?
+
+  // tabulated cohort parameters:
+  id *child_age_dist_sumtable;
+  id child_age_dist_sumtable_size;
+  id *child_age_dist_inv_sumtree;
+  id child_age_dist_inv_sumtree_size;
 
   // partner parameters:
   id max_partners_per_mother;
@@ -47,6 +52,14 @@ typedef struct acy_family_info_s acy_family_info;
  * Constants *
  *************/
 
+id const DEFAULT_CHILD_AGE_SUMTABLE[3] = {
+  1, 2, 3
+};
+
+id const DEFAULT_CHILD_AGE_INV_SUMTREE[3] = {
+  1, 2, 3
+};
+
 acy_family_info const DEFAULT_FAMILY_INFO = {
   .seed = 9728182391,
 
@@ -56,7 +69,11 @@ acy_family_info const DEFAULT_FAMILY_INFO = {
   .max_childbearing_age = 40 * ONE_EARTH_YEAR,
   .average_children_per_mother = 1,
   .max_children_per_mother = 32,
-  .child_age_distribution_shape = 10.0,
+
+  .child_age_dist_sumtable = DEFAULT_CHILD_AGE_SUMTABLE,
+  .child_age_dist_sumtable_size = 3,
+  .child_age_dist_inv_sumtree = DEFAULT_CHILD_AGE_INV_SUMTREE, // TODO: HERE
+  .child_age_dist_inv_sumtree_size = 3,
 
   .max_partners_per_mother = 16,
   .likely_partner_age_gap = 3 * ONE_EARTH_YEAR,
@@ -101,7 +118,16 @@ void acy_copy_family_info(
   dst->max_childbearing_age = src->max_childbearing_age;
   dst->average_children_per_mother = src->average_children_per_mother;
   dst->max_children_per_mother = src->max_children_per_mother;
-  dst->child_age_distribution_shape = src->child_age_distribution_shape;
+
+  dst->child_age_dist_sumtable_size = src->child_age_dist_sumtable_size;
+  dst->child_age_dist_inv_sumtree_size = src->child_age_dist_inv_sumtree_size;
+  id i;
+  for (i = 0; i < dst->child_age_dist_sumtable_size; ++i) {
+    dst->child_age_dist_sumtable[i] = src->child_age_dist_sumtable[i];
+  }
+  for (i = 0; i < dst->child_age_dist_inv_sumtree_size; ++i) {
+    dst->child_age_dist_inv_sumtree[i] = src->child_age_dist_inv_sumtree[i];
+  }
 
   dst->max_partners_per_mother = src->max_partners_per_mother;
   dst->likely_partner_age_gap = src->likely_partner_age_gap;
