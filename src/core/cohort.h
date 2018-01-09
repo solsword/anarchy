@@ -10,7 +10,7 @@
 #define INCLUDE_COHORT_H
 
 #include <assert.h>
-#include <math.h> // for roundf
+#include <math.h> // for roundf and log
 #include <malloc.h> // for allocating sum tables and inverse sum trees
 #ifdef DEBUG_COHORT
   #include <stdio.h>
@@ -1376,14 +1376,65 @@ static inline id acy_tree_isleaf(id idx, id tree_size) {
   return acy_tree_left(idx) >= tree_size;
 }
 
+// Computes the index of the next-greater value within a tree of the given size
+// given an index into the tree. Returns the given index if it is already the
+// rightmost.
+static inline id acy_tree_next_index(id idx, id tree_size) {
+  if (acy_tree_isleaf(idx, tree_size)) { // a leaf
+    if (idx % 2) { // a left child
+      return acy_tree_parent(idx);
+    } else { // a right child
+      id result = idx;
+      while (!(result % 2)) { // result is a right child
+        result = acy_tree_parent(result);
+        if (result == 0) {
+          return idx; // out-of-stuff
+        }
+      }
+      return acy_tree_parent(result); // above-right
+    }
+  } else { // a non-leaf
+    id result = acy_tree_right(idx);
+    if (result >= tree_size) { // no right child
+      result = acy_tree_parent(result);
+      while (!(result % 2)) {
+        result = acy_tree_parent(result);
+        if (result == 0) {
+          return idx; // out-of-stuff
+        }
+      }
+      return acy_tree_parent(result); // above-right
+    } else { // has a right child
+      while (!acy_tree_isleaf(result, tree_size)) {
+        result = acy_tree_left(result);
+      }
+      return result;
+    }
+  }
+}
+
+// Computes index of the leftmost entry in the given tree.
+static inline id acy_tree_first(id tree_size) {
+  id result = 0;
+  while (!acy_tree_isleaf(result, tree_size)) {
+    result = acy_tree_left(result);
+  }
+  return result;
+}
+
 // Computes the required inverse sum tree size for a sum table of the given
 // size. For an inverse sumtree, each sum table entry except the first has a
 // spot in the tree, and each possible distribution index also has a spot.
 // Because the number of distribution indices is equal to the number of table
-// entries, the total is just twice the size of the sum table minus one.
+// entries, the total is should be twice the size of the sum table minus one.
+//
 static inline id acy_inv_sumtree_size(id table_size) {
-  return table_size*2 - 1;
+  return table_size * 2 - 1;
 }
+// HOWEVER, the leaves in the last layer may have some unevenness, which means
+// that we actually need to save extra space for storing them. So the actual
+// size is "large enough to store each sum table entry, plus one layer."
+  // return pow(2, (id) ceil(log2((float) table_size)) + 1) - 1;
 
 // Fills in an inverse sumtree for the given sum table. Each non-leaf entry is
 // a test value. Not inline because it's recursive.

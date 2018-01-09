@@ -64,8 +64,7 @@ acy_family_info const DEFAULT_FAMILY_INFO = {
   .seed = 9728182391,
 
   .birth_rate_per_day = 10000, // modern is 350,000+
-  //.min_childbearing_age = 15 * ONE_EARTH_YEAR, TODO: Swap back
-  .min_childbearing_age = 20 * ONE_EARTH_YEAR,
+  .min_childbearing_age = 15 * ONE_EARTH_YEAR, // TODO: Adjust?
   .max_childbearing_age = 40 * ONE_EARTH_YEAR,
   .average_children_per_mother = 1,
   .max_children_per_mother = 32,

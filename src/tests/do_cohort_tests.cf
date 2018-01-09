@@ -137,7 +137,15 @@ acy_unit_test(
   &acy_test_multipoly_generations_gnuplot
 );
 
+acy_unit_test("tree_iteration", &acy_test_tree_iteration);
+
 acy_unit_test("table_construction", &acy_test_table_construction);
+
+acy_unit_test("table_construction (large)", &acy_test_table_construction_large);
+
+acy_unit_test("table_construction (alt)", &acy_test_table_construction_alt);
+
+acy_unit_test("table_construction (sizes)", &acy_test_table_construction_sizes);
 
 acy_unit_test("table_use", &acy_test_table_use);
 
