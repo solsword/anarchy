@@ -51,13 +51,43 @@ typedef struct acy_family_info_s acy_family_info;
 /*************
  * Constants *
  *************/
+ 
+/*
+ * The age-of-parent distribution table used to generate the tables below:
+ *
+ *  id disttable[] = {
+ *     1,  1,  2,  3,  9, // at ages 15--19
+ *    17, 23, 25, 27, 29, // at ages 20--25
+ *    31, 34, 35, 36, 37, // at ages 26--30
+ *    38, 39, 40, 39, 37, // at ages 31--35
+ *    35, 32, 30, 27, 24, // at ages 36--40
+ *    20, 16, 11, 10,  9, // at ages 41--45
+ *     7,  4,  2,  1,  1, // at ages 46--50
+ *     1,  1,  1,  1,  1, // at ages 51--55
+ *  };
+ */
 
-id const DEFAULT_CHILD_AGE_SUMTABLE[3] = {
-  1, 2, 3
+
+id const DEFAULT_CHILD_AGE_SUMTABLE[41] = {
+    0,   1,   2,   3,   4, // at ages 15--19
+    5,   6,   7,   9,  13, // at ages 20--24
+   20,  29,  39,  50,  66, // at ages 25--29
+   86, 110, 137, 167, 199, // at ages 30--34
+  234, 271, 310, 350, 389, // at ages 35--39
+  427, 464, 500, 535, 569, // at ages 40--44
+  600, 629, 656, 681, 704, // at ages 45--49
+  721, 730, 733, 735, 736, // at ages 50--54
+  737 // overall sum
 };
 
-id const DEFAULT_CHILD_AGE_INV_SUMTREE[3] = {
-  1, 2, 3
+id const DEFAULT_CHILD_AGE_INV_SUMTREE[79] = {
+  389,
+  110,                                    656,
+    9,                234,                535,                730,
+    4,        39,     167,      310,      464,      600,      704,      735,
+    2,   6,   20, 66, 137, 199, 271, 350, 427, 500, 569, 629, 681, 721, 733,736,
+    1,3, 5,7, 13,29, 50,86, 16,17, 18,19, 20,21, 22,23, 24,25, 26,27, 28,29, 30,31, 32,33, 34,35, 36,37, 38,39,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 };
 
 acy_family_info const DEFAULT_FAMILY_INFO = {
@@ -70,9 +100,9 @@ acy_family_info const DEFAULT_FAMILY_INFO = {
   .max_children_per_mother = 32,
 
   .child_age_dist_sumtable = DEFAULT_CHILD_AGE_SUMTABLE,
-  .child_age_dist_sumtable_size = 3,
+  .child_age_dist_sumtable_size = 41,
   .child_age_dist_inv_sumtree = DEFAULT_CHILD_AGE_INV_SUMTREE, // TODO: HERE
-  .child_age_dist_inv_sumtree_size = 3,
+  .child_age_dist_inv_sumtree_size = 79,
 
   .max_partners_per_mother = 16,
   .likely_partner_age_gap = 3 * ONE_EARTH_YEAR,
@@ -120,13 +150,8 @@ void acy_copy_family_info(
 
   dst->child_age_dist_sumtable_size = src->child_age_dist_sumtable_size;
   dst->child_age_dist_inv_sumtree_size = src->child_age_dist_inv_sumtree_size;
-  id i;
-  for (i = 0; i < dst->child_age_dist_sumtable_size; ++i) {
-    dst->child_age_dist_sumtable[i] = src->child_age_dist_sumtable[i];
-  }
-  for (i = 0; i < dst->child_age_dist_inv_sumtree_size; ++i) {
-    dst->child_age_dist_inv_sumtree[i] = src->child_age_dist_inv_sumtree[i];
-  }
+  dst->child_age_dist_sumtable = src->child_age_dist_sumtable;
+  dst->child_age_dist_inv_sumtree = src->child_age_dist_inv_sumtree;
 
   dst->max_partners_per_mother = src->max_partners_per_mother;
   dst->likely_partner_age_gap = src->likely_partner_age_gap;

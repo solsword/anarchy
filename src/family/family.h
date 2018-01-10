@@ -73,7 +73,8 @@ acy_family_info *acy_create_family_info();
 // Destroys a heap-allocated family info object.
 void acy_destroy_family_info(acy_family_info *info);
 
-// Copies family info from src into dst.
+// Copies family info from src into dst. The age distribution tables (sum table
+// and inverse sum tree) are NOT copied, so try to avoid editing them directly.
 void acy_copy_family_info(
   acy_family_info const * const src,
   acy_family_info *dst

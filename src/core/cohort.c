@@ -8,101 +8,6 @@
 
 #include "cohort.h"
 
-// Private recursive helper for acy_fill_inv_sumtree below which tracks base
-// index and tree position.
-void _acy_fill_inv_sumtree_recursive(
-  id *sumtable,
-  id table_size,
-  id *inv_sumtree,
-  id base_index,
-  id tree_index
-) {
-  if (table_size == 1) {
-    inv_sumtree[tree_index] = sumtable[0];
-    inv_sumtree[acy_tree_left(tree_index)] = base_index;
-    inv_sumtree[acy_tree_right(tree_index)] = base_index + 1;
-#ifdef DEBUG_COHORT
-    fprintf(
-      stderr,
-      "fill_inv_sumtree_recursive::TS=1\n  INT %lu<-%lu\n",
-      tree_index, sumtable[0]
-    );
-    fprintf(
-      stderr,
-      "    FIN %lu<-%lu\n    FIN %lu<-%lu\n",
-      acy_tree_left(tree_index), base_index,
-      acy_tree_right(tree_index), base_index + 1
-    );
-#endif
-  } else if (table_size == 2) {
-    inv_sumtree[tree_index] = sumtable[1];
-
-    id left = acy_tree_left(tree_index);
-    inv_sumtree[left] = sumtable[0];
-    inv_sumtree[acy_tree_left(left)] = base_index;
-    inv_sumtree[acy_tree_right(left)] = base_index + 1;
-
-    id right = acy_tree_right(tree_index);
-    inv_sumtree[right] = base_index + 2;
-    inv_sumtree[acy_tree_left(right)] = base_index + 2; // fill
-    inv_sumtree[acy_tree_right(right)] = base_index + 2; // fill
-#ifdef DEBUG_COHORT
-    fprintf(
-      stderr,
-      "fill_inv_sumtree_recursive::TS=2\n  INT %lu<-%lu\n",
-      tree_index, sumtable[1]
-    );
-    fprintf(
-      stderr,
-      "    INT %lu<-%lu\n      FIN %lu<-%lu\n      FIN %lu<-%lu\n    FIN %lu<-%lu\n",
-      left, sumtable[0],
-      acy_tree_left(left), base_index,
-      acy_tree_right(left), base_index + 1,
-      acy_tree_right(tree_index), base_index + 2
-    );
-#endif
-  } else {
-    id split_at = table_size / 2;
-    inv_sumtree[tree_index] = sumtable[split_at];
-    id left = acy_tree_left(tree_index);
-    id left_size = split_at;
-    id right = acy_tree_right(tree_index);
-    id right_size = table_size - split_at - 1;
-#ifdef DEBUG_COHORT
-    fprintf(
-      stderr,
-      "fill_inv_sumtree_recursive::TS=%lu\n  INT %lu<-[%lu]%lu\n",
-      table_size,
-      tree_index, split_at, sumtable[split_at]
-    );
-    /*
-    fprintf(
-      stderr,
-      "    %lu<-(%lu)REC[%lu,%lu]\n    %lu<-(%lu)REC[%lu,%lu]\n",
-      acy_tree_left(tree_index), split_at,
-        base_index, left,
-      acy_tree_right(tree_index), table_size - split_at - 1,
-        base_index + split_at + 1, right
-    );
-    */
-#endif
-    _acy_fill_inv_sumtree_recursive(
-      sumtable,
-      left_size,
-      inv_sumtree,
-      base_index,
-      left
-    );
-    _acy_fill_inv_sumtree_recursive(
-      sumtable + split_at + 1,
-      right_size,
-      inv_sumtree,
-      base_index + split_at + 1,
-      right
-    );
-  }
-}
-
 void acy_fill_inv_sumtree(
   id *sumtable,
   id table_size,
@@ -120,10 +25,9 @@ void acy_fill_inv_sumtree(
   }
   fprintf(stderr, "\n");
 #endif
-  // _acy_fill_inv_sumtree_recursive(sumtable+1, table_size-1, inv_sumtree, 0, 0);
   id sts = acy_inv_sumtree_size(table_size);
   id idx = acy_tree_first(sts);
-  id table_which = 0;
+  id table_which = 1;
   id index_which = 0;
   for (id i = 0; i < sts; ++i) {
     if (idx < table_size - 1) { // a sumtable value entry

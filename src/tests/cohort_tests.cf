@@ -1909,6 +1909,21 @@ int acy_test_tree_iteration() {
   return 0;
 }
 
+void print_tree(id *tree, id tree_size) {
+  id lim = 1;
+  id j = 0;
+  for (id i = 0; i < tree_size; ++i) {
+    fprintf(stderr, "%lu ", tree[i]);
+    j += 1;
+    if (j >= lim) {
+      fprintf(stderr, "\n");
+      lim *= 2;
+      j = 0;
+    }
+  }
+  fprintf(stderr, "\n");
+}
+
 int acy_test_table_construction() {
   id disttable[] = { 1, 2, 3 };
   id table_size = 3;
@@ -1929,10 +1944,10 @@ int acy_test_table_construction() {
   id inv_sumtree_result[] = {
     5,
     3,        2,
-    0, 1,     2, 2
+    0, 1
   };
 
-  id correct_size = 7;
+  id correct_size = 5;
 
   for (id i = 0; i < table_size + 1; ++i) {
     if (sumtable[i] != sumtable_result[i]) {
@@ -1971,15 +1986,16 @@ int acy_test_table_construction() {
         "Inverse sum tree entry [%lu] is incorrect: %lu != %lu.\n",
         i, inv_sumtree[i], inv_sumtree_result[i]
       );
-      fprintf(stderr, "Full tree: ");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree[j]);
+      fprintf(stderr, "Full sum table:\n");
+      for (id j = 0; j < table_size + 1; ++j) {
+        fprintf(stderr, "%lu ", sumtable[j]);
+        if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
       }
       fprintf(stderr, "\n");
-      fprintf(stderr, "Correct:   ");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree_result[j]);
-      }
+      fprintf(stderr, "Full tree:\n");
+      print_tree(inv_sumtree, inv_sumtree_size);
+      fprintf(stderr, "Correct:\n");
+      print_tree(inv_sumtree_result, inv_sumtree_size);
       fprintf(stderr, "\n");
       return i + 100;
     }
@@ -2055,16 +2071,17 @@ int acy_test_table_construction() {
         "Inverse sum tree entry [%lu] is incorrect: %lu != %lu.\n",
         i, inv_sumtree[i], inv_sumtree_result2[i]
       );
-      fprintf(stderr, "Full tree: ");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree[j]);
+      fprintf(stderr, "Full sum table:\n");
+      for (id j = 0; j < table_size + 1; ++j) {
+        fprintf(stderr, "%lu ", sumtable[j]);
+        if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
       }
       fprintf(stderr, "\n");
-      fprintf(stderr, "Correct:   ");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree_result2[j]);
-      }
+      fprintf(stderr, "Full tree:\n");
+      print_tree(inv_sumtree, inv_sumtree_size);
       fprintf(stderr, "\n");
+      fprintf(stderr, "Correct:\n");
+      print_tree(inv_sumtree_result2, inv_sumtree_size);
       return i + 100;
     }
   }
@@ -2090,13 +2107,13 @@ int acy_test_table_construction() {
   };
 
   id inv_sumtree_result3[] = {
-    14,
+    18,
     6,                    20,
-    2,          2,        18,             5,
-    0,    1,    2,    2,   3,     4,      5,   5
+    2,         14,         4,             5,
+    0,    1,    2,    3
   };
 
-  correct_size = 15;
+  correct_size = 11;
 
   for (id i = 0; i < table_size + 1; ++i) {
     if (sumtable[i] != sumtable_result3[i]) {
@@ -2135,16 +2152,16 @@ int acy_test_table_construction() {
         "Inverse sum tree entry [%lu] is incorrect: %lu != %lu.\n",
         i, inv_sumtree[i], inv_sumtree_result3[i]
       );
-      fprintf(stderr, "Full tree: ");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree[j]);
+      fprintf(stderr, "Full sum table:\n");
+      for (id j = 0; j < table_size + 1; ++j) {
+        fprintf(stderr, "%lu ", sumtable[j]);
+        if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
       }
       fprintf(stderr, "\n");
-      fprintf(stderr, "Correct:   ");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree_result3[j]);
-      }
-      fprintf(stderr, "\n");
+      fprintf(stderr, "Full tree:\n");
+      print_tree(inv_sumtree, inv_sumtree_size);
+      fprintf(stderr, "Correct:\n");
+      print_tree(inv_sumtree_result3, inv_sumtree_size);
       return i + 100;
     }
   }
@@ -2159,11 +2176,9 @@ int acy_test_table_construction_large() {
     1, 1, 1, 1, 1, // 10--14
     1, 1, 1, 1, 1, // 15--19
     1, 1, 1, 1, 1, // 20--24
-    1, 1, 1, 1, 1, // 25--29
-    1, 1, 1, 1, 1, // 30--34
-    1, 1, 1, 1, 1, // 35--39
+    1, 1, 1 // 25--27
   };
-  id table_size = 40;
+  id table_size = 28;
   id inv_sumtree_size;
   id *sumtable, *inv_sumtree;
 
@@ -2182,98 +2197,35 @@ int acy_test_table_construction_large() {
     10, 11, 12, 13, 14,
     15, 16, 17, 18, 19,
     20, 21, 22, 23, 24,
-    25, 26, 27, 28, 29,
-    30, 31, 32, 33, 34,
-    35, 36, 37, 38, 39,
-    40
+    25, 26, 27, 28
   };
 
   /*
-   * How the indices are split:
-      1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-   20, (index 19)
-     21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39
-
-        1,  2,  3,  4,  5,  6,  7,  8,  9,
-     10, (index 9)
-       11, 12, 13, 14, 15, 16, 17, 18, 19,
-   20, (index 19)
-       21, 22, 23, 24, 25, 26, 27, 28, 29,
-     30, (index 9)
-       31, 32, 33, 34, 35, 36, 37, 38, 39
-
-          1,  2,  3,  4,
-        5, (index 4)
-          6,  7,  8,  9,
-     10, (index 9)
-         11, 12, 13, 14,
-       15, (index 4)
-         16, 17, 18, 19,
-   20, (index 19)
-         21, 22, 23, 24,
-       25, (index 4)
-         26, 27, 28, 29,
-     30, (index 9)
-         31, 32, 33, 34,
-       35, (index 4)
-         36, 37, 38, 39
-
-            1,  2,
-          3, (index 2)
-            4,
-        5, (index 4)
-            6,  7,
-          8, (index 2)
-            9,
-     10, (index 9)
-           11, 12,
-         13, (index 2)
-           14,
-       15, (index 4)
-           16, 17,
-         18, (index 2)
-           19,
-   20, (index 19)
-           21, 22,
-         23, (index 2)
-           24,
-       25, (index 4)
-           26, 27,
-         28, (index 2)
-           29,
-     30, (index 9)
-           31, 32,
-         33, (index 2)
-           34,
-       35, (index 4)
-           36, 37,
-         38, (index 2)
-           39
-
-   A      B       B             C              D               D
-  0 1    A 2    A   C        B     D       B       E       B        F
-        0 1    0 1 2 3    A   2   3 4    A   C    4 5    A   C    E  6
-                         0 1            0 1 2 3         0 1 2 3  4 5
-
-          D                   E                    F
-      B       F           C       G            D       H
-    A   C   E   G       B   D   F   H        B    E   G   I
-   0 1 2 3 4 5 6 7     A 2 3 4 5 6 7 8     A   C 4 5 6 7 8 9
-                      0 1                 0 1 2 3
-
+   * Some example tree arrangements:
+   *
+   *    A      B       B             C              D               D
+   *   0 1    A 2    A   C        B     D       B       E       B        F
+   *         0 1    0 1 2 3    A   2   3 4    A   C    4 5    A   C    E  6
+   *                          0 1            0 1 2 3         0 1 2 3  4 5
+   *
+   *         D                   E                    F
+   *     B       F           C       G            D       H
+   *   A   C   E   G       B   D   F   H        B    E   G   I
+   *  0 1 2 3 4 5 6 7     A 2 3 4 5 6 7 8     A   C 4 5 6 7 8 9
+   *                     0 1                 0 1 2 3
+   *
    */
 
   id inv_sumtree_result[] = {
-   20,
-   10,                                                 30,
-   5,                              15,                 25,                35,
-   3,              8,              13,        18,      23,       28,      33,38,
-   2,      4,      7,      9, // TODO: HERE!
-   1,  2,  3,  4,  6,  7,  8,  9,
-   0,1,2,2,3,3,4,4,5,6,7,7,8,8,9,9
+                                     16,
+                8,                                         24,
+         4,               12,                     20,                  26,
+     2,      6,     10,         14,         18,         22,        25,     27,
+   1,  3,  5,  7,  9,  11,   13,   15,   17,   19,   21,   23,   24,25,   26,27,
+  0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23
   };
 
-  id correct_size = 127;
+  id correct_size = 55;
 
   for (id i = 0; i < table_size + 1; ++i) {
     if (sumtable[i] != sumtable_result[i]) {
@@ -2319,17 +2271,9 @@ int acy_test_table_construction_large() {
       }
       fprintf(stderr, "\n");
       fprintf(stderr, "Full tree:\n");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree[j]);
-        if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
-      }
-      fprintf(stderr, "\n");
+      print_tree(inv_sumtree, inv_sumtree_size);
       fprintf(stderr, "Correct:\n");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree_result[j]);
-        if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
-      }
-      fprintf(stderr, "\n");
+      print_tree(inv_sumtree_result, inv_sumtree_size);
       return i + 100;
     }
   }
@@ -2373,45 +2317,30 @@ int acy_test_table_construction_alt() {
     737
   };
 
-   /* TODO: HERE
-           0,   1,   2,   3,   4,
-        5,
-           6,   7,   9,  13,
-     20,
-          29,  39,  50,  66,
-       86,
-         110, 137, 167, 199,
-
-        271, 310, 350, 389, 427,
-      464,
-        500, 535, 569, 600,
-    629,
-        656, 681, 704, 721,
-      730,
-        733, 735, 736, 737
-
   id inv_sumtree_result[] = {
-  234,
-   20,                                           629,
-   5,                           86,              464,               730,
-   3,                   9,
-   2,           4,      7,       13,
-   1,    X,     X,Y     6,   X,  X, X
-   X, X, *,*,   **,**   X,X, X,X
+    389,
+    110,                                656,
+    9,                  234,            535,            730,
+    4,      39,         167,    310,    464,    600,    704,    735,
+    2,  6,  20,   66,   137,199,271,350,427,500,569,629,681,721,733,736,
+    1,3,5,7,13,29,50,86,   16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,
+    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+  };
+
+  /*
+   * The result indices:
+  id inv_sumtree_result[] = {
+    24,
+    16,                            32,
+    8,                 20,         28,         36,
+    4,      12,        18,   22,   26,   30,   34,   38,
+    2,  6,  10,  14,   17,19,21,23,25,27,29,31,33,35,37,39,
+    1,3,5,7,9,11,13,15,   16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,
+    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
   };
   */
 
-  id inv_sumtree_result[] = {
-234,
- 20,                                 600,
-  5,             86,                 427,                  721,
-  3,     9,      50,      167,       350,       535,       681,       735,
-  2, 4,  7, 13,  39, 66,  137, 199,  310, 389,  500, 569,  656, 704,  733, 736,
-  1,2, 3,4, 6,7, 8,9, 29,12, 13,14, 110,17, 18,19, 271,22, 23,24, 464,27, 28,29, 629,32, 33,34, 730,37,
-  38,39, 0,1,
-  };
-
-  id correct_size = 127;
+  id correct_size = 79;
 
   for (id i = 0; i < table_size + 1; ++i) {
     if (sumtable[i] != sumtable_result[i]) {
@@ -2457,17 +2386,9 @@ int acy_test_table_construction_alt() {
       }
       fprintf(stderr, "\n");
       fprintf(stderr, "Full tree:\n");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree[j]);
-        if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
-      }
-      fprintf(stderr, "\n");
+      print_tree(inv_sumtree, inv_sumtree_size);
       fprintf(stderr, "Correct:\n");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree_result[j]);
-        if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
-      }
-      fprintf(stderr, "\n");
+      print_tree(inv_sumtree_result, inv_sumtree_size);
       return i + 100;
     }
   }
@@ -2495,13 +2416,13 @@ int acy_test_table_construction_sizes() {
     0, // unused
     1,
     3,
+    5,
     7,
-    7,
+    9,
+    11,
+    13,
     15,
-    15,
-    15,
-    15,
-    31
+    17
   };
 
   id inv_sumtree_results[10][31] = {
@@ -2511,30 +2432,31 @@ int acy_test_table_construction_sizes() {
       0, 1 }, // ts = 2
     { 2,
       1,     2,
-      0, 1,  2, 2 }, // ts = 3
+      0, 1 }, // ts = 3
     { 2,
       1,     3,
       0, 1,  2, 3 }, // ts = 4
     { 3,
       2,           4,
       1,    2,     3,     4,
-      0,1,  2, 2,  3, 3,  4, 4 }, // ts = 5
-    { 3,
-      2,           5,
-      1,    2,     4,     5,
-      0,1,  2, 2,  3, 4,  5, 5 }, // ts = 6
+      0,1 }, // ts = 5
     { 4,
       2,           5,
-      1,    3,     4,     6,
-      0,1,  2, 3,  4, 5,  6, 6 }, // ts = 7
+      1,    3,     4,     5,
+      0,1,  2, 3, }, // ts = 6
+    { 4,
+      2,           6,
+      1,    3,     5,     6,
+      0,1,  2, 3,  4, 5 }, // ts = 7
     { 4,
       2,           6,
       1,    3,     5,     7,
       0,1,  2, 3,  4, 5,  6, 7 }, // ts = 8
     { 5,
-      2,           6,
-      1,    3,     5,     7,
-      0,1,  2, 3,  4, 5,  6, 7 }  // ts = 9
+      3,           7,
+      2,    4,     6,     8,
+      1, 2, 3,4,   5,6,   7,8,
+      0,1 }  // ts = 9
   };
 
   // Construct sum- and inverse-sum-tables from distribution tables of sizes
@@ -2593,17 +2515,9 @@ int acy_test_table_construction_sizes() {
         }
         fprintf(stderr, "\n");
         fprintf(stderr, "Full tree:\n");
-        for (id j = 0; j < inv_sumtree_size; ++j) {
-          fprintf(stderr, "%lu ", inv_sumtree[j]);
-          if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
-        }
-        fprintf(stderr, "\n");
+        print_tree(inv_sumtree, inv_sumtree_size);
         fprintf(stderr, "Correct:\n");
-        for (id j = 0; j < inv_sumtree_size; ++j) {
-          fprintf(stderr, "%lu ", inv_sumtree_results[table_size][j]);
-          if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
-        }
-        fprintf(stderr, "\n");
+        print_tree(inv_sumtree_results[table_size], inv_sumtree_size);
         return i + 100;
       }
     }
@@ -2716,10 +2630,14 @@ int acy_test_table_use() {
         "Inverse sum lookup [%lu] failed: %lu != %lu.\n",
         i, invsum, inv_results[i]
       );
-      fprintf(stderr, "Full tree: ");
-      for (id j = 0; j < inv_sumtree_size; ++j) {
-        fprintf(stderr, "%lu ", inv_sumtree[j]);
+      fprintf(stderr, "Full sum table:\n");
+      for (id j = 0; j < table_size + 1; ++j) {
+        fprintf(stderr, "%lu ", sumtable[j]);
+        if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
       }
+      fprintf(stderr, "\n");
+      fprintf(stderr, "Full tree:\n");
+      print_tree(inv_sumtree, inv_sumtree_size);
       return i + 100;
     }
   }
