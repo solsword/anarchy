@@ -1463,7 +1463,8 @@ void acy_cleanup_tables(
 
 // Looks up the desired distribution sum in a sum table (see acy_fill_sumtable
 // above). Note that the given index 'n' isn't checked for validity; you can
-// use valgrind if you're worried about uninitialized access as a result.
+// use valgrind if you're worried about uninitialized access as a result. If
+// you're using a multiplier, you can simply multiply the return value.
 static inline id acy_tablesum(id n, id *sumtable) {
   return sumtable[n];
 }
@@ -1475,10 +1476,16 @@ static inline id acy_tablesum(id n, id *sumtable) {
 // proportional to the log of the number of table entries, not the log of the
 // table sum, so coarser tables with equivalent sums can potentially be used to
 // speed things up.
-static inline id acy_inv_tablesum(id sum, id *inv_sumtree, id tree_size) {
+// The given multiplier value is used to scale each sum tree entry.
+static inline id acy_inv_tablesum(
+  id sum,
+  id *inv_sumtree,
+  id tree_size,
+  id multiplier
+) {
   id idx = 0;
   while (!acy_tree_isleaf(idx, tree_size)) {
-    if (sum < inv_sumtree[idx]) {
+    if (sum < inv_sumtree[idx] * multiplier) {
       idx = acy_tree_left(idx);
     } else {
       idx = acy_tree_right(idx);
@@ -1487,25 +1494,37 @@ static inline id acy_inv_tablesum(id sum, id *inv_sumtree, id tree_size) {
   return inv_sumtree[idx];
 }
 
-// Works like acy_multipoly_cohort_and_inner above, but the cohort distribution
-// is specified by a sum table and an inverse sum tree instead of being a
-// specific polynomial function with just a shape parameter. Note that both the
-// sum table and inverse sum tree can be computed from a distribution table
-// using the functions above. This gives fine-grained control over the
-// resulting relative distribution.
+// According to a distribution table that specifies the relative number of
+// items found within a given number of regions, computes the cohort number and
+// inner index of the given linear outer ID.
+//
+// The distribution table must first be converted to a sum table and inverse
+// sum tree, using acy_create_tables and acy_fill_sumtable/
+// acy_fill_inv_sumtree.
+//
+// The cohort size is determined by the last entry in the sum table, and those
+// members are spread over a region that's equal to the cohort size times the
+// number of sumtable entries. So for example, if the sumtable's grand total is
+// 45 and the sum table has 10 entries, then each cohort will include a total
+// of 45 members drawn from a region of 450 IDs. While the cohort spread cannot
+// be changed except by creating a sum table with a different number of
+// entries, the cohort size can be manipulated using the 'multiplier' argument,
+// which is multiplied with each entry in the sum table to create a
+// distribution with a different cohort size (but the same shape).
 void acy_tabulated_cohort_and_inner(
   id outer,
   id *sumtable,
   id sumtable_size,
   id *inv_sumtree,
   id inv_sumtree_size,
+  id multiplier,
   id seed,
   id *r_cohort,
   id *r_inner
 );
 
 // The inverse of acy_tabulated_cohort_and_inner, finds the outer ID given a
-// cohort and inner ID.
+// cohort and inner ID (the multiplier and tables must be specified as well).
 id acy_tabulated_cohort_outer(
   id cohort,
   id inner,
@@ -1513,6 +1532,7 @@ id acy_tabulated_cohort_outer(
   id sumtable_size,
   id *inv_sumtree,
   id inv_sumtree_size,
+  id multiplier,
   id seed
 );
 
@@ -1523,7 +1543,8 @@ id acy_tabulated_outer_min(
   id *sumtable,
   id sumtable_size,
   id *inv_sumtree,
-  id inv_sumtree_size
+  id inv_sumtree_size,
+  id multiplier
 );
 
 #endif // INCLUDE_COHORT_H

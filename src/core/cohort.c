@@ -79,11 +79,12 @@ void acy_tabulated_cohort_and_inner(
   id table_size,
   id *inv_sumtree,
   id inv_sumtree_size,
+  id multiplier,
   id seed,
   id *r_cohort,
   id *r_inner
 ) {
-  id cohort_size = acy_tablesum(table_size, sumtable);
+  id cohort_size = acy_tablesum(table_size, sumtable) * multiplier;
   id super_size = cohort_size * table_size;
 
   id super_cohort;
@@ -91,7 +92,12 @@ void acy_tabulated_cohort_and_inner(
   acy_cohort_and_inner(outer, super_size, &super_cohort, &super_inner);
 
 #ifdef DEBUG_COHORT
-  fprintf(stderr, "\ntabulated_cohort::outer::%lu\n", outer);
+  fprintf(
+    stderr,
+    "\ntabulated_cohort::outer/multiplier::%lu/%lu\n",
+    outer,
+    multiplier
+  );
   fprintf(
     stderr,
     "tabulated_cohort::tsize/size/super::%lu/%lu/%lu\n",
@@ -125,25 +131,35 @@ void acy_tabulated_cohort_and_inner(
 #endif
 
 #ifdef DEBUG_COHORT
-  fprintf(stderr, "tabulated_cohort::inv_sumtree::");
-  for (id i = 0; i < inv_sumtree_size; ++i) {
-    fprintf(stderr, "%lu ", inv_sumtree[i]);
+  fprintf(stderr, "tabulated_cohort::inv_sumtree:+\n");
+  id lim = 1;
+  id j = 0;
+  for (id k = 0; k < inv_sumtree_size; ++k) {
+    fprintf(stderr, "%lu ", inv_sumtree[k]);
+    j += 1;
+    if (j >= lim) {
+      fprintf(stderr, "\n");
+      lim *= 2;
+      j = 0;
+    }
   }
-  fprintf(stderr, "\n");
+  if (j != 0) {
+    fprintf(stderr, "\n");
+  }
 #endif
 
   // Figure out which slice we fall into:
-  id slice = acy_inv_tablesum(shuf, inv_sumtree, inv_sumtree_size);
+  id slice = acy_inv_tablesum(shuf, inv_sumtree, inv_sumtree_size, multiplier);
   // ...and where we are in that slice:
-  id before_slice = acy_tablesum(slice, sumtable);
-  id in_slice = shuf - before_slice;
+  id after_slice = acy_tablesum(slice, sumtable) * multiplier;
+  id in_slice = shuf - after_slice;
 
 #ifdef DEBUG_COHORT
   fprintf(
     stderr,
-    "tabulated_cohort::slice/before_slice/in_slice::%lu/%lu/%lu\n",
+    "tabulated_cohort::slice/after_slice/in_slice::%lu/%lu/%lu\n",
     slice,
-    before_slice,
+    after_slice,
     in_slice
   );
 #endif
@@ -163,7 +179,11 @@ void acy_tabulated_cohort_and_inner(
   // difference of two table sums: the table sum for the full cohort minus the
   // table sum for our segment, and notice that our slice is the same as our
   // segment. So:
-  *r_inner = cohort_size - acy_tablesum(slice, sumtable) - in_slice - 1;
+  *r_inner = (
+    cohort_size - 1
+  - (acy_tablesum(slice, sumtable) * multiplier)
+  - in_slice
+  );
 
 #ifdef DEBUG_COHORT
   fprintf(
@@ -182,13 +202,20 @@ id acy_tabulated_cohort_outer(
   id table_size,
   id *inv_sumtree,
   id inv_sumtree_size,
+  id multiplier,
   id seed
 ) {
-  id cohort_size = acy_tablesum(table_size, sumtable);
+  id cohort_size = acy_tablesum(table_size, sumtable) * multiplier;
   id super_size = cohort_size * table_size;
 
 #ifdef DEBUG_COHORT
-  fprintf(stderr, "\ntabulated_outer::cohort/inner::%lu/%lu\n", cohort, inner);
+  fprintf(
+    stderr,
+    "\ntabulated_outer::cohort/inner/multiplier::%lu/%lu/%lu\n",
+    cohort,
+    inner,
+    multiplier
+  );
   fprintf(
     stderr,
     "tabulated_outer::tsize/size/super::%lu/%lu/%lu\n",
@@ -200,8 +227,13 @@ id acy_tabulated_cohort_outer(
 
   id inv_inner = cohort_size - 1 - inner;
 
-  id segment = acy_inv_tablesum(inv_inner, inv_sumtree, inv_sumtree_size);
-  id after = acy_tablesum(segment, sumtable);
+  id segment = acy_inv_tablesum(
+    inv_inner,
+    inv_sumtree,
+    inv_sumtree_size,
+    multiplier
+  );
+  id after = acy_tablesum(segment, sumtable) * multiplier;
 
 #ifdef DEBUG_COHORT
   fprintf(
@@ -270,16 +302,18 @@ id acy_tabulated_outer_min(
   id *sumtable,
   id sumtable_size,
   id *inv_sumtree,
-  id inv_sumtree_size
+  id inv_sumtree_size,
+  id multiplier
 ) {
-  id cohort_size = acy_tablesum(sumtable_size - 1, sumtable);
+  id cohort_size = acy_tablesum(sumtable_size - 1, sumtable) * multiplier;
   id super_size = cohort_size * sumtable_size;
 
 #ifdef DEBUG_COHORT
   fprintf(
     stderr,
-    "\ntabulated_outer_min::cohort::%lu\n",
-    cohort
+    "\ntabulated_outer_min::cohort/multiplier::%lu/%lu\n",
+    cohort,
+    multiplier
   );
   fprintf(
     stderr,
@@ -292,7 +326,12 @@ id acy_tabulated_outer_min(
 
   id inv_inner = cohort_size - 1;
 
-  id segment = acy_inv_tablesum(inv_inner, inv_sumtree, inv_sumtree_size);
+  id segment = acy_inv_tablesum(
+    inv_inner,
+    inv_sumtree,
+    inv_sumtree_size,
+    multiplier
+  );
 
 #ifdef DEBUG_COHORT
   fprintf(stderr, "tabulated_outer_min::segment::%lu\n", segment);

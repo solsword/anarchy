@@ -30,9 +30,9 @@ struct acy_family_info_s {
   id max_children_per_mother;
 
   // tabulated cohort parameters:
-  id *child_age_dist_sumtable;
+  id const *child_age_dist_sumtable;
   id child_age_dist_sumtable_size;
-  id *child_age_dist_inv_sumtree;
+  id const *child_age_dist_inv_sumtree;
   id child_age_dist_inv_sumtree_size;
 
   // partner parameters:

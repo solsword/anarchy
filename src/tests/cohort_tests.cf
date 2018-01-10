@@ -2610,6 +2610,26 @@ int acy_test_table_use() {
     16,
   };
 
+  id inv_results7[] = {
+    0, 0, 0, 0, 0, 0, 0,
+    1, // 7
+         1, 1, 1, 1,
+      1, 1, 1, 1, 1,
+      1, 1, 1, 1,
+    2, // 21
+         2, 2, 2, 2,
+      2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2,
+      2, 2, 2, 2, 2,
+      2,
+    3, // 42
+         3, 3, 3, 3,
+      3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3,
+      3, 3, 3, 3, 3 // 66 is the end of the smaller table
+  };
+
   for (id i = 0; i < table_size + 1; ++i) {
     id sum = acy_tablesum(i, sumtable);
     if (sum != sumtable_result[i]) {
@@ -2623,12 +2643,30 @@ int acy_test_table_use() {
   }
 
   for (id i = 0; i < sumtable_result[table_size] + 1; ++i) {
-    id invsum = acy_inv_tablesum(i, inv_sumtree, inv_sumtree_size);
+    id invsum = acy_inv_tablesum(i, inv_sumtree, inv_sumtree_size, 1);
     if (invsum != inv_results[i]) {
       fprintf(
         stderr,
         "Inverse sum lookup [%lu] failed: %lu != %lu.\n",
         i, invsum, inv_results[i]
+      );
+      fprintf(stderr, "Full sum table:\n");
+      for (id j = 0; j < table_size + 1; ++j) {
+        fprintf(stderr, "%lu ", sumtable[j]);
+        if (j % 10 == 0 && j > 0) { fprintf(stderr, "\n"); }
+      }
+      fprintf(stderr, "\n");
+      fprintf(stderr, "Full tree:\n");
+      print_tree(inv_sumtree, inv_sumtree_size);
+      return i + 100;
+    }
+
+    id invsum7 = acy_inv_tablesum(i, inv_sumtree, inv_sumtree_size, 7);
+    if (invsum7 != inv_results7[i]) {
+      fprintf(
+        stderr,
+        "Inverse sum lookup (x7) [%lu] failed: %lu != %lu.\n",
+        i, invsum7, inv_results7[i]
       );
       fprintf(stderr, "Full sum table:\n");
       for (id j = 0; j < table_size + 1; ++j) {
@@ -2648,7 +2686,8 @@ int acy_test_table_use() {
 
 int acy_test_find_tabulated_cohort_and_inner() {
   id i;
-  id my_cohort, inner; 
+  id my_cohort, inner;
+  id my_cohort17, inner17;
 
   id seed = 1728;
   id disttable[] = {
@@ -2668,8 +2707,10 @@ int acy_test_find_tabulated_cohort_and_inner() {
   );
 
   id cohort_size = acy_tablesum(table_size, sumtable);
+  id cohort_size17 = acy_tablesum(table_size, sumtable) * 17;
 
   id reversed;
+  id reversed17;
   for (i = 89898128; i < 89898128 + 3921831; i += 12817) {
     acy_tabulated_cohort_and_inner(
       i,
@@ -2677,15 +2718,35 @@ int acy_test_find_tabulated_cohort_and_inner() {
       table_size,
       inv_sumtree,
       inv_sumtree_size,
+      1,
       seed,
       &my_cohort,
       &inner
+    );
+    acy_tabulated_cohort_and_inner(
+      i,
+      sumtable,
+      table_size,
+      inv_sumtree,
+      inv_sumtree_size,
+      17,
+      seed,
+      &my_cohort17,
+      &inner17
     );
     if (inner >= cohort_size) {
       fprintf(
         stderr,
         "Tabulated cohort index out-of-bounds: %lu → %lu/%lu [%lu]\n",
         i, my_cohort, inner, cohort_size
+      );
+      return (int) i+1;
+    }
+    if (inner17 >= cohort_size17) {
+      fprintf(
+        stderr,
+        "Tabulated cohort index (x17) out-of-bounds: %lu → %lu/%lu [%lu]\n",
+        i, my_cohort17, inner17, cohort_size17
       );
       return (int) i+1;
     }
@@ -2696,6 +2757,17 @@ int acy_test_find_tabulated_cohort_and_inner() {
       table_size,
       inv_sumtree,
       inv_sumtree_size,
+      1,
+      seed
+    );
+    reversed17 = acy_tabulated_cohort_outer(
+      my_cohort17,
+      inner17,
+      sumtable,
+      table_size,
+      inv_sumtree,
+      inv_sumtree_size,
+      17,
       seed
     );
     if (reversed != i) {
@@ -2703,6 +2775,14 @@ int acy_test_find_tabulated_cohort_and_inner() {
         stderr,
         "Tabulated cohort reversibility failed: %lu → %lu/%lu → %lu\n",
         i, my_cohort, inner, reversed
+      );
+      return (int) i+1;
+    }
+    if (reversed17 != i) {
+      fprintf(
+        stderr,
+        "Tabulated cohort reversibility (x17) failed: %lu → %lu/%lu → %lu\n",
+        i, my_cohort17, inner17, reversed17
       );
       return (int) i+1;
     }
@@ -2752,6 +2832,7 @@ int acy_test_tabulated_cohort_sections_visual() {
       table_size,
       inv_sumtree,
       inv_sumtree_size,
+      1,
       seed,
       &mxc,
       &mxi

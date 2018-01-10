@@ -67,10 +67,12 @@ static inline int acy_is_child_bearer(id non_normalized) {
  * Functions *
  *************/
 
-// Creates a new acy_family_info object on the heap.
+// Creates a new acy_family_info object on the heap. Does not allocate separate
+// space for sum- and inverse-sum- tables.
 acy_family_info *acy_create_family_info();
 
-// Destroys a heap-allocated family info object.
+// Destroys a heap-allocated family info object. Does not do anything to the
+// associated sum- and inverse-sum- tables.
 void acy_destroy_family_info(acy_family_info *info);
 
 // Copies family info from src into dst. The age distribution tables (sum table
