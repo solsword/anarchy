@@ -1290,6 +1290,7 @@ int acy_test_table_parent_child_selection() {
   id multiplier = 32 * 1000;
   id seed = 798513546;
   id result;
+  // TODO: HERE These numbers are small enough to cause underflow!
   for (id tin = 9464135; tin < 9464135 + 409102; tin += 5167) {
     acy_select_table_parent_and_index(
       tin,
@@ -1319,7 +1320,7 @@ int acy_test_table_parent_child_selection() {
     if (result != tin) {
       fprintf(
         stderr,
-        "Poly. selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        "Table selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
         tin, parent, index, parent, index, result
       );
       fprintf(stderr, "All children of %lu:\n", parent);
@@ -1389,7 +1390,7 @@ int acy_test_odd_table_parent_child_selection() {
     if (result != tin) {
       fprintf(
         stderr,
-        "Poly. selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        "Table selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
         tin, parent, index, parent, index, result
       );
       fprintf(stderr, "All children of %lu:\n", parent);
@@ -1797,7 +1798,7 @@ int acy_test_table_select_gnuplot() {
     "# gnuplot script for plotting table-data.dat\n"
     "set term png\n"
     "set output \"table-data.png\"\n"
-    "set title \"Polynomial Parent/Child IDs\"\n"
+    "set title \"Table Parent/Child IDs\"\n"
     "set xlabel \"Child\"\n"
     "set ylabel \"Parent\"\n"
     "datafile = 'table-data.dat'\n"
