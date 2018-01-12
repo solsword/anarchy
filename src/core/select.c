@@ -1084,3 +1084,424 @@ id acy_select_poly_nth_child(
 
   return adjusted;
 }
+
+
+void acy_select_table_parent_and_index(
+  id child,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id *children_sumtable,
+  id children_sumtable_size,
+  id *children_inv_sumtree,
+  id children_inv_sumtree_size,
+  id children_multiplier,
+  id seed,
+  id *r_parent,
+  id *r_index
+) {
+  // NONE is its own parent and is the NONEth child of that parent:
+  if (child == NONE) {
+    *r_parent = NONE;
+    *r_index = NONE;
+    return;
+  }
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "\nselect_table_parent_and_index::child/pcs/ccs::%lu/%lu/%lu\n",
+    child, parent_cohort_size, child_cohort_size
+  );
+  fprintf(
+    stderr,
+    "select_table_parent_and_index::table_size/IST_size/mult::%lu/%lu/%lu\n",
+    children_sumtable_size,
+    children_inv_sumtree_size,
+    children_multiplier
+  );
+#endif
+
+  // Get from absolute-child to child-within-cohort. For tabular child
+  // super-cohorts, parents in the xth super-cohort have children drawn from
+  // the xth polynomial super-cohort.
+  id super_cohort, super_inner;
+  // polynomial super-cohort 
+  acy_tabulated_cohort_and_inner(
+    child,
+    children_sumtable,
+    children_sumtable_size,
+    children_inv_sumtree,
+    children_inv_sumtree_size,
+    children_multiplier,
+    seed,
+    &super_cohort,
+    &super_inner
+  );
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_parent_and_index::child_super/child_inner::%lu/%lu\n",
+    super_cohort,
+    super_inner
+  );
+#endif
+
+  id child_super_cohort_size = acy_tablesum(
+    children_sumtable_size,
+    children_sumtable
+  ) * children_multiplier;
+
+  // TODO: Rounding here?
+  id parent_super_cohort_size = (
+    parent_cohort_size
+  * (child_super_cohort_size / child_cohort_size)
+  );
+
+  // TODO: Are these a problem?!!!?!?
+  id child_leftovers = (
+    child_super_cohort_size
+  - (child_super_cohort_size / child_cohort_size) * child_cohort_size
+  );
+  if (child_leftovers > 0) {
+    // add a cohort to parent the leftover children
+    parent_super_cohort_size += parent_cohort_size;
+  }
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_parent_and_index::parent_scs/child_scs/ch_lfo::%lu/%lu/%lu\n",
+    parent_super_cohort_size,
+    child_super_cohort_size,
+    child_leftovers
+  );
+#endif
+
+  // reverse shuffle within cohort
+  id shuf = acy_rev_cohort_shuffle(
+    super_inner,
+    child_super_cohort_size,
+    seed + super_cohort
+  );
+
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_table_parent_and_index::shuffled_inner::%lu\n", shuf);
+#endif
+
+  // now find our sub-cohort
+  // if we're in the nth sub-cohort of our super-cohort, our parent is in the
+  // nth sub-cohort of their super cohort.
+  id sub_cohort, sub_inner;
+  acy_cohort_and_inner(
+    shuf,
+    child_cohort_size,
+    &sub_cohort,
+    &sub_inner
+  );
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_parent_and_index::sub/inner::%lu/%lu\n",
+    sub_cohort,
+    sub_inner
+  );
+#endif
+
+  // Shuffle child ID within children cohort:
+  id inner_shuf = acy_cohort_shuffle(
+    sub_inner,
+    child_cohort_size,
+    seed + sub_cohort
+  );
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_parent_and_index::inner_shuf::%lu\n",
+    inner_shuf
+  );
+#endif
+
+  id from_upper = 0;
+  id to_upper = parent_cohort_size;
+  id parents_left = parent_cohort_size;
+  id half_remaining;
+
+  id from_lower = 0;
+  id to_lower = child_cohort_size;
+  id children_left = child_cohort_size;
+
+  id divide_at = sub_cohort + seed;
+
+  while (parents_left > 1) {
+    half_remaining = parents_left/2;
+    divide_at = acy_irrev_smooth_prng(
+      divide_at,
+      children_left,
+      acy_min(2, parents_left),
+      seed
+    );
+
+    if (inner_shuf >= divide_at) {
+      inner_shuf -= divide_at;
+      from_lower += divide_at;
+      from_upper += half_remaining;
+    } else {
+      to_lower -= (children_left - divide_at);
+      to_upper -= (parents_left - half_remaining);
+    }
+    parents_left = to_upper - from_upper;
+    children_left = to_lower - from_lower;
+  }
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_parent_and_index::divided_shuf::%lu\n",
+    inner_shuf
+  );
+#endif
+
+  // At this point, we know the child's index within its parent's children:
+  *r_index = inner_shuf;
+
+  // And the parent's index is from_upper
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_parent_and_index::index/inner_parent::%lu/%lu\n",
+    *r_index,
+    from_upper
+  );
+#endif
+
+  // Escape twice to get the parent:
+  id parent_super_inner = acy_cohort_outer(
+    sub_cohort,
+    from_upper,
+    parent_cohort_size
+  );
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_parent_and_index::parent_super_inner::%lu\n",
+    parent_super_inner
+  );
+#endif
+
+  *r_parent = acy_cohort_outer(
+    super_cohort,
+    parent_super_inner,
+    parent_super_cohort_size
+  );
+
+#ifdef DEBUG_SELECT
+  fprintf(stderr, "select_table_parent_and_index::parent::%lu\n\n", *r_parent);
+#endif
+}
+
+// Works like acy_select_nth_child, but uses a table-based cohort for
+// children.
+id acy_select_table_nth_child(
+  id parent,
+  id nth,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id *children_sumtable,
+  id children_sumtable_size,
+  id *children_inv_sumtree,
+  id children_inv_sumtree_size,
+  id children_multiplier,
+  id seed
+) {
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "\nselect_table_nth_child::parent/nth::%lu/%lu\n",
+    parent, nth
+  );
+  fprintf(
+    stderr,
+    "select_table_nth_child::table_size/IST_size/mult::%lu/%lu/%lu\n",
+    children_sumtable_size,
+    children_inv_sumtree_size,
+    children_multiplier
+  );
+#endif
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_nth_child::pcs/ccs::%lu/%lu\n",
+    parent_cohort_size,
+    child_cohort_size
+  );
+#endif
+
+  // Cohort sizes:
+  id child_super_cohort_size = acy_tablesum(
+    children_sumtable_size,
+    children_sumtable
+  ) * children_multiplier;
+  id parent_super_cohort_size = (
+    parent_cohort_size
+  * (child_super_cohort_size / child_cohort_size)
+  );
+  id child_leftovers = (
+    child_super_cohort_size
+  - (child_super_cohort_size / child_cohort_size) * child_cohort_size
+  );
+  if (child_leftovers > 0) {
+    // add a cohort to parent the leftover children
+    parent_super_cohort_size += parent_cohort_size;
+  }
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_nth_child::parent_scs/child_scs/leftovers::%lu/%lu/%lu\n",
+    parent_super_cohort_size,
+    child_super_cohort_size,
+    child_leftovers
+  );
+#endif
+
+  // Find parent super/sub cohort information:
+  id parent_super_cohort;
+  id parent_super_inner;
+
+  acy_cohort_and_inner(
+    parent,
+    parent_super_cohort_size,
+    &parent_super_cohort,
+    &parent_super_inner
+  );
+
+  id parent_sub_cohort;
+  id parent_sub_inner;
+
+  acy_cohort_and_inner(
+    parent_super_inner,
+    parent_cohort_size,
+    &parent_sub_cohort,
+    &parent_sub_inner
+  );
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_nth_child::super/inner/sub/inner::%lu/%lu/%lu/%lu\n",
+    parent_super_cohort,
+    parent_super_inner,
+    parent_sub_cohort,
+    parent_sub_inner
+  );
+#endif
+
+  // divide children to find corresponding child
+  id from_upper = 0;
+  id to_upper = parent_cohort_size;
+  id parents_left = parent_cohort_size;
+  id half_remaining;
+
+  id from_lower = 0;
+  id to_lower = child_cohort_size;
+  id children_left = child_cohort_size;
+
+  id divide_at = parent_sub_cohort + seed;
+
+  while (parents_left > 1 && children_left > 0) {
+    half_remaining = parents_left/2;
+    divide_at = acy_irrev_smooth_prng(
+      divide_at,
+      children_left,
+      acy_min(2, parents_left),
+      seed
+    );
+
+    if (parent_sub_inner >= half_remaining) {
+      parent_sub_inner -= half_remaining;
+      from_lower += divide_at;
+      from_upper += half_remaining;
+    } else {
+      to_lower -= (children_left - divide_at);
+      to_upper -= (parents_left - half_remaining);
+    }
+    parents_left = to_upper - from_upper;
+    children_left = to_lower - from_lower;
+  }
+
+  if (nth >= children_left) {
+    return NONE;
+  }
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_nth_child::divided_inner/from_lower::%lu/%lu\n",
+    parent_sub_inner,
+    from_lower
+  );
+#endif
+
+  // Unshuffle child ID within children cohort:
+  id child_sub_inner = acy_rev_cohort_shuffle(
+    from_lower + nth,
+    child_cohort_size,
+    seed + parent_sub_cohort
+  );
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_nth_child::unshuffled_lower::%lu\n",
+    child_sub_inner
+  );
+#endif
+
+  // Get back from child-within-sub-cohort-within-super-cohort to
+  // absolute-child. Note that children of parents in the xth parent cohort are
+  // assigned to the xth child cohort.
+  id child_super_inner = acy_cohort_outer(
+    parent_sub_cohort,
+    child_sub_inner,
+    child_cohort_size
+  );
+
+  // shuffle within child super cohort:
+  id shuf = acy_cohort_shuffle(
+    child_super_inner,
+    child_super_cohort_size,
+    seed + parent_super_cohort
+  );
+
+  // Escape from polynomial cohort:
+  id child = acy_tabulated_cohort_outer(
+    parent_super_cohort,
+    shuf,
+    children_sumtable,
+    children_sumtable_size,
+    children_inv_sumtree,
+    children_inv_sumtree_size,
+    children_multiplier,
+    seed
+  );
+
+#ifdef DEBUG_SELECT
+  fprintf(
+    stderr,
+    "select_table_nth_child::super_cohort/result::%lu/%lu\n",
+    parent_super_cohort,
+    child
+  );
+#endif
+
+  // TODO: DEBUG
+  id adjusted = child;
+// TODO: HERE
+
+  return adjusted;
+}

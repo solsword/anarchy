@@ -30,10 +30,10 @@ struct acy_family_info_s {
   id max_children_per_mother;
 
   // tabulated cohort parameters:
-  id const *child_age_dist_sumtable;
-  id child_age_dist_sumtable_size;
-  id const *child_age_dist_inv_sumtree;
-  id child_age_dist_inv_sumtree_size;
+  id const *birth_age_dist_sumtable;
+  id birth_age_dist_sumtable_size;
+  id const *birth_age_dist_inv_sumtree;
+  id birth_age_dist_inv_sumtree_size;
 
   // partner parameters:
   id max_partners_per_mother;
@@ -68,7 +68,7 @@ typedef struct acy_family_info_s acy_family_info;
  */
 
 
-id const DEFAULT_CHILD_AGE_SUMTABLE[41] = {
+id const DEFAULT_BIRTH_AGE_SUMTABLE[41] = {
     0,   1,   2,   3,   4, // at ages 15--19
     5,   6,   7,   9,  13, // at ages 20--24
    20,  29,  39,  50,  66, // at ages 25--29
@@ -80,7 +80,7 @@ id const DEFAULT_CHILD_AGE_SUMTABLE[41] = {
   737 // overall sum
 };
 
-id const DEFAULT_CHILD_AGE_INV_SUMTREE[79] = {
+id const DEFAULT_BIRTH_AGE_INV_SUMTREE[79] = {
   389,
   110,                                    656,
     9,                234,                535,                730,
@@ -95,14 +95,14 @@ acy_family_info const DEFAULT_FAMILY_INFO = {
 
   .birth_rate_per_day = 10000, // modern is 350,000+
   .min_childbearing_age = 15 * ONE_EARTH_YEAR, // TODO: Adjust?
-  .max_childbearing_age = 40 * ONE_EARTH_YEAR,
+  .max_childbearing_age = 55 * ONE_EARTH_YEAR,
   .average_children_per_mother = 1,
   .max_children_per_mother = 32,
 
-  .child_age_dist_sumtable = DEFAULT_CHILD_AGE_SUMTABLE,
-  .child_age_dist_sumtable_size = 41,
-  .child_age_dist_inv_sumtree = DEFAULT_CHILD_AGE_INV_SUMTREE, // TODO: HERE
-  .child_age_dist_inv_sumtree_size = 79,
+  .birth_age_dist_sumtable = DEFAULT_BIRTH_AGE_SUMTABLE,
+  .birth_age_dist_sumtable_size = 41,
+  .birth_age_dist_inv_sumtree = DEFAULT_BIRTH_AGE_INV_SUMTREE, // TODO: HERE
+  .birth_age_dist_inv_sumtree_size = 79,
 
   .max_partners_per_mother = 16,
   .likely_partner_age_gap = 3 * ONE_EARTH_YEAR,
@@ -148,10 +148,10 @@ void acy_copy_family_info(
   dst->average_children_per_mother = src->average_children_per_mother;
   dst->max_children_per_mother = src->max_children_per_mother;
 
-  dst->child_age_dist_sumtable_size = src->child_age_dist_sumtable_size;
-  dst->child_age_dist_inv_sumtree_size = src->child_age_dist_inv_sumtree_size;
-  dst->child_age_dist_sumtable = src->child_age_dist_sumtable;
-  dst->child_age_dist_inv_sumtree = src->child_age_dist_inv_sumtree;
+  dst->birth_age_dist_sumtable_size = src->birth_age_dist_sumtable_size;
+  dst->birth_age_dist_inv_sumtree_size = src->birth_age_dist_inv_sumtree_size;
+  dst->birth_age_dist_sumtable = src->birth_age_dist_sumtable;
+  dst->birth_age_dist_inv_sumtree = src->birth_age_dist_inv_sumtree;
 
   dst->max_partners_per_mother = src->max_partners_per_mother;
   dst->likely_partner_age_gap = src->likely_partner_age_gap;
@@ -189,15 +189,12 @@ id acy_mother(id person, acy_family_info const * const info) {
   return parent;
 }
 
-static inline id acy_family_children_cohort_size(
+static inline id acy_family_birth_age_table_multiplier(
   acy_family_info const * const info
 ) {
   return (
-    (
-      info->birth_rate_per_day
-    * (info->max_childbearing_age - info->min_childbearing_age)
-    )
-  / (info->max_children_per_mother)
+    info->birth_rate_per_day
+  * ONE_EARTH_YEAR
   );
 }
 
@@ -274,7 +271,7 @@ void acy_mother_and_index(
     adjusted,
     info->average_children_per_mother,
     info->max_children_per_mother,
-    info->child_age_distribution_shape,
+    info->birth_age_distribution_shape,
     cohort_size,
     FAMILY_COHORT_LAYERS,
     info->seed,
@@ -340,7 +337,7 @@ id acy_direct_child(id person, id nth, acy_family_info const * const info) {
     nth,
     info->average_children_per_mother,
     info->max_children_per_mother,
-    info->child_age_distribution_shape,
+    info->birth_age_distribution_shape,
     cohort_size,
     FAMILY_COHORT_LAYERS,
     info->seed

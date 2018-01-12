@@ -12,6 +12,26 @@
 
 #include "core/select.h"
 
+// distribution:
+//  1, 1, 1, 2, 2, 3, 4, 5, 6, 8, 12, 9, 6, 3, 2, 1
+
+id TEST_SUMTABLE[] = {
+    0,   1,  3,  6,
+    12, 21, 33, 41,
+    47, 52, 56, 59,
+    61, 63, 64, 65, 66
+};
+id TEST_SUMTABLE_SIZE = 16; // off-by-1 is intentional
+
+id TEST_INV_SUMTREE[] = {
+    47,
+    12,                    61,
+    3,          33,        56,            64,
+    1,    6,    21,   41,  52,    59,     63,     65,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
+};
+id TEST_INV_SUMTREE_SIZE = 31;
+
 int acy_test_parent_child_selection() {
   id parent, index;
   id max_arity = 16;
@@ -1250,6 +1270,566 @@ int acy_test_poly_select_gnuplot() {
         child_cohort_size,
         poly_cohort_base,
         poly_cohort_shape,
+        seed,
+        &parent,
+        &index
+      );
+      if (parent < min_parent) { min_parent = parent; }
+      if (parent > max_parent) { max_parent = parent; }
+      fprintf(fout, "%lu %lu\n", child, parent);
+    }
+  }
+  fclose(fout);
+  return 0;
+}
+
+int acy_test_table_parent_child_selection() {
+  id parent, index;
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id multiplier = 32 * 1000;
+  id seed = 798513546;
+  id result;
+  for (id tin = 9464135; tin < 9464135 + 409102; tin += 5167) {
+    acy_select_table_parent_and_index(
+      tin,
+      parent_cohort_size,
+      child_cohort_size,
+      TEST_SUMTABLE,
+      TEST_SUMTABLE_SIZE,
+      TEST_INV_SUMTREE,
+      TEST_INV_SUMTREE_SIZE,
+      multiplier,
+      seed,
+      &parent,
+      &index
+    );
+    result = acy_select_table_nth_child(
+      parent,
+      index,
+      parent_cohort_size,
+      child_cohort_size,
+      TEST_SUMTABLE,
+      TEST_SUMTABLE_SIZE,
+      TEST_INV_SUMTREE,
+      TEST_INV_SUMTREE_SIZE,
+      multiplier,
+      seed
+    );
+    if (result != tin) {
+      fprintf(
+        stderr,
+        "Poly. selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        tin, parent, index, parent, index, result
+      );
+      fprintf(stderr, "All children of %lu:\n", parent);
+      id nth = 0;
+      id child = NONE;
+      do {
+        child = acy_select_table_nth_child(
+          parent,
+          nth,
+          parent_cohort_size,
+          child_cohort_size,
+          TEST_SUMTABLE,
+          TEST_SUMTABLE_SIZE,
+          TEST_INV_SUMTREE,
+          TEST_INV_SUMTREE_SIZE,
+          multiplier,
+          seed
+        );
+        fprintf(stderr, "  #%lu: %lu\n", nth, child);
+        nth += 1;
+      } while (child != NONE);
+      return tin;
+    }
+  }
+  return 0;
+}
+
+int acy_test_odd_table_parent_child_selection() {
+  id parent, index;
+  id parent_cohort_size = 37;
+  id child_cohort_size = 45;
+  id multiplier = 32*1000;
+  id seed = 94199832;
+  id result;
+  id accum = 1;
+  for (id tin = 389238; tin < 581201; tin += accum) {
+    if (tin % 300 == 0) {
+      accum = 3801;
+    } else {
+      accum = 1;
+    }
+    acy_select_table_parent_and_index(
+      tin,
+      parent_cohort_size,
+      child_cohort_size,
+      TEST_SUMTABLE,
+      TEST_SUMTABLE_SIZE,
+      TEST_INV_SUMTREE,
+      TEST_INV_SUMTREE_SIZE,
+      multiplier,
+      seed,
+      &parent,
+      &index
+    );
+    result = acy_select_table_nth_child(
+      parent,
+      index,
+      parent_cohort_size,
+      child_cohort_size,
+      TEST_SUMTABLE,
+      TEST_SUMTABLE_SIZE,
+      TEST_INV_SUMTREE,
+      TEST_INV_SUMTREE_SIZE,
+      multiplier,
+      seed
+    );
+    if (result != tin) {
+      fprintf(
+        stderr,
+        "Poly. selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        tin, parent, index, parent, index, result
+      );
+      fprintf(stderr, "All children of %lu:\n", parent);
+      id nth = 0;
+      id child = NONE;
+      do {
+        child = acy_select_table_nth_child(
+          parent,
+          nth,
+          parent_cohort_size,
+          child_cohort_size,
+          TEST_SUMTABLE,
+          TEST_SUMTABLE_SIZE,
+          TEST_INV_SUMTREE,
+          TEST_INV_SUMTREE_SIZE,
+          multiplier,
+          seed
+        );
+        fprintf(stderr, "  #%lu: %lu\n", nth, child);
+        nth += 1;
+      } while (child != NONE);
+      return tin;
+    }
+  }
+  return 0;
+}
+
+int acy_test_table_parent_child_visual() {
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id multiplier = 32*1000;
+
+  id parent = 46548464;
+  id seed = 172911;
+  id nth = 0;
+  id child = NONE;
+
+  // Try to guarantee at least one generation:
+  id grandparent, index;
+  acy_select_table_parent_and_index(
+    parent,
+    parent_cohort_size,
+    child_cohort_size,
+    TEST_SUMTABLE,
+    TEST_SUMTABLE_SIZE,
+    TEST_INV_SUMTREE,
+    TEST_INV_SUMTREE_SIZE,
+    multiplier,
+    seed,
+    &grandparent,
+    &index
+  );
+  fprintf(stdout, "\n  %lu ^ %lu (%lu)", parent, grandparent, index);
+  parent = grandparent;
+  fprintf(stdout, "\n  %lu", parent);
+  for (id i = 0; i < 7; ++i) {
+      nth = 0;
+      fprintf(stdout, "\n    |\n  ");
+      while(1) {
+        child = acy_select_table_nth_child(
+          parent,
+          nth,
+          parent_cohort_size,
+          child_cohort_size,
+          TEST_SUMTABLE,
+          TEST_SUMTABLE_SIZE,
+          TEST_INV_SUMTREE,
+          TEST_INV_SUMTREE_SIZE,
+          multiplier,
+          seed
+        );
+        if (child == NONE) {
+          fprintf(stdout, "|");
+          break;
+        }
+        fprintf(stdout, "%lu---", child);
+        nth += 1;
+      }
+      parent = acy_select_table_nth_child(
+        parent,
+        0,
+        parent_cohort_size,
+        child_cohort_size,
+        TEST_SUMTABLE,
+        TEST_SUMTABLE_SIZE,
+        TEST_INV_SUMTREE,
+        TEST_INV_SUMTREE_SIZE,
+        multiplier,
+        seed
+      );
+      if (parent == NONE) {
+        break;
+      }
+  }
+  fprintf(stdout, "\n\n");
+  return 0;
+}
+
+/*
+int acy_test_table_select_gap_stream() {
+  id n_patches = 20;
+  id n_samples = 8;
+
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id multiplier = 32*1000;
+
+  id seed = 71829812983;
+
+  for (
+    //*
+    id start = 372221831718;
+    start < 372221831718 + 4587518831*n_patches;
+    start += 4587518831
+    // */
+    /*
+    id start = 10000;
+    start < 10000 + 1000*n_patches;
+    start += 1000
+    // * /
+  ) {
+    fprintf(stdout, "\nParent/child gaps [%lu]:\n", start);
+    for (id child = start; child < start + n_samples; ++child) {
+      id parent, index;
+      acy_select_table_parent_and_index(
+        child,
+        parent_cohort_size,
+        child_cohort_size,
+        TEST_SUMTABLE,
+        TEST_SUMTABLE_SIZE,
+        TEST_INV_SUMTREE,
+        TEST_INV_SUMTREE_SIZE,
+        multiplier,
+        seed,
+        &parent,
+        &index
+      );
+      // TODO: Implement these!
+      id epc = acy_select_table_earliest_possible_child(
+        parent,
+        parent_cohort_size,
+        child_cohort_size,
+        TEST_SUMTABLE,
+        TEST_SUMTABLE_SIZE,
+        TEST_INV_SUMTREE,
+        TEST_INV_SUMTREE_SIZE,
+        multiplier,
+        seed
+      );
+      id ccs = acy_select_table_child_cohort_start(
+        child,
+        TEST_SUMTABLE,
+        TEST_SUMTABLE_SIZE,
+        TEST_INV_SUMTREE,
+        TEST_INV_SUMTREE_SIZE,
+        multiplier,
+        seed
+      );
+      int64_t diff = child - epc;
+      int64_t diff2 = child - ccs;
+      fprintf(
+        stdout,
+        "  %lu → %lu [%lu ⇒ %ld]\n",
+        parent, child,
+        epc, diff
+      );
+      if (diff != diff2) {
+        fprintf(stderr, "Diffs differ: %ld != %ld!\n", diff, diff2);
+        return parent;
+      }
+      if (diff < 0 || diff2 < 0) {
+        fprintf(stderr, "Negative diff! %ld/%ld!\n", diff, diff2);
+        return parent;
+      }
+    }
+  }
+  fputc('\n', stdout);
+  return 0;
+}
+*/
+
+
+void acy_print_table_edges_recursively(
+  FILE* stream,
+  id parent,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id *sumtable,
+  id sumtable_size,
+  id *inv_sumtree,
+  id inv_sumtree_size,
+  id multiplier,
+  id seed,
+  id depth_limit
+) {
+  id nth = 0;
+  id child;
+  while(1) {
+    child = acy_select_table_nth_child(
+      parent,
+      nth,
+      parent_cohort_size,
+      child_cohort_size,
+      TEST_SUMTABLE,
+      TEST_SUMTABLE_SIZE,
+      TEST_INV_SUMTREE,
+      TEST_INV_SUMTREE_SIZE,
+      multiplier,
+      seed
+    );
+    if (child == NONE) {
+      break;
+    }
+    fprintf(stream, "  %lu -> %lu;\n", parent, child);
+    nth += 1;
+    if (depth_limit > 0) {
+      acy_print_table_edges_recursively(
+        stream,
+        child,
+        parent_cohort_size,
+        child_cohort_size,
+        TEST_SUMTABLE,
+        TEST_SUMTABLE_SIZE,
+        TEST_INV_SUMTREE,
+        TEST_INV_SUMTREE_SIZE,
+        multiplier,
+        seed,
+        depth_limit - 1
+      );
+    }
+  }
+}
+
+int acy_test_table_select_graphviz() {
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id multiplier = 32 * 1000;
+
+  id parent;
+  id index = 0;
+
+  char filename[1024];
+  for (id seed = 172741; seed < 172746; seed += 1) {
+    parent = 10000000;
+    // find the great-grandparent:
+    for (id i = 0; i < 3; ++i) {
+      acy_select_table_parent_and_index(
+        parent,
+        parent_cohort_size,
+        child_cohort_size,
+        TEST_SUMTABLE,
+        TEST_SUMTABLE_SIZE,
+        TEST_INV_SUMTREE,
+        TEST_INV_SUMTREE_SIZE,
+        multiplier,
+        seed,
+        &parent,
+        &index
+      );
+    }
+
+    snprintf(filename, 1024, "test/select/table_select-graph-%lu.gv", seed);
+    FILE *fout = fopen(filename, "w");
+    // print edges
+    fprintf(fout, "digraph G {\n");
+    acy_print_table_edges_recursively(
+      fout,
+      parent,
+      parent_cohort_size,
+      child_cohort_size,
+      TEST_SUMTABLE,
+      TEST_SUMTABLE_SIZE,
+      TEST_INV_SUMTREE,
+      TEST_INV_SUMTREE_SIZE,
+      multiplier,
+      seed,
+      5
+    );
+    fprintf(fout, "}\n");
+  }
+  return 0;
+}
+
+int acy_test_avg_table_parent_child_gap() {
+  id parent, index, child;
+
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id multiplier = 32*1000;
+
+  double avg_parent_distance = 0; 
+  double avg_child_distance = 0; 
+  id parent_dist_count = 0;
+  id child_dist_count = 0;
+  id n_samples = 10000;
+  int64_t parent_distances[n_samples];
+  int64_t child_distances[n_samples];
+  int64_t dist;
+  id seeds_to_check = 3;
+  for (id seed = 301910239812; seed < 301910239812 + seeds_to_check; ++seed) {
+    avg_parent_distance = 0; 
+    avg_child_distance = 0; 
+    parent_dist_count = 0;
+    child_dist_count = 0;
+    for (id here = 5646461354679; here < 5646461354679 + n_samples; ++here) {
+      acy_select_table_parent_and_index(
+        here,
+        parent_cohort_size,
+        child_cohort_size,
+        TEST_SUMTABLE,
+        TEST_SUMTABLE_SIZE,
+        TEST_INV_SUMTREE,
+        TEST_INV_SUMTREE_SIZE,
+        multiplier,
+        seed,
+        &parent,
+        &index
+      );
+      dist = (int64_t) here - (int64_t) parent;
+      parent_distances[parent_dist_count] = dist;
+      avg_parent_distance += dist; parent_dist_count += 1;
+      child = acy_select_table_nth_child(
+        here,
+        0,
+        parent_cohort_size,
+        child_cohort_size,
+        TEST_SUMTABLE,
+        TEST_SUMTABLE_SIZE,
+        TEST_INV_SUMTREE,
+        TEST_INV_SUMTREE_SIZE,
+        multiplier,
+        seed
+      );
+      if (child != NONE) {
+        dist = (int64_t) child - (int64_t) here;
+        child_distances[child_dist_count] = dist;
+        avg_child_distance += dist;
+        child_dist_count += 1;
+      }
+    }
+    fprintf(
+      stdout,
+      "\nSampled %lu parent distances and %lu child distances.\n",
+      parent_dist_count,
+      child_dist_count
+    );
+    fprintf(
+      stdout,
+      "Average parent/child distances [%lu]: %.2f/%.2f\n",
+      seed,
+      avg_parent_distance / (double) parent_dist_count,
+      avg_child_distance / (double) child_dist_count
+    );
+    int64_t min_parent_dist = parent_distances[0];
+    int64_t max_parent_dist = parent_distances[0];
+    int64_t min_child_dist = child_distances[0];
+    int64_t max_child_dist = child_distances[0];
+    for (id i = 0; i < parent_dist_count; ++i) {
+      if (parent_distances[i] < min_parent_dist) {
+        min_parent_dist = parent_distances[i];
+      }
+      if (parent_distances[i] > max_parent_dist) {
+        max_parent_dist = parent_distances[i];
+      }
+    }
+    for (id i = 0; i < child_dist_count; ++i) {
+      if (child_distances[i] < min_child_dist) {
+        min_child_dist = child_distances[i];
+      }
+      if (child_distances[i] > max_child_dist) {
+        max_child_dist = child_distances[i];
+      }
+    }
+    fprintf(
+      stdout,
+      "Min--max parent/child distances [%lu]: %ld--%ld / %ld--%ld\n\n",
+      seed,
+      min_parent_dist,
+      max_parent_dist,
+      min_child_dist,
+      max_child_dist
+    );
+  }
+  return 0;
+}
+
+int acy_test_table_select_gnuplot() {
+  id n_samples = 2500;
+  id n_batches = 5;
+
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+
+  id multiplier = 32*1000;
+
+  id seed;
+  id parent, child, index;
+
+  char* scriptfile = "test/select/table-data.gpt";
+  FILE *fout = fopen(scriptfile, "w");
+  fprintf(
+    fout,
+    "#!/usr/bin/env gnuplot\n"
+    "# table-data.gpt\n"
+    "# gnuplot script for plotting table-data.dat\n"
+    "set term png\n"
+    "set output \"table-data.png\"\n"
+    "set title \"Polynomial Parent/Child IDs\"\n"
+    "set xlabel \"Child\"\n"
+    "set ylabel \"Parent\"\n"
+    "datafile = 'table-data.dat'\n"
+    "stats datafile\n"
+    "plot for [IDX=1:STATS_blocks] datafile index (IDX-1) "
+      "with points title columnheader(1)\n"
+    "quit\n"
+  );
+  fclose(fout);
+  chmod(scriptfile, S_IRUSR | S_IWUSR | S_IXUSR);
+  fout = fopen("test/select/table-data.dat", "w");
+  fprintf(fout, "# Parent child\n");
+  id min_parent = 0 - 1;
+  id max_parent = 0;
+  id increment = n_samples;
+  for (
+    id start = 3298019;
+    start < 3298019 + increment*n_batches;
+    start += increment
+  ) {
+    seed = acy_prng(start, start + 4654681615348494);
+    fprintf(fout, "\n\n\"Batch at %lu (seed %lu)\"\n", start, seed);
+    for (child = start; child < start + n_samples; ++child) {
+      acy_select_table_parent_and_index(
+        child,
+        parent_cohort_size,
+        child_cohort_size,
+        TEST_SUMTABLE,
+        TEST_SUMTABLE_SIZE,
+        TEST_INV_SUMTREE,
+        TEST_INV_SUMTREE_SIZE,
+        multiplier,
         seed,
         &parent,
         &index

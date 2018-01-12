@@ -145,4 +145,41 @@ id acy_select_poly_nth_child(
   id seed
 );
 
+// Works like acy_select_parent_and_index, but uses the given tables for child
+// selection. The multiplier parameter controls how large the cohort is, along
+// with the tables given. Returns values via the r_parent and r_index
+// parameters. Note that child_cohort_size should divide evenly into the
+// children_multiplier (or at least, into the children multiplier times the sum
+// table grand total).
+void acy_select_table_parent_and_index(
+  id child,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id *children_sumtable,
+  id children_sumtable_size,
+  id *children_inv_sumtree,
+  id children_inv_sumtree_size,
+  id children_multiplier,
+  id seed,
+  id *r_parent,
+  id *r_index
+);
+
+// Works like acy_select_nth_child, but uses a table-based cohort for
+// children. Note that child_cohort_size should divide evenly into the
+// children_multiplier (or at least, into the children multiplier times the sum
+// table grand total).
+id acy_select_table_nth_child(
+  id parent,
+  id nth,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id *children_sumtable,
+  id children_sumtable_size,
+  id *children_inv_sumtree,
+  id children_inv_sumtree_size,
+  id children_multiplier,
+  id seed
+);
+
 #endif // INCLUDE_SELECT_H

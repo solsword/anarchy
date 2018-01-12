@@ -87,3 +87,37 @@ acy_unit_test(
   "selection_poly_parent/child_plot",
   &acy_test_poly_select_gnuplot
 );
+
+acy_unit_test(
+  "select_table_nth/parent",
+  &acy_test_table_parent_child_selection
+);
+
+acy_unit_test(
+  "select_table_nth/parent_odd",
+  &acy_test_odd_table_parent_child_selection
+);
+
+acy_unit_test(
+  "table_selection_visual",
+  &acy_test_table_parent_child_visual
+);
+
+/*
+acy_unit_test(
+  "table_selection_diff_stream",
+  &acy_test_table_select_gap_stream
+);
+*/
+
+acy_unit_test("table_selection_grahpviz", &acy_test_table_select_graphviz);
+
+acy_unit_test(
+  "table_selection_average_distances",
+  &acy_test_avg_table_parent_child_gap
+);
+
+acy_unit_test(
+  "selection_table_parent/child_plot",
+  &acy_test_table_select_gnuplot
+);
