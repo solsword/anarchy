@@ -182,4 +182,33 @@ id acy_select_table_nth_child(
   id seed
 );
 
+// TODO: Are these correct or even useful?
+
+// For table-based cohort selection (see above) returns the earliest possible
+// child of the given parent.
+id acy_select_table_earliest_possible_child(
+  id parent,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id *children_sumtable,
+  id children_sumtable_size,
+  id *children_inv_sumtree,
+  id children_inv_sumtree_size,
+  id children_multiplier,
+  id seed
+);
+
+// Same as acy_select_table_earliest_possible_child, but from the child's
+// perspective.
+id acy_select_table_child_cohort_start(
+  id child,
+  id child_cohort_size,
+  id *children_sumtable,
+  id children_sumtable_size,
+  id *children_inv_sumtree,
+  id children_inv_sumtree_size,
+  id children_multiplier,
+  id seed
+);
+
 #endif // INCLUDE_SELECT_H

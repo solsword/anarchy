@@ -1478,7 +1478,7 @@ id acy_select_table_nth_child(
     seed + parent_super_cohort
   );
 
-  // Escape from polynomial cohort:
+  // Escape from tabulated cohort:
   id child = acy_tabulated_cohort_outer(
     parent_super_cohort,
     shuf,
@@ -1505,3 +1505,249 @@ id acy_select_table_nth_child(
 
   return adjusted;
 }
+
+
+id acy_select_table_earliest_possible_child(
+  id parent,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id *children_sumtable,
+  id children_sumtable_size,
+  id *children_inv_sumtree,
+  id children_inv_sumtree_size,
+  id children_multiplier,
+  id seed
+) {
+  // Cohort sizes:
+  id child_super_cohort_size = acy_tablesum(
+    children_sumtable_size,
+    children_sumtable
+  ) * children_multiplier;
+  id parent_super_cohort_size = (
+    parent_cohort_size
+  * (child_super_cohort_size / child_cohort_size)
+  );
+  id child_leftovers = (
+    child_super_cohort_size
+  - (child_super_cohort_size / child_cohort_size) * child_cohort_size
+  );
+  if (child_leftovers > 0) {
+    // add a cohort to parent the leftover children
+    parent_super_cohort_size += parent_cohort_size;
+  }
+
+  // Find parent super/sub cohort information:
+  id parent_super_cohort;
+  id parent_super_inner;
+
+  acy_cohort_and_inner(
+    parent,
+    parent_super_cohort_size,
+    &parent_super_cohort,
+    &parent_super_inner
+  );
+
+  // Escape at index 0:
+  return acy_cohort_outer(
+    parent_super_cohort,
+    0,
+    child_super_cohort_size
+  );
+}
+
+id acy_select_table_child_cohort_start(
+  id child,
+  id child_cohort_size,
+  id *children_sumtable,
+  id children_sumtable_size,
+  id *children_inv_sumtree,
+  id children_inv_sumtree_size,
+  id children_multiplier,
+  id seed
+) {
+  // Cohort sizes:
+  id child_super_cohort_size = acy_tablesum(
+    children_sumtable_size,
+    children_sumtable
+  ) * children_multiplier;
+
+  // Get from absolute-child to child-within-cohort. For tabular child
+  // super-cohorts, parents in the xth super-cohort have children drawn from
+  // the xth polynomial super-cohort.
+  id super_cohort, super_inner;
+  // polynomial super-cohort 
+  acy_tabulated_cohort_and_inner(
+    child,
+    children_sumtable,
+    children_sumtable_size,
+    children_inv_sumtree,
+    children_inv_sumtree_size,
+    children_multiplier,
+    seed,
+    &super_cohort,
+    &super_inner
+  );
+
+  // TODO: Is this correct?
+  // Escape at index 0 for result:
+  return acy_cohort_outer(
+    super_cohort,
+    0,
+    child_super_cohort_size
+  );
+}
+
+
+// TODO: Minimize just sub-cohort (this code) or just super-cohort (above)?
+/*
+id acy_select_table_earliest_possible_child(
+  id parent,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id *children_sumtable,
+  id children_sumtable_size,
+  id *children_inv_sumtree,
+  id children_inv_sumtree_size,
+  id children_multiplier,
+  id seed
+) {
+  // Cohort sizes:
+  id child_super_cohort_size = acy_tablesum(
+    children_sumtable_size,
+    children_sumtable
+  ) * children_multiplier;
+  id parent_super_cohort_size = (
+    parent_cohort_size
+  * (child_super_cohort_size / child_cohort_size)
+  );
+  id child_leftovers = (
+    child_super_cohort_size
+  - (child_super_cohort_size / child_cohort_size) * child_cohort_size
+  );
+  if (child_leftovers > 0) {
+    // add a cohort to parent the leftover children
+    parent_super_cohort_size += parent_cohort_size;
+  }
+
+  // Find parent super/sub cohort information:
+  id parent_super_cohort;
+  id parent_super_inner;
+
+  acy_cohort_and_inner(
+    parent,
+    parent_super_cohort_size,
+    &parent_super_cohort,
+    &parent_super_inner
+  );
+
+  id parent_sub_cohort;
+  id parent_sub_inner;
+
+  acy_cohort_and_inner(
+    parent_super_inner,
+    parent_cohort_size,
+    &parent_sub_cohort,
+    &parent_sub_inner
+  );
+
+  // child super-cohort equals parent super-cohort
+
+  // Get back from child-within-sub-cohort-within-super-cohort to
+  // absolute-child. Note that children of parents in the xth parent cohort are
+  // assigned to the xth child cohort.
+  // Here we just use 0 as the child inner index to get the earliest possible
+  // child.
+  id child_super_inner = acy_cohort_outer(
+    parent_sub_cohort,
+    0,
+    child_cohort_size
+  );
+
+  // shuffle within child super cohort:
+  id shuf = acy_cohort_shuffle(
+    child_super_inner,
+    child_super_cohort_size,
+    seed + parent_super_cohort
+  );
+
+  // Escape from tabulated cohort and return:
+  return acy_tabulated_cohort_outer(
+    parent_super_cohort,
+    shuf,
+    children_sumtable,
+    children_sumtable_size,
+    children_inv_sumtree,
+    children_inv_sumtree_size,
+    children_multiplier,
+    seed
+  );
+}
+
+id acy_select_table_child_cohort_start(
+  id child,
+  id child_cohort_size,
+  id *children_sumtable,
+  id children_sumtable_size,
+  id *children_inv_sumtree,
+  id children_inv_sumtree_size,
+  id children_multiplier,
+  id seed
+) {
+  // Cohort sizes:
+  id child_super_cohort_size = acy_tablesum(
+    children_sumtable_size,
+    children_sumtable
+  ) * children_multiplier;
+
+  // Get from absolute-child to child-within-cohort. For tabular child
+  // super-cohorts, parents in the xth super-cohort have children drawn from
+  // the xth polynomial super-cohort.
+  id super_cohort, super_inner;
+  // polynomial super-cohort 
+  acy_tabulated_cohort_and_inner(
+    child,
+    children_sumtable,
+    children_sumtable_size,
+    children_inv_sumtree,
+    children_inv_sumtree_size,
+    children_multiplier,
+    seed,
+    &super_cohort,
+    &super_inner
+  );
+
+
+  // reverse shuffle within cohort
+  id shuf = acy_rev_cohort_shuffle(
+    super_inner,
+    child_super_cohort_size,
+    seed + super_cohort
+  );
+
+  // now find our sub-cohort
+  // if we're in the nth sub-cohort of our super-cohort, our parent is in the
+  // nth sub-cohort of their super cohort.
+  id sub_cohort, sub_inner;
+  acy_cohort_and_inner(
+    shuf,
+    child_cohort_size,
+    &sub_cohort,
+    &sub_inner
+  );
+
+  // Now get min member of our sub-cohort:
+  id min_inner = acy_cohort_outer(
+    sub_cohort,
+    0,
+    child_cohort_size
+  );
+
+  // TODO: Is this correct?
+  // Unshuffle and return:
+  return acy_cohort_shuffle(
+    min_inner,
+    child_super_cohort_size,
+    seed + super_cohort
+  );
+}
+*/

@@ -103,12 +103,10 @@ acy_unit_test(
   &acy_test_table_parent_child_visual
 );
 
-/*
 acy_unit_test(
   "table_selection_diff_stream",
   &acy_test_table_select_gap_stream
 );
-*/
 
 acy_unit_test("table_selection_grahpviz", &acy_test_table_select_graphviz);
 

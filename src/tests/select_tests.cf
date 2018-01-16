@@ -624,7 +624,7 @@ int acy_test_avg_exp_parent_child_gap() {
 }
 
 int acy_test_exp_select_gap_stream() {
-  id n_patches = 20;
+  id n_patches = 7;
   id n_samples = 8;
   id avg_arity = 1;
   id max_arity = 32;
@@ -1005,7 +1005,7 @@ int acy_test_poly_parent_child_visual() {
 }
 
 int acy_test_poly_select_gap_stream() {
-  id n_patches = 20;
+  id n_patches = 7;
   id n_samples = 8;
 
   id parent_cohort_size = 32;
@@ -1289,9 +1289,13 @@ int acy_test_table_parent_child_selection() {
   id child_cohort_size = 32;
   id multiplier = 32 * 1000;
   id seed = 798513546;
+  id base_value = ((id) 2) << 50; // 14 bits from max
   id result;
-  // TODO: HERE These numbers are small enough to cause underflow!
-  for (id tin = 9464135; tin < 9464135 + 409102; tin += 5167) {
+  for (
+    id tin = base_value + 9464135;
+    tin < base_value + 9464135 + 409102;
+    tin += 5167
+  ) {
     acy_select_table_parent_and_index(
       tin,
       parent_cohort_size,
@@ -1353,10 +1357,11 @@ int acy_test_odd_table_parent_child_selection() {
   id parent_cohort_size = 37;
   id child_cohort_size = 45;
   id multiplier = 32*1000;
+  id base_value = ((id) 2) << 50; // 14 bits from max
   id seed = 94199832;
   id result;
   id accum = 1;
-  for (id tin = 389238; tin < 581201; tin += accum) {
+  for (id tin = base_value + 389238; tin < base_value + 581201; tin += accum) {
     if (tin % 300 == 0) {
       accum = 3801;
     } else {
@@ -1423,7 +1428,8 @@ int acy_test_table_parent_child_visual() {
   id child_cohort_size = 32;
   id multiplier = 32*1000;
 
-  id parent = 46548464;
+  id base_value = ((id) 2) << 50; // 14 bits from max
+  id parent = base_value + 46548464;
   id seed = 172911;
   id nth = 0;
   id child = NONE;
@@ -1489,30 +1495,38 @@ int acy_test_table_parent_child_visual() {
   return 0;
 }
 
-/*
 int acy_test_table_select_gap_stream() {
-  id n_patches = 20;
+  id n_patches = 7;
   id n_samples = 8;
 
   id parent_cohort_size = 32;
   id child_cohort_size = 32;
   id multiplier = 32*1000;
 
+  id base_value = ((id) 2) << 50; // 14 bits from max
   id seed = 71829812983;
 
   for (
     //*
-    id start = 372221831718;
-    start < 372221831718 + 4587518831*n_patches;
+    id start = base_value + 372221831718;
+    start < base_value + 372221831718 + 4587518831*n_patches;
     start += 4587518831
     // */
     /*
     id start = 10000;
     start < 10000 + 1000*n_patches;
     start += 1000
-    // * /
+    // */
   ) {
-    fprintf(stdout, "\nParent/child gaps [%lu]:\n", start);
+    fprintf(
+      stdout,
+      "\nParent/child gaps [%lu] (expected %lu):\n",
+      start,
+      acy_tablesum(
+        TEST_SUMTABLE_SIZE,
+        TEST_SUMTABLE
+      ) * multiplier / 2
+    );
     for (id child = start; child < start + n_samples; ++child) {
       id parent, index;
       acy_select_table_parent_and_index(
@@ -1542,6 +1556,7 @@ int acy_test_table_select_gap_stream() {
       );
       id ccs = acy_select_table_child_cohort_start(
         child,
+        child_cohort_size,
         TEST_SUMTABLE,
         TEST_SUMTABLE_SIZE,
         TEST_INV_SUMTREE,
@@ -1570,7 +1585,6 @@ int acy_test_table_select_gap_stream() {
   fputc('\n', stdout);
   return 0;
 }
-*/
 
 
 void acy_print_table_edges_recursively(
@@ -1632,9 +1646,11 @@ int acy_test_table_select_graphviz() {
   id parent;
   id index = 0;
 
+  id base_value = ((id) 2) << 50; // 14 bits from max
+
   char filename[1024];
   for (id seed = 172741; seed < 172746; seed += 1) {
-    parent = 10000000;
+    parent = base_value;
     // find the great-grandparent:
     for (id i = 0; i < 3; ++i) {
       acy_select_table_parent_and_index(
@@ -1681,6 +1697,7 @@ int acy_test_avg_table_parent_child_gap() {
   id child_cohort_size = 32;
   id multiplier = 32*1000;
 
+  id base_value = ((id) 2) << 50; // 14 bits from max
   double avg_parent_distance = 0; 
   double avg_child_distance = 0; 
   id parent_dist_count = 0;
@@ -1695,7 +1712,11 @@ int acy_test_avg_table_parent_child_gap() {
     avg_child_distance = 0; 
     parent_dist_count = 0;
     child_dist_count = 0;
-    for (id here = 5646461354679; here < 5646461354679 + n_samples; ++here) {
+    for (
+      id here = base_value + 5646461354679;
+      here < base_value + 5646461354679 + n_samples;
+      ++here
+    ) {
       acy_select_table_parent_and_index(
         here,
         parent_cohort_size,
@@ -1786,6 +1807,8 @@ int acy_test_table_select_gnuplot() {
 
   id multiplier = 32*1000;
 
+  id base_value = ((id) 2) << 50; // 14 bits from max
+
   id seed;
   id parent, child, index;
 
@@ -1815,8 +1838,8 @@ int acy_test_table_select_gnuplot() {
   id max_parent = 0;
   id increment = n_samples;
   for (
-    id start = 3298019;
-    start < 3298019 + increment*n_batches;
+    id start = base_value + 3298019;
+    start < base_value + 3298019 + increment*n_batches;
     start += increment
   ) {
     seed = acy_prng(start, start + 4654681615348494);
