@@ -75,9 +75,9 @@ void acy_cleanup_tables(
 
 void acy_tabulated_cohort_and_inner(
   id outer,
-  id *sumtable,
+  id const * const sumtable,
   id table_size,
-  id *inv_sumtree,
+  id const * const inv_sumtree,
   id inv_sumtree_size,
   id multiplier,
   id seed,
@@ -198,9 +198,9 @@ void acy_tabulated_cohort_and_inner(
 id acy_tabulated_cohort_outer(
   id cohort,
   id inner,
-  id *sumtable,
+  id const * const sumtable,
   id table_size,
-  id *inv_sumtree,
+  id const * const inv_sumtree,
   id inv_sumtree_size,
   id multiplier,
   id seed
@@ -299,9 +299,9 @@ id acy_tabulated_cohort_outer(
 
 id acy_tabulated_outer_min(
   id cohort,
-  id *sumtable,
+  id const * const sumtable,
   id sumtable_size,
-  id *inv_sumtree,
+  id const * const inv_sumtree,
   id inv_sumtree_size,
   id multiplier
 ) {

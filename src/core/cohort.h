@@ -1465,7 +1465,7 @@ void acy_cleanup_tables(
 // above). Note that the given index 'n' isn't checked for validity; you can
 // use valgrind if you're worried about uninitialized access as a result. If
 // you're using a multiplier, you can simply multiply the return value.
-static inline id acy_tablesum(id n, id *sumtable) {
+static inline id acy_tablesum(id n, id const * const sumtable) {
   return sumtable[n];
 }
 
@@ -1479,7 +1479,7 @@ static inline id acy_tablesum(id n, id *sumtable) {
 // The given multiplier value is used to scale each sum tree entry.
 static inline id acy_inv_tablesum(
   id sum,
-  id *inv_sumtree,
+  id const * const inv_sumtree,
   id tree_size,
   id multiplier
 ) {
@@ -1513,9 +1513,9 @@ static inline id acy_inv_tablesum(
 // distribution with a different cohort size (but the same shape).
 void acy_tabulated_cohort_and_inner(
   id outer,
-  id *sumtable,
+  id const * const sumtable,
   id sumtable_size,
-  id *inv_sumtree,
+  id const * const inv_sumtree,
   id inv_sumtree_size,
   id multiplier,
   id seed,
@@ -1528,9 +1528,9 @@ void acy_tabulated_cohort_and_inner(
 id acy_tabulated_cohort_outer(
   id cohort,
   id inner,
-  id *sumtable,
+  id const * const sumtable,
   id sumtable_size,
-  id *inv_sumtree,
+  id const * const inv_sumtree,
   id inv_sumtree_size,
   id multiplier,
   id seed
@@ -1540,9 +1540,9 @@ id acy_tabulated_cohort_outer(
 // possible outer ID for any inner ID in this cohort.
 id acy_tabulated_outer_min(
   id cohort,
-  id *sumtable,
+  id const * const sumtable,
   id sumtable_size,
-  id *inv_sumtree,
+  id const * const inv_sumtree,
   id inv_sumtree_size,
   id multiplier
 );

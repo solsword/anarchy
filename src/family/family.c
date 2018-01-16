@@ -68,7 +68,7 @@ typedef struct acy_family_info_s acy_family_info;
  */
 
 
-id const DEFAULT_BIRTH_AGE_SUMTABLE[41] = {
+id const DEFAULT_BIRTH_AGE_SUMTABLE[41] = { // off-by-one intentional
     0,   1,   2,   3,   4, // at ages 15--19
     5,   6,   7,   9,  13, // at ages 20--24
    20,  29,  39,  50,  66, // at ages 25--29
@@ -100,8 +100,8 @@ acy_family_info const DEFAULT_FAMILY_INFO = {
   .max_children_per_mother = 32,
 
   .birth_age_dist_sumtable = DEFAULT_BIRTH_AGE_SUMTABLE,
-  .birth_age_dist_sumtable_size = 41,
-  .birth_age_dist_inv_sumtree = DEFAULT_BIRTH_AGE_INV_SUMTREE, // TODO: HERE
+  .birth_age_dist_sumtable_size = 40, // off-by-one intentional
+  .birth_age_dist_inv_sumtree = DEFAULT_BIRTH_AGE_INV_SUMTREE,
   .birth_age_dist_inv_sumtree_size = 79,
 
   .max_partners_per_mother = 16,
@@ -227,10 +227,15 @@ void acy_mother_and_index(
   fprintf(stderr, "acy_mother_and_index::adjusted::%lu\n", adjusted);
 #endif
   id mother, index;
-  acy_select_parent_and_index(
+  acy_select_table_parent_and_index(
     adjusted,
-    info->average_children_per_mother,
     info->max_children_per_mother,
+    info->max_children_per_mother * info->average_children_per_mother,
+    info->birth_age_dist_sumtable,
+    info->birth_age_dist_sumtable_size,
+    info->birth_age_dist_inv_sumtree,
+    info->birth_age_dist_inv_sumtree_size,
+    acy_family_birth_age_table_multiplier(info),
     info->seed,
     &mother,
     &index
@@ -249,7 +254,7 @@ void acy_mother_and_index(
   fprintf(stderr, "acy_mother_and_index::adjusted_mother::%lu\n", *r_mother);
 #endif
   if (mother != *r_mother) {
-    index += acy_count_select_children(
+    index += acy_count_select_children( // TODO: Is this accurate w/ table?
       *r_mother,
       info->average_children_per_mother,
       info->max_children_per_mother,
@@ -264,21 +269,6 @@ void acy_mother_and_index(
 #endif
   *r_index = index;
 
-  /*
-   * TODO: Exponential selection?
-  id cohort_size = acy_family_children_cohort_size(info);
-  acy_select_exp_parent_and_index(
-    adjusted,
-    info->average_children_per_mother,
-    info->max_children_per_mother,
-    info->birth_age_distribution_shape,
-    cohort_size,
-    FAMILY_COHORT_LAYERS,
-    info->seed,
-    r_mother,
-    r_index
-  );
-  */
   /*
    * TODO: Check underflow
   if (*r_mother > person) { // underflow
@@ -296,7 +286,7 @@ id acy_direct_child(id person, id nth, acy_family_info const * const info) {
   if (!acy_is_child_bearer(person)) {
     return NONE;
   }
-  id first_count = acy_count_select_children(
+  id first_count = acy_count_select_children( // TODO: Does this work w/ table?
     person,
     info->average_children_per_mother,
     info->max_children_per_mother,
@@ -307,42 +297,38 @@ id acy_direct_child(id person, id nth, acy_family_info const * const info) {
 #endif
   id child;
   if (nth < first_count) {
-    child = acy_select_nth_child(
+    child = acy_select_table_nth_child(
       person,
       nth,
-      info->average_children_per_mother,
       info->max_children_per_mother,
+      info->max_children_per_mother * info->average_children_per_mother,
+      info->birth_age_dist_sumtable,
+      info->birth_age_dist_sumtable_size,
+      info->birth_age_dist_inv_sumtree,
+      info->birth_age_dist_inv_sumtree_size,
+      acy_family_birth_age_table_multiplier(info),
       info->seed
     );
 #ifdef DEBUG_FAMILY
     fprintf(stderr, "acy_direct_child::child(first)::%lu\n", child);
 #endif
   } else { // get children that would think our duo is their parent:
-    child = acy_select_nth_child(
+    child = acy_select_table_nth_child(
       person + 1,
       nth - first_count,
-      info->average_children_per_mother,
       info->max_children_per_mother,
+      info->max_children_per_mother * info->average_children_per_mother,
+      info->birth_age_dist_sumtable,
+      info->birth_age_dist_sumtable_size,
+      info->birth_age_dist_inv_sumtree,
+      info->birth_age_dist_inv_sumtree_size,
+      acy_family_birth_age_table_multiplier(info),
       info->seed
     );
 #ifdef DEBUG_FAMILY
     fprintf(stderr, "acy_direct_child::child(second)::%lu\n", child);
 #endif
   }
-  /*
-   * TODO: Exponential selection (or just do multi-selection?)
-  id cohort_size = acy_family_children_cohort_size(info);
-  id child = acy_select_exp_nth_child(
-    person,
-    nth,
-    info->average_children_per_mother,
-    info->max_children_per_mother,
-    info->birth_age_distribution_shape,
-    cohort_size,
-    FAMILY_COHORT_LAYERS,
-    info->seed
-  );
-  */
   if (child == NONE) { return NONE; } // mother doesn't have this many children
   // Introduce age gap:
   id adjusted = child + acy_get_child_id_adjust(info);
