@@ -92,8 +92,8 @@ static inline id acy_flop(id x) {
 // A simple reversible pseudo-random number generator
 static inline id acy_prng(id x, id seed) {
   x ^= seed;
-  x = acy_flop(x);
   x = acy_fold(x, seed + 17); // prime
+  x = acy_flop(x);
   x = acy_circular_shift(x, seed + 37); // prime
   x = acy_fold(x, seed + 89); // prime
   x = acy_circular_shift(x, seed + 107); // prime
@@ -107,8 +107,8 @@ static inline id acy_rev_prng(id x, id seed) {
   x = acy_rev_circular_shift(x, seed + 107); // prime
   x = acy_fold(x, seed + 89); // prime
   x = acy_rev_circular_shift(x, seed + 37); // prime
-  x = acy_fold(x, seed + 17); // prime
   x = acy_flop(x);
+  x = acy_fold(x, seed + 17); // prime
   x ^= seed;
   return x;
 }
