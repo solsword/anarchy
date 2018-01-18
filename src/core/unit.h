@@ -20,6 +20,9 @@
 #define ID_BYTES 8ULL
 typedef uint64_t id;
 
+// Mask containing every-other byte.
+#define FLOP_MASK 0xff00ff00ff00ff00
+
 // An ID to be used for out-of-band purposes. Note that it's often not strictly
 // out-of-band, however.
 #define NONE 0
@@ -81,27 +84,19 @@ static inline id acy_fold(id x, id where) {
 
 // Flops each byte with the adjacent byte. This is its own inverse.
 static inline id acy_flop(id x) {
-  for (int i = 0; i < ID_BYTES - 1; i += 2) {
-    id m = acy_byte_mask(i);
-    id om = acy_byte_mask(i+1);
-    id fb = x & m;
-    id sb = x & om;
-    x &= ~m;
-    x &= ~om;
-    x |= fb << 8ULL;
-    x |= sb >> 8ULL;
-  }
-  return x;
+  id left = x & FLOP_MASK;
+  id right = x & ~FLOP_MASK;
+  return (right << 8ULL) | (left >> 8ULL);
 }
 
 // A simple reversible pseudo-random number generator
 static inline id acy_prng(id x, id seed) {
   x ^= seed;
   x = acy_flop(x);
-  x = acy_fold(x, seed + 17);
-  x = acy_circular_shift(x, seed + 48);
-  x = acy_fold(x, seed + 83);
-  x = acy_circular_shift(x, seed + 105);
+  x = acy_fold(x, seed + 17); // prime
+  x = acy_circular_shift(x, seed + 37); // prime
+  x = acy_fold(x, seed + 89); // prime
+  x = acy_circular_shift(x, seed + 107); // prime
   x = acy_flop(x);
   return x;
 }
@@ -109,10 +104,10 @@ static inline id acy_prng(id x, id seed) {
 // Reverse
 static inline id acy_rev_prng(id x, id seed) {
   x = acy_flop(x);
-  x = acy_rev_circular_shift(x, seed + 105);
-  x = acy_fold(x, seed + 83);
-  x = acy_rev_circular_shift(x, seed + 48);
-  x = acy_fold(x, seed + 17);
+  x = acy_rev_circular_shift(x, seed + 107); // prime
+  x = acy_fold(x, seed + 89); // prime
+  x = acy_rev_circular_shift(x, seed + 37); // prime
+  x = acy_fold(x, seed + 17); // prime
   x = acy_flop(x);
   x ^= seed;
   return x;

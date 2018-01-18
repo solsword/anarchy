@@ -50,8 +50,7 @@ static inline id acy_cohort_outer(
   id inner,
   id cohort_size
 ) {
-  id cohort_start = cohort * cohort_size;
-  return cohort_start + inner;
+  return (cohort * cohort_size) + inner;
 }
 
 // Interleaves cohort members by folding top half into bottom half.
@@ -73,10 +72,12 @@ static inline id acy_rev_cohort_interleave(id shuffled, id cohort_size) {
 }
 
 // Folds items past an arbitrary split point into the middle of the cohort.
-// The split will always leave an odd number at the end
+// The split will always leave an odd number at the end. Doesn't work for
+// cohorts of less than 4 items!
 static inline id acy_cohort_fold(id inner, id cohort_size, id seed) {
   id half = cohort_size >> 1;
-  id split = (seed % half) + half;
+  id quarter = cohort_size >> 2;
+  id split = half + (seed % quarter);
   id after = (cohort_size - split);
   split += (after + 1) % 2; // force an odd split point
   after = (cohort_size - split);
@@ -94,7 +95,8 @@ static inline id acy_cohort_fold(id inner, id cohort_size, id seed) {
 
 static inline id acy_rev_cohort_fold(id folded, id cohort_size, id seed) {
   id half = cohort_size >> 1;
-  id split = (seed % half) + half;
+  id quarter = cohort_size >> 2;
+  id split = (seed % quarter) + half;
   id after = (cohort_size - split);
   split += (after + 1) % 2; // force an odd split point
   after = (cohort_size - split);
@@ -183,7 +185,6 @@ static inline id acy_rev_cohort_mix(id mixed, id cohort_size, id seed) {
 // cohort.
 #define MIN_REGION_SIZE 2
 #define MAX_REGION_COUNT 16
-// TODO: Don't send stuff out-of-range
 static inline id acy_cohort_spread(id inner, id cohort_size, id seed) {
   id min_regions = 2 - (cohort_size < 2 * MIN_REGION_SIZE);
   id max_regions = 1 + cohort_size / MIN_REGION_SIZE;
@@ -259,22 +260,22 @@ static inline id acy_cohort_shuffle(id inner, id cohort_size, id seed) {
   }
 #endif
   id r = inner;
-  seed ^= cohort_size/3;
-  r = acy_cohort_spread(r, cohort_size, seed + 453);
-  r = acy_cohort_mix(r, cohort_size, seed + 2891);
+  seed ^= cohort_size;
+  r = acy_cohort_spread(r, cohort_size, seed + 457); // prime
+  r = acy_cohort_mix(r, cohort_size, seed + 2897); // prime
   r = acy_cohort_interleave(r, cohort_size);
-  r = acy_cohort_spin(r, cohort_size, seed + 1982);
-  r = acy_cohort_upend(r, cohort_size, seed + 47);
-  r = acy_cohort_fold(r, cohort_size, seed + 837);
+  r = acy_cohort_spin(r, cohort_size, seed + 1987); // prime
+  r = acy_cohort_upend(r, cohort_size, seed + 47); // prime
+  r = acy_cohort_fold(r, cohort_size, seed + 839); // prime
   r = acy_cohort_interleave(r, cohort_size);
-  r = acy_cohort_flop(r, cohort_size, seed + 53);
-  r = acy_cohort_fold(r, cohort_size, seed + 201);
-  r = acy_cohort_mix(r, cohort_size, seed + 728);
-  r = acy_cohort_spread(r, cohort_size, seed + 881);
+  r = acy_cohort_flop(r, cohort_size, seed + 53); // prime
+  r = acy_cohort_fold(r, cohort_size, seed + 211); // prime
+  r = acy_cohort_mix(r, cohort_size, seed + 733); // prime
+  r = acy_cohort_spread(r, cohort_size, seed + 881); // prime
   r = acy_cohort_interleave(r, cohort_size);
-  r = acy_cohort_flop(r, cohort_size, seed + 192);
-  r = acy_cohort_upend(r, cohort_size, seed + 794614);
-  r = acy_cohort_spin(r, cohort_size, seed + 19);
+  r = acy_cohort_flop(r, cohort_size, seed + 193); // prime
+  r = acy_cohort_upend(r, cohort_size, seed + 794641); // prime
+  r = acy_cohort_spin(r, cohort_size, seed + 19); // prime
   return r;
 }
 
@@ -287,22 +288,22 @@ static inline id acy_rev_cohort_shuffle(id shuffled, id cohort_size, id seed) {
   }
 #endif
   id r = shuffled;
-  seed ^= cohort_size/3;
-  r = acy_rev_cohort_spin(r, cohort_size, seed + 19);
-  r = acy_cohort_upend(r, cohort_size, seed + 794614);
-  r = acy_cohort_flop(r, cohort_size, seed + 192);
+  seed ^= cohort_size;
+  r = acy_rev_cohort_spin(r, cohort_size, seed + 19); // prime
+  r = acy_cohort_upend(r, cohort_size, seed + 794641); // prime
+  r = acy_cohort_flop(r, cohort_size, seed + 193); // prime
   r = acy_rev_cohort_interleave(r, cohort_size);
-  r = acy_rev_cohort_spread(r, cohort_size, seed + 881);
-  r = acy_rev_cohort_mix(r, cohort_size, seed + 728);
-  r = acy_rev_cohort_fold(r, cohort_size, seed + 201);
-  r = acy_cohort_flop(r, cohort_size, seed + 53);
+  r = acy_rev_cohort_spread(r, cohort_size, seed + 881); // prime
+  r = acy_rev_cohort_mix(r, cohort_size, seed + 733); // prime
+  r = acy_rev_cohort_fold(r, cohort_size, seed + 211); // prime
+  r = acy_cohort_flop(r, cohort_size, seed + 53); // prime
   r = acy_rev_cohort_interleave(r, cohort_size);
-  r = acy_rev_cohort_fold(r, cohort_size, seed + 837);
-  r = acy_cohort_upend(r, cohort_size, seed + 47);
-  r = acy_rev_cohort_spin(r, cohort_size, seed + 1982);
+  r = acy_rev_cohort_fold(r, cohort_size, seed + 839); // prime
+  r = acy_cohort_upend(r, cohort_size, seed + 47); // prime
+  r = acy_rev_cohort_spin(r, cohort_size, seed + 1987); // prime
   r = acy_rev_cohort_interleave(r, cohort_size);
-  r = acy_rev_cohort_mix(r, cohort_size, seed + 2891);
-  r = acy_rev_cohort_spread(r, cohort_size, seed + 453);
+  r = acy_rev_cohort_mix(r, cohort_size, seed + 2897); // prime
+  r = acy_rev_cohort_spread(r, cohort_size, seed + 457); // prime
   return r;
 }
 
