@@ -21,7 +21,7 @@
 typedef uint64_t id;
 
 // Mask containing every-other byte.
-#define FLOP_MASK 0xff00ff00ff00ff00
+#define FLOP_MASK 0xf0f0f0f0f0f0f0f0
 
 // An ID to be used for out-of-band purposes. Note that it's often not strictly
 // out-of-band, however.
@@ -82,16 +82,33 @@ static inline id acy_fold(id x, id where) {
   return x ^ (lower << shift_by);
 }
 
-// Flops each byte with the adjacent byte. This is its own inverse.
+// Flops each half-byte with the adjacent half-byte. This is its own inverse.
 static inline id acy_flop(id x) {
   id left = x & FLOP_MASK;
   id right = x & ~FLOP_MASK;
-  return (right << 8ULL) | (left >> 8ULL);
+  return (right << 4ULL) | (left >> 4ULL);
+}
+
+// Implements something similar to a linear-feedback-shift-register, but
+// reversible. Note that the shift does not cause the trigger mask to overlap
+// the scramble mask, which would otherwise prevent reversibility.
+static inline id acy_scramble(id x) {
+  id trigger = !!(x & 0x80200003); // 1 or 0
+  x = acy_circular_shift(x, 1);
+  x ^= trigger * 0x03040610; // pseudo-if
+  return x;
+}
+
+static inline id acy_rev_scramble(id x) {
+  x = acy_rev_circular_shift(x, 1);
+  id trigger = !!(x & 0x80200003); // 1 or 0
+  x ^= trigger * 0x06080c20; // pseudo-if; constant above left-shifted by 1
+  return x;
 }
 
 // A simple reversible pseudo-random number generator
 static inline id acy_prng(id x, id seed) {
-  x ^= seed;
+  x += 13; // prime
   x = acy_fold(x, seed + 17); // prime
   x = acy_flop(x);
   x = acy_circular_shift(x, seed + 37); // prime
@@ -109,7 +126,7 @@ static inline id acy_rev_prng(id x, id seed) {
   x = acy_rev_circular_shift(x, seed + 37); // prime
   x = acy_flop(x);
   x = acy_fold(x, seed + 17); // prime
-  x ^= seed;
+  x -= 13; // prime
   return x;
 }
 

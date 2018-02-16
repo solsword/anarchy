@@ -13,6 +13,16 @@ acy_unit_test("circular_shift", &acy_test_circular_shift);
 
 acy_unit_test("flop", &acy_test_flop);
 
+acy_unit_test("scramble", &acy_test_scramble);
+
 acy_unit_test("prng", &acy_test_prng);
 
 acy_unit_test("prng spew", &acy_test_prng_spew);
+
+// TODO: Additional prng tests:
+// 1. sequential-seed patterns
+// 2. sequential-value patterns
+// 3. sequential-gap patterns
+// 4. sequential-seed autocorrelation
+// 5. sequential-value autocorrelation
+// 6. sequential-gap autocorrelation

@@ -18,6 +18,13 @@
 
 #include "core/unit.h" // for "id" and unit operations
 
+/***********
+ * Globals *
+ ***********/
+
+// Minimum viable cohort size (cuts off a few edge cases)
+#define MIN_COHORT_SIZE 4
+
 /********************
  * Inline Functions *
  ********************/
@@ -152,11 +159,7 @@ static inline id acy_cohort_mix(id inner, id cohort_size, id seed) {
   id even = inner - inner % 2;
   id target;
   if (inner % 2) {
-    target = acy_cohort_spin(
-      even/2,
-      (cohort_size+(1-cohort_size%2))/2,
-      seed + 464185
-    );
+    target = acy_cohort_spin(even/2, cohort_size/2, seed + 464185);
     return 2 * target + 1;
   } else {
     target = acy_cohort_spin(even/2, (cohort_size+1)/2, seed + 1048239);
@@ -171,7 +174,7 @@ static inline id acy_rev_cohort_mix(id mixed, id cohort_size, id seed) {
   if (mixed % 2) {
     target = acy_rev_cohort_spin(
       even/2,
-      (cohort_size+(1-cohort_size%2))/2,
+      cohort_size/2,
       seed + 464185
     );
     return 2 * target + 1;
