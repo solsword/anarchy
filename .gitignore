@@ -1,4 +1,4 @@
 # Build output
-obj/*
-bin/*
-test/*
+c/obj/*
+c/bin/*
+c/test/*

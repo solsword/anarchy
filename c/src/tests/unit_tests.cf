@@ -37,18 +37,18 @@ int acy_test_fold() {
   return 0;
 }
 
-int acy_test_circular_shift() {
+int acy_test_swirl() {
   int i;
   id results[TEST_ITERATIONS];
 
   results[0] = 10290192;
 
   for (i = 1; i < TEST_ITERATIONS; ++i) {
-    results[i] = acy_circular_shift(results[i-1], 17 + i);
+    results[i] = acy_swirl(results[i-1], 17 + i);
   }
 
   for (i = TEST_ITERATIONS - 1; i > 0; --i) {
-    id x = acy_rev_circular_shift(results[i], 17 + i);
+    id x = acy_rev_swirl(results[i], 17 + i);
     if (x != results[i-1]) {
       fprintf(
         stderr,

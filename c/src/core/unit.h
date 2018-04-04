@@ -48,7 +48,7 @@ static inline id acy_max(id A, id B) {
 }
 
 // A circular bit shift; distance is capped at 3/4 of ID_BITS
-static inline id acy_circular_shift(id x, id distance) {
+static inline id acy_swirl(id x, id distance) {
   distance %= ((ID_BITS << 1) + ID_BITS) >> 2; // 3/4 of ID_BITS
   id m = acy_mask(distance);
   id fall_off = x & m;
@@ -60,7 +60,7 @@ static inline id acy_circular_shift(id x, id distance) {
 }
 
 // Reverse
-static inline id acy_rev_circular_shift(id x, id distance) {
+static inline id acy_rev_swirl(id x, id distance) {
   distance %= ((ID_BITS << 1) + ID_BITS) >> 2; // 3/4 of ID_BITS
   id m = acy_mask(distance);
   id fall_off = x & (m << (ID_BITS - distance));
@@ -94,13 +94,13 @@ static inline id acy_flop(id x) {
 // the scramble mask, which would otherwise prevent reversibility.
 static inline id acy_scramble(id x) {
   id trigger = !!(x & 0x80200003); // 1 or 0
-  x = acy_circular_shift(x, 1);
+  x = acy_swirl(x, 1);
   x ^= trigger * 0x03040610; // pseudo-if
   return x;
 }
 
 static inline id acy_rev_scramble(id x) {
-  x = acy_rev_circular_shift(x, 1);
+  x = acy_rev_swirl(x, 1);
   id trigger = !!(x & 0x80200003); // 1 or 0
   x ^= trigger * 0x06080c20; // pseudo-if; constant above left-shifted by 1
   return x;
@@ -111,9 +111,9 @@ static inline id acy_prng(id x, id seed) {
   x += 13; // prime
   x = acy_fold(x, seed + 17); // prime
   x = acy_flop(x);
-  x = acy_circular_shift(x, seed + 37); // prime
+  x = acy_swirl(x, seed + 37); // prime
   x = acy_fold(x, seed + 89); // prime
-  x = acy_circular_shift(x, seed + 107); // prime
+  x = acy_swirl(x, seed + 107); // prime
   x = acy_flop(x);
   return x;
 }
@@ -121,9 +121,9 @@ static inline id acy_prng(id x, id seed) {
 // Reverse
 static inline id acy_rev_prng(id x, id seed) {
   x = acy_flop(x);
-  x = acy_rev_circular_shift(x, seed + 107); // prime
+  x = acy_rev_swirl(x, seed + 107); // prime
   x = acy_fold(x, seed + 89); // prime
-  x = acy_rev_circular_shift(x, seed + 37); // prime
+  x = acy_rev_swirl(x, seed + 37); // prime
   x = acy_flop(x);
   x = acy_fold(x, seed + 17); // prime
   x -= 13; // prime

@@ -9,7 +9,7 @@
 
 acy_unit_test("fold", &acy_test_fold);
 
-acy_unit_test("circular_shift", &acy_test_circular_shift);
+acy_unit_test("swirl", &acy_test_swirl);
 
 acy_unit_test("flop", &acy_test_flop);
 
