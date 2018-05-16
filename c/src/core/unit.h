@@ -114,13 +114,13 @@ static inline id acy_prng(id x, id seed) {
   x = acy_swirl(x, seed + 37); // prime
   x = acy_fold(x, seed + 89); // prime
   x = acy_swirl(x, seed + 107); // prime
-  x = acy_flop(x);
+  x = acy_scramble(x);
   return x;
 }
 
 // Reverse
 static inline id acy_rev_prng(id x, id seed) {
-  x = acy_flop(x);
+  x = acy_rev_scramble(x);
   x = acy_rev_swirl(x, seed + 107); // prime
   x = acy_fold(x, seed + 89); // prime
   x = acy_rev_swirl(x, seed + 37); // prime

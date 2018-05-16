@@ -8,83 +8,34 @@
 
 #include "cohort.h"
 
-void acy_fill_inv_sumtree(
-  id *sumtable,
-  id table_size,
-  id *inv_sumtree
-) {
-#ifdef DEBUG_COHORT
-  fprintf(
-    stderr,
-    "\nfill_inv_sumtree_recursive/START::ts::%lu\n",
-    table_size
-  );
-  fprintf(stderr, " ST: ");
-  for (id i = 0; i < table_size + 1; ++i) {
-    fprintf(stderr, "%lu, ", sumtable[i]);
-  }
-  fprintf(stderr, "\n");
-#endif
-  id sts = acy_inv_sumtree_size(table_size);
-  id idx = acy_tree_first(sts);
-  id table_which = 1;
-  id index_which = 0;
-  for (id i = 0; i < sts; ++i) {
-    if (idx < table_size - 1) { // a sumtable value entry
-      inv_sumtree[idx] = sumtable[table_which];
-      table_which += 1;
-    } else { // an index entry
-      inv_sumtree[idx] = index_which;
-      index_which += 1;
-    }
-    idx = acy_tree_next_index(idx, sts);
-  }
-}
-
-void acy_create_tables(
+void acy_create_sumtable(
   id *disttable,
   id table_size,
-  id **r_sumtable,
-  id **r_inv_sumtree,
-  id *r_inv_sumtree_size
+  id **r_sumtable
 ) {
   *r_sumtable = (id*) malloc(sizeof(id)*(table_size+1));
-  *r_inv_sumtree_size = acy_inv_sumtree_size(table_size);
-  *r_inv_sumtree = (id*) malloc(sizeof(id)*(*r_inv_sumtree_size));
 
   acy_fill_sumtable(
     disttable,
     table_size,
     *r_sumtable
   );
-
-  acy_fill_inv_sumtree(
-    *r_sumtable,
-    table_size,
-    *r_inv_sumtree
-  );
 }
 
-void acy_cleanup_tables(
-  id *sumtable,
-  id *inv_sumtree
-) {
+void acy_cleanup_sumtable(id *sumtable) {
   free(sumtable);
-  free(inv_sumtree);
 }
 
 void acy_tabulated_cohort_and_inner(
   id outer,
   id const * const sumtable,
   id table_size,
-  id const * const inv_sumtree,
-  id inv_sumtree_size,
   id multiplier,
   id seed,
   id *r_cohort,
   id *r_inner
 ) {
-  id cohort_size = acy_tablesum(table_size, sumtable) * multiplier;
+  id cohort_size = acy_table_total(table_size, sumtable) * multiplier;
   id super_size = cohort_size * table_size;
 
   id super_cohort;
@@ -130,26 +81,8 @@ void acy_tabulated_cohort_and_inner(
   );
 #endif
 
-#ifdef DEBUG_COHORT
-  fprintf(stderr, "tabulated_cohort::inv_sumtree:+\n");
-  id lim = 1;
-  id j = 0;
-  for (id k = 0; k < inv_sumtree_size; ++k) {
-    fprintf(stderr, "%lu ", inv_sumtree[k]);
-    j += 1;
-    if (j >= lim) {
-      fprintf(stderr, "\n");
-      lim *= 2;
-      j = 0;
-    }
-  }
-  if (j != 0) {
-    fprintf(stderr, "\n");
-  }
-#endif
-
   // Figure out which slice we fall into:
-  id slice = acy_inv_tablesum(shuf, inv_sumtree, inv_sumtree_size, multiplier);
+  id slice = acy_inv_tablesum(shuf, sumtable, table_size, multiplier);
   // ...and where we are in that slice:
   id after_slice = acy_tablesum(slice, sumtable) * multiplier;
   id in_slice = shuf - after_slice;
@@ -200,12 +133,10 @@ id acy_tabulated_cohort_outer(
   id inner,
   id const * const sumtable,
   id table_size,
-  id const * const inv_sumtree,
-  id inv_sumtree_size,
   id multiplier,
   id seed
 ) {
-  id cohort_size = acy_tablesum(table_size, sumtable) * multiplier;
+  id cohort_size = acy_table_total(table_size, sumtable) * multiplier;
   id super_size = cohort_size * table_size;
 
 #ifdef DEBUG_COHORT
@@ -229,8 +160,8 @@ id acy_tabulated_cohort_outer(
 
   id segment = acy_inv_tablesum(
     inv_inner,
-    inv_sumtree,
-    inv_sumtree_size,
+    sumtable,
+    table_size,
     multiplier
   );
   id after = acy_tablesum(segment, sumtable) * multiplier;
@@ -301,8 +232,6 @@ id acy_tabulated_outer_min(
   id cohort,
   id const * const sumtable,
   id sumtable_size,
-  id const * const inv_sumtree,
-  id inv_sumtree_size,
   id multiplier
 ) {
   id cohort_size = acy_tablesum(sumtable_size - 1, sumtable) * multiplier;
@@ -328,8 +257,8 @@ id acy_tabulated_outer_min(
 
   id segment = acy_inv_tablesum(
     inv_inner,
-    inv_sumtree,
-    inv_sumtree_size,
+    sumtable,
+    sumtable_size,
     multiplier
   );
 

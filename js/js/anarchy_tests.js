@@ -88,10 +88,10 @@ requirejs(
       ],
       "prng": [
         // TODO: Verify these!
-        [ anarchy.prng(489348, 373891), 1766932808 ],
-        [ anarchy.rev_prng(1766932808, 373891), 489348 ],
-        [ anarchy.prng(0, 0), 1617140986 ],
-        [ anarchy.rev_prng(1617140986, 0), 0 ],
+        [ anarchy.prng(489348, 373891), 1766311112 ],
+        [ anarchy.rev_prng(1766311112, 373891), 489348 ],
+        [ anarchy.prng(0, 0), 2697180397 ],
+        [ anarchy.rev_prng(2697180397, 0), 0 ],
         [ anarchy.prng(anarchy.rev_prng(1782, 39823), 39823), 1782 ],
         [ anarchy.rev_prng(anarchy.prng(1782, 39823), 39823), 1782 ],
       ],

@@ -147,28 +147,25 @@ id acy_select_poly_nth_child(
 
 // Works like acy_select_parent_and_index, but uses the given tables for child
 // selection. The multiplier parameter controls how large the cohort is, along
-// with the tables given. Returns values via the r_parent and r_index
-// parameters. Note that child_cohort_size should divide evenly into the
-// children_multiplier (or at least, into the children multiplier times the sum
-// table grand total).
+// with the table given (it is multiplied by child_cohort_size as well).
+// Returns values via the r_parent and r_index parameters.
 void acy_select_table_parent_and_index(
   id child,
   id parent_cohort_size,
   id child_cohort_size,
   id const * const children_sumtable,
   id children_sumtable_size,
-  id const * const children_inv_sumtree,
-  id children_inv_sumtree_size,
-  id children_multiplier,
+  id table_extra_multiplier,
   id seed,
   id *r_parent,
   id *r_index
 );
 
 // Works like acy_select_nth_child, but uses a table-based cohort for
-// children. Note that child_cohort_size should divide evenly into the
-// children_multiplier (or at least, into the children multiplier times the sum
-// table grand total).
+// children. The actual table multiplier used is the child_cohort_size times
+// the extra_multiplier.
+// Note: if you want parent and child cohort starts to be aligned, the parent
+// and child cohort sizes *must* be the same.
 id acy_select_table_nth_child(
   id parent,
   id nth,
@@ -176,9 +173,7 @@ id acy_select_table_nth_child(
   id child_cohort_size,
   id const * const children_sumtable,
   id children_sumtable_size,
-  id const * const children_inv_sumtree,
-  id children_inv_sumtree_size,
-  id children_multiplier,
+  id table_extra_multiplier,
   id seed
 );
 
@@ -192,8 +187,6 @@ id acy_select_table_earliest_possible_child(
   id child_cohort_size,
   id const * const children_sumtable,
   id children_sumtable_size,
-  id const * const children_inv_sumtree,
-  id children_inv_sumtree_size,
   id children_multiplier,
   id seed
 );
@@ -202,11 +195,10 @@ id acy_select_table_earliest_possible_child(
 // perspective.
 id acy_select_table_child_cohort_start(
   id child,
+  // parent_cohort_size isn't needed here
   id child_cohort_size,
   id const * const children_sumtable,
   id children_sumtable_size,
-  id const * const children_inv_sumtree,
-  id children_inv_sumtree_size,
   id children_multiplier,
   id seed
 );

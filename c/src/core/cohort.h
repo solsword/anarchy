@@ -1345,30 +1345,6 @@ static inline void acy_fill_disttable(
   }
 }
 
-// Reads the supplied distribution table and overwrites values in the given sum
-// table so that the sum table accurately describes the distribution table.
-// Each entry in the sum table will be the sum of all entries in the
-// distribution table up to but not including that index, so that the sum table
-// can be used for the acy_tablesum function (see below). Note that the given
-// table size should be the distribution table size, which is one smaller than
-// the sum table size.
-// Note that for arcane reasons, the distribution table needs to be reversed
-// here for the distribution shape to be correct.
-static inline void acy_fill_sumtable(
-  id *disttable,
-  id table_size,
-  id *sumtable
-) {
-  id sum = 0;
-  id i;
-  for (i = 0; i < table_size; ++i) {
-    sumtable[i] = sum;
-    sum += disttable[table_size - i - 1];
-    // TODO: Avoid reversing here?
-  }
-  sumtable[i] = sum; // extra entry for the total sum
-}
-
 // The parent and left and right children of a tree index in an array heap
 // layout:
 static inline id acy_tree_parent(id idx) { return ((idx + 1) / 2) - 1; }
@@ -1426,44 +1402,40 @@ static inline id acy_tree_first(id tree_size) {
   return result;
 }
 
-// Computes the required inverse sum tree size for a sum table of the given
-// size. For an inverse sumtree, each sum table entry except the first has a
-// spot in the tree, and each possible distribution index also has a spot.
-// Because the number of distribution indices is equal to the number of table
-// entries, the total is should be twice the size of the sum table minus one.
-//
-static inline id acy_inv_sumtree_size(id table_size) {
-  return table_size * 2 - 1;
-}
-// HOWEVER, the leaves in the last layer may have some unevenness, which means
-// that we actually need to save extra space for storing them. So the actual
-// size is "large enough to store each sum table entry, plus one layer."
-  // return pow(2, (id) ceil(log2((float) table_size)) + 1) - 1;
-
-// Fills in an inverse sumtree for the given sum table. Each non-leaf entry is
-// a test value. Not inline because it's recursive.
-void acy_fill_inv_sumtree(
-  id *sumtable,
-  id table_size,
-  id *inv_sumtree
-);
-
 // Takes a distribution table of the given size and allocates and returns (via
-// return parameters) a corresponding sum table and inverse sum tree. Also
-// returns the size of the inverse sum tree created.
-void acy_create_tables(
+// return parameter) a corresponding sum table.
+void acy_create_sumtable(
   id *disttable,
   id table_size,
-  id **r_sumtable,
-  id **r_inv_sumtree,
-  id *r_inv_sumtree_size
+  id **r_sumtable
 );
 
-// Cleans up the memory allocated by acy_create_tables.
-void acy_cleanup_tables(
-  id *sumtable,
-  id *inv_sumtree
-);
+// Reads the supplied distribution table and overwrites values in the given sum
+// table so that the sum table accurately describes the distribution table.
+// Each entry in the sum table will be the sum of all entries in the
+// distribution table up to but not including that index, so that the sum table
+// can be used for the acy_tablesum function (see below). Note that the given
+// table size should be the distribution table size, which is one smaller than
+// the sum table size.
+// Note that for arcane reasons, the distribution table needs to be reversed
+// here for the distribution shape to be correct.
+static inline void acy_fill_sumtable(
+  id *disttable,
+  id table_size,
+  id *sumtable
+) {
+  id sum = 0;
+  id i;
+  for (i = 0; i < table_size; ++i) {
+    sumtable[i] = sum;
+    sum += disttable[table_size - i - 1];
+    // TODO: Avoid reversing here?
+  }
+  sumtable[i] = sum; // extra entry for the total sum
+}
+
+// Cleans up the memory allocated by acy_create_sumtable.
+void acy_cleanup_sumtable(id *sumtable);
 
 // Looks up the desired distribution sum in a sum table (see acy_fill_sumtable
 // above). Note that the given index 'n' isn't checked for validity; you can
@@ -1473,38 +1445,47 @@ static inline id acy_tablesum(id n, id const * const sumtable) {
   return sumtable[n];
 }
 
-// Uses an inverse sum tree to look up the index 'n' that results in the
-// greatest sum less than or equal to the given value in a sum table for the
-// given distribution, which must be specified as an inverse sum tree (see
-// acy_fill_inv_sumtree above). Note that this algorithm takes time
-// proportional to the log of the number of table entries, not the log of the
-// table sum, so coarser tables with equivalent sums can potentially be used to
-// speed things up.
-// The given multiplier value is used to scale each sum tree entry.
+// Actually just the same as calling acy_tablesum(table_size, sumtable), but
+// defined here so that it's easy to remember, and easier to see when other
+// code is using the grand total vs. getting an arbitrary sum from the table.
+static inline id acy_table_total(id table_size, id const * const sumtable) {
+  return sumtable[table_size];
+}
+
+// Uses binary search in a sumtable to look up the index 'n' that results in
+// the greatest sum less than or equal to the given 'sum' value. Used to see
+// which bucket of a sumtable a certain sum would put you in. The given
+// multiplier is used to scale each sumtable entry; use '1' for no scaling.
 static inline id acy_inv_tablesum(
   id sum,
-  id const * const inv_sumtree,
-  id tree_size,
+  id const * const sumtable,
+  id sumtable_size,
   id multiplier
 ) {
-  id idx = 0;
-  while (!acy_tree_isleaf(idx, tree_size)) {
-    if (sum < inv_sumtree[idx] * multiplier) {
-      idx = acy_tree_left(idx);
-    } else {
-      idx = acy_tree_right(idx);
+  id lower = 0, upper = sumtable_size;
+  id idx;
+  while (upper - lower > 1) {
+    idx = lower + (upper - lower)/2;
+    if (sumtable[idx] * multiplier <= sum) { // nothing below here is the answer
+      lower = idx;
+    } else { // something here or below must be the answer
+      upper = idx;
     }
   }
-  return inv_sumtree[idx];
+  // upper and lower are now adjacent or identical
+  if (sumtable[upper] * multiplier <= sum) {
+    return upper;
+  } else {
+    return lower;
+  }
 }
 
 // According to a distribution table that specifies the relative number of
 // items found within a given number of regions, computes the cohort number and
 // inner index of the given linear outer ID.
 //
-// The distribution table must first be converted to a sum table and inverse
-// sum tree, using acy_create_tables and acy_fill_sumtable/
-// acy_fill_inv_sumtree.
+// The distribution table must first be converted to a sum table using
+// acy_create_sumtable and acy_fill_sumtable.
 //
 // The cohort size is determined by the last entry in the sum table, and those
 // members are spread over a region that's equal to the cohort size times the
@@ -1519,8 +1500,6 @@ void acy_tabulated_cohort_and_inner(
   id outer,
   id const * const sumtable,
   id sumtable_size,
-  id const * const inv_sumtree,
-  id inv_sumtree_size,
   id multiplier,
   id seed,
   id *r_cohort,
@@ -1534,8 +1513,6 @@ id acy_tabulated_cohort_outer(
   id inner,
   id const * const sumtable,
   id sumtable_size,
-  id const * const inv_sumtree,
-  id inv_sumtree_size,
   id multiplier,
   id seed
 );
@@ -1546,8 +1523,6 @@ id acy_tabulated_outer_min(
   id cohort,
   id const * const sumtable,
   id sumtable_size,
-  id const * const inv_sumtree,
-  id inv_sumtree_size,
   id multiplier
 );
 

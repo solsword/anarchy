@@ -52,6 +52,16 @@ static inline id acy_sep_non_child_bearer(id normalized) {
   return 2 * normalized + 1;
 }
 
+// faster if we know we have the child-bearer:
+static inline id acy_child_bearers_duo(id non_normalized){
+  return non_normalized + 1;
+}
+
+// faster if we know we have the non-child-bearer:
+static inline id acy_non_child_bearers_duo(id non_normalized) {
+  return non_normalized - 1;
+}
+
 // Takes a full person ID and returns the corresponding separated ID for child
 // bearer / non-child-bearer separation.
 static inline int acy_separated(id person) {

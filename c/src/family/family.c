@@ -32,8 +32,6 @@ struct acy_family_info_s {
   // tabulated cohort parameters:
   id const *birth_age_dist_sumtable;
   id birth_age_dist_sumtable_size;
-  id const *birth_age_dist_inv_sumtree;
-  id birth_age_dist_inv_sumtree_size;
 
   // partner parameters:
   id max_partners_per_mother;
@@ -80,20 +78,10 @@ id const DEFAULT_BIRTH_AGE_SUMTABLE[41] = { // off-by-one intentional
   737 // overall sum
 };
 
-id const DEFAULT_BIRTH_AGE_INV_SUMTREE[79] = {
-  389,
-  110,                                    656,
-    9,                234,                535,                730,
-    4,        39,     167,      310,      464,      600,      704,      735,
-    2,   6,   20, 66, 137, 199, 271, 350, 427, 500, 569, 629, 681, 721, 733,736,
-    1,3, 5,7, 13,29, 50,86, 16,17, 18,19, 20,21, 22,23, 24,25, 26,27, 28,29, 30,31, 32,33, 34,35, 36,37, 38,39,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-};
-
 acy_family_info const DEFAULT_FAMILY_INFO = {
   .seed = 9728182391,
 
-  .birth_rate_per_day = 10000, // modern is 350,000+
+  .birth_rate_per_day = 9984, // modern is 350,000+; this is divisible by 32
   .min_childbearing_age = 15 * ONE_EARTH_YEAR, // TODO: Adjust?
   .max_childbearing_age = 55 * ONE_EARTH_YEAR,
   .average_children_per_mother = 1,
@@ -101,15 +89,13 @@ acy_family_info const DEFAULT_FAMILY_INFO = {
 
   .birth_age_dist_sumtable = DEFAULT_BIRTH_AGE_SUMTABLE,
   .birth_age_dist_sumtable_size = 40, // off-by-one intentional
-  .birth_age_dist_inv_sumtree = DEFAULT_BIRTH_AGE_INV_SUMTREE,
-  .birth_age_dist_inv_sumtree_size = 79,
 
   .max_partners_per_mother = 16,
   .likely_partner_age_gap = 3 * ONE_EARTH_YEAR,
   .unlikely_partner_age_gap = 7 * ONE_EARTH_YEAR,
-  //.min_partner_age = 15 * ONE_EARTH_YEAR, TODO: Swap back
-  .min_partner_age = 20 * ONE_EARTH_YEAR,
-  .max_partner_age = 40 * ONE_EARTH_YEAR, // low for motherhood TODO: fix this?
+  .min_partner_age = 15 * ONE_EARTH_YEAR, // TODO: Swap back
+  //.min_partner_age = 20 * ONE_EARTH_YEAR,
+  .max_partner_age = 65 * ONE_EARTH_YEAR,
   .likely_partner_likelihood = 6, // 1/6 are unlikely or full
   .unlikely_partner_likelihood = 4, // 1/4 of that 1/6 unlikely are full
   .multiple_partners_percent = 21 // wild guess based on cursory research
@@ -149,9 +135,7 @@ void acy_copy_family_info(
   dst->max_children_per_mother = src->max_children_per_mother;
 
   dst->birth_age_dist_sumtable_size = src->birth_age_dist_sumtable_size;
-  dst->birth_age_dist_inv_sumtree_size = src->birth_age_dist_inv_sumtree_size;
   dst->birth_age_dist_sumtable = src->birth_age_dist_sumtable;
-  dst->birth_age_dist_inv_sumtree = src->birth_age_dist_inv_sumtree;
 
   dst->max_partners_per_mother = src->max_partners_per_mother;
   dst->likely_partner_age_gap = src->likely_partner_age_gap;
@@ -172,11 +156,16 @@ id acy_get_info_seed(acy_family_info *info) {
 }
 
 id acy_birthdate(id person, acy_family_info const * const info) {
-  return acy_mixed_cohort(person, info->birth_rate_per_day, 0);
+  return acy_mixed_cohort(person, info->birth_rate_per_day, info->seed + 17);
 }
 
 id acy_first_born_on(id day, acy_family_info const * const info) {
-  return acy_mixed_cohort_outer(day, 0, info->birth_rate_per_day, 0);
+  return acy_mixed_cohort_outer(
+    day,
+    0,
+    info->birth_rate_per_day,
+    info->seed + 17
+  );
 }
 
 id acy_get_child_id_adjust(acy_family_info const * const info) {
@@ -192,10 +181,16 @@ id acy_mother(id person, acy_family_info const * const info) {
 static inline id acy_family_birth_age_table_multiplier(
   acy_family_info const * const info
 ) {
-  return (
-    info->birth_rate_per_day
-  * ONE_EARTH_YEAR
+  id table_total = acy_table_total(
+    info->birth_age_dist_sumtable_size,
+    info->birth_age_dist_sumtable
   );
+  return (
+    (
+      info->birth_rate_per_day
+    * ONE_EARTH_YEAR
+    ) / table_total
+  ) * table_total; // round to nearest multiple of table_total
 }
 
 void acy_mother_and_index(
@@ -233,8 +228,6 @@ void acy_mother_and_index(
     info->max_children_per_mother * info->average_children_per_mother,
     info->birth_age_dist_sumtable,
     info->birth_age_dist_sumtable_size,
-    info->birth_age_dist_inv_sumtree,
-    info->birth_age_dist_inv_sumtree_size,
     acy_family_birth_age_table_multiplier(info),
     info->seed,
     &mother,
@@ -304,8 +297,6 @@ id acy_direct_child(id person, id nth, acy_family_info const * const info) {
       info->max_children_per_mother * info->average_children_per_mother,
       info->birth_age_dist_sumtable,
       info->birth_age_dist_sumtable_size,
-      info->birth_age_dist_inv_sumtree,
-      info->birth_age_dist_inv_sumtree_size,
       acy_family_birth_age_table_multiplier(info),
       info->seed
     );
@@ -314,14 +305,12 @@ id acy_direct_child(id person, id nth, acy_family_info const * const info) {
 #endif
   } else { // get children that would think our duo is their parent:
     child = acy_select_table_nth_child(
-      person + 1,
+      acy_child_bearers_duo(person),
       nth - first_count,
       info->max_children_per_mother,
       info->max_children_per_mother * info->average_children_per_mother,
       info->birth_age_dist_sumtable,
       info->birth_age_dist_sumtable_size,
-      info->birth_age_dist_inv_sumtree,
-      info->birth_age_dist_inv_sumtree_size,
       acy_family_birth_age_table_multiplier(info),
       info->seed
     );

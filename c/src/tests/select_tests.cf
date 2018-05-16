@@ -23,15 +23,6 @@ id TEST_SUMTABLE[] = {
 };
 id TEST_SUMTABLE_SIZE = 16; // off-by-1 is intentional
 
-id TEST_INV_SUMTREE[] = {
-    47,
-    12,                    61,
-    3,          33,        56,            64,
-    1,    6,    21,   41,  52,    59,     63,     65,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-};
-id TEST_INV_SUMTREE_SIZE = 31;
-
 int acy_test_parent_child_selection() {
   id parent, index;
   id max_arity = 16;
@@ -1287,7 +1278,7 @@ int acy_test_table_parent_child_selection() {
   id parent, index;
   id parent_cohort_size = 32;
   id child_cohort_size = 32;
-  id multiplier = 32 * 1000;
+  id multiplier = 32 * 9984;
   id seed = 798513546;
   id base_value = ((id) 2) << 50; // 14 bits from max
   id result;
@@ -1302,8 +1293,6 @@ int acy_test_table_parent_child_selection() {
       child_cohort_size,
       TEST_SUMTABLE,
       TEST_SUMTABLE_SIZE,
-      TEST_INV_SUMTREE,
-      TEST_INV_SUMTREE_SIZE,
       multiplier,
       seed,
       &parent,
@@ -1316,8 +1305,6 @@ int acy_test_table_parent_child_selection() {
       child_cohort_size,
       TEST_SUMTABLE,
       TEST_SUMTABLE_SIZE,
-      TEST_INV_SUMTREE,
-      TEST_INV_SUMTREE_SIZE,
       multiplier,
       seed
     );
@@ -1338,8 +1325,6 @@ int acy_test_table_parent_child_selection() {
           child_cohort_size,
           TEST_SUMTABLE,
           TEST_SUMTABLE_SIZE,
-          TEST_INV_SUMTREE,
-          TEST_INV_SUMTREE_SIZE,
           multiplier,
           seed
         );
@@ -1356,7 +1341,7 @@ int acy_test_odd_table_parent_child_selection() {
   id parent, index;
   id parent_cohort_size = 37;
   id child_cohort_size = 45;
-  id multiplier = 32*1000;
+  id multiplier = 32*9984;
   id base_value = ((id) 2) << 50; // 14 bits from max
   id seed = 94199832;
   id result;
@@ -1373,8 +1358,6 @@ int acy_test_odd_table_parent_child_selection() {
       child_cohort_size,
       TEST_SUMTABLE,
       TEST_SUMTABLE_SIZE,
-      TEST_INV_SUMTREE,
-      TEST_INV_SUMTREE_SIZE,
       multiplier,
       seed,
       &parent,
@@ -1387,8 +1370,6 @@ int acy_test_odd_table_parent_child_selection() {
       child_cohort_size,
       TEST_SUMTABLE,
       TEST_SUMTABLE_SIZE,
-      TEST_INV_SUMTREE,
-      TEST_INV_SUMTREE_SIZE,
       multiplier,
       seed
     );
@@ -1409,8 +1390,71 @@ int acy_test_odd_table_parent_child_selection() {
           child_cohort_size,
           TEST_SUMTABLE,
           TEST_SUMTABLE_SIZE,
-          TEST_INV_SUMTREE,
-          TEST_INV_SUMTREE_SIZE,
+          multiplier,
+          seed
+        );
+        fprintf(stderr, "  #%lu: %lu\n", nth, child);
+        nth += 1;
+      } while (child != NONE);
+      return tin;
+    }
+  }
+  return 0;
+}
+
+int acy_test_big_table_parent_child_selection() {
+  id parent, index;
+  id parent_cohort_size = 32;
+  id child_cohort_size = 32;
+  id multiplier = 365*9984; // divisible by 32
+  id base_value = ((id) 2) << 50; // 14 bits from max
+  id seed = 94199832;
+  id result;
+  id accum = 1;
+  for (id tin = base_value + 389238; tin < base_value + 581201; tin += accum) {
+    if (tin % 300 == 0) {
+      accum = 3801;
+    } else {
+      accum = 1;
+    }
+    acy_select_table_parent_and_index(
+      tin,
+      parent_cohort_size,
+      child_cohort_size,
+      TEST_SUMTABLE,
+      TEST_SUMTABLE_SIZE,
+      multiplier,
+      seed,
+      &parent,
+      &index
+    );
+    result = acy_select_table_nth_child(
+      parent,
+      index,
+      parent_cohort_size,
+      child_cohort_size,
+      TEST_SUMTABLE,
+      TEST_SUMTABLE_SIZE,
+      multiplier,
+      seed
+    );
+    if (result != tin) {
+      fprintf(
+        stderr,
+        "Table selection reversibility failed: %lu → %lu#%lu / %lu#%lu → %lu\n",
+        tin, parent, index, parent, index, result
+      );
+      fprintf(stderr, "All children of %lu:\n", parent);
+      id nth = 0;
+      id child = NONE;
+      do {
+        child = acy_select_table_nth_child(
+          parent,
+          nth,
+          parent_cohort_size,
+          child_cohort_size,
+          TEST_SUMTABLE,
+          TEST_SUMTABLE_SIZE,
           multiplier,
           seed
         );
@@ -1426,7 +1470,7 @@ int acy_test_odd_table_parent_child_selection() {
 int acy_test_table_parent_child_visual() {
   id parent_cohort_size = 32;
   id child_cohort_size = 32;
-  id multiplier = 32*1000;
+  id multiplier = 32*9984;
 
   id base_value = ((id) 2) << 50; // 14 bits from max
   id parent = base_value + 46548464;
@@ -1442,8 +1486,6 @@ int acy_test_table_parent_child_visual() {
     child_cohort_size,
     TEST_SUMTABLE,
     TEST_SUMTABLE_SIZE,
-    TEST_INV_SUMTREE,
-    TEST_INV_SUMTREE_SIZE,
     multiplier,
     seed,
     &grandparent,
@@ -1463,8 +1505,6 @@ int acy_test_table_parent_child_visual() {
           child_cohort_size,
           TEST_SUMTABLE,
           TEST_SUMTABLE_SIZE,
-          TEST_INV_SUMTREE,
-          TEST_INV_SUMTREE_SIZE,
           multiplier,
           seed
         );
@@ -1482,8 +1522,6 @@ int acy_test_table_parent_child_visual() {
         child_cohort_size,
         TEST_SUMTABLE,
         TEST_SUMTABLE_SIZE,
-        TEST_INV_SUMTREE,
-        TEST_INV_SUMTREE_SIZE,
         multiplier,
         seed
       );
@@ -1501,7 +1539,7 @@ int acy_test_table_select_gap_stream() {
 
   id parent_cohort_size = 32;
   id child_cohort_size = 32;
-  id multiplier = 32*1000;
+  id multiplier = 32*9984;
 
   id base_value = ((id) 2) << 50; // 14 bits from max
   id seed = 71829812983;
@@ -1535,8 +1573,6 @@ int acy_test_table_select_gap_stream() {
         child_cohort_size,
         TEST_SUMTABLE,
         TEST_SUMTABLE_SIZE,
-        TEST_INV_SUMTREE,
-        TEST_INV_SUMTREE_SIZE,
         multiplier,
         seed,
         &parent,
@@ -1549,8 +1585,6 @@ int acy_test_table_select_gap_stream() {
         child_cohort_size,
         TEST_SUMTABLE,
         TEST_SUMTABLE_SIZE,
-        TEST_INV_SUMTREE,
-        TEST_INV_SUMTREE_SIZE,
         multiplier,
         seed
       );
@@ -1559,8 +1593,6 @@ int acy_test_table_select_gap_stream() {
         child_cohort_size,
         TEST_SUMTABLE,
         TEST_SUMTABLE_SIZE,
-        TEST_INV_SUMTREE,
-        TEST_INV_SUMTREE_SIZE,
         multiplier,
         seed
       );
@@ -1594,8 +1626,6 @@ void acy_print_table_edges_recursively(
   id child_cohort_size,
   id *sumtable,
   id sumtable_size,
-  id *inv_sumtree,
-  id inv_sumtree_size,
   id multiplier,
   id seed,
   id depth_limit
@@ -1610,8 +1640,6 @@ void acy_print_table_edges_recursively(
       child_cohort_size,
       TEST_SUMTABLE,
       TEST_SUMTABLE_SIZE,
-      TEST_INV_SUMTREE,
-      TEST_INV_SUMTREE_SIZE,
       multiplier,
       seed
     );
@@ -1628,8 +1656,6 @@ void acy_print_table_edges_recursively(
         child_cohort_size,
         TEST_SUMTABLE,
         TEST_SUMTABLE_SIZE,
-        TEST_INV_SUMTREE,
-        TEST_INV_SUMTREE_SIZE,
         multiplier,
         seed,
         depth_limit - 1
@@ -1641,7 +1667,7 @@ void acy_print_table_edges_recursively(
 int acy_test_table_select_graphviz() {
   id parent_cohort_size = 32;
   id child_cohort_size = 32;
-  id multiplier = 32 * 1000;
+  id multiplier = 32 * 9984;
 
   id parent;
   id index = 0;
@@ -1659,8 +1685,6 @@ int acy_test_table_select_graphviz() {
         child_cohort_size,
         TEST_SUMTABLE,
         TEST_SUMTABLE_SIZE,
-        TEST_INV_SUMTREE,
-        TEST_INV_SUMTREE_SIZE,
         multiplier,
         seed,
         &parent,
@@ -1679,8 +1703,6 @@ int acy_test_table_select_graphviz() {
       child_cohort_size,
       TEST_SUMTABLE,
       TEST_SUMTABLE_SIZE,
-      TEST_INV_SUMTREE,
-      TEST_INV_SUMTREE_SIZE,
       multiplier,
       seed,
       5
@@ -1695,7 +1717,7 @@ int acy_test_avg_table_parent_child_gap() {
 
   id parent_cohort_size = 32;
   id child_cohort_size = 32;
-  id multiplier = 32*1000;
+  id multiplier = 32*9984;
 
   id base_value = ((id) 2) << 50; // 14 bits from max
   double avg_parent_distance = 0; 
@@ -1723,8 +1745,6 @@ int acy_test_avg_table_parent_child_gap() {
         child_cohort_size,
         TEST_SUMTABLE,
         TEST_SUMTABLE_SIZE,
-        TEST_INV_SUMTREE,
-        TEST_INV_SUMTREE_SIZE,
         multiplier,
         seed,
         &parent,
@@ -1740,8 +1760,6 @@ int acy_test_avg_table_parent_child_gap() {
         child_cohort_size,
         TEST_SUMTABLE,
         TEST_SUMTABLE_SIZE,
-        TEST_INV_SUMTREE,
-        TEST_INV_SUMTREE_SIZE,
         multiplier,
         seed
       );
@@ -1805,7 +1823,7 @@ int acy_test_table_select_gnuplot() {
   id parent_cohort_size = 32;
   id child_cohort_size = 32;
 
-  id multiplier = 32*1000;
+  id multiplier = 32*9984;
 
   id base_value = ((id) 2) << 50; // 14 bits from max
 
@@ -1851,8 +1869,6 @@ int acy_test_table_select_gnuplot() {
         child_cohort_size,
         TEST_SUMTABLE,
         TEST_SUMTABLE_SIZE,
-        TEST_INV_SUMTREE,
-        TEST_INV_SUMTREE_SIZE,
         multiplier,
         seed,
         &parent,

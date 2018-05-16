@@ -99,6 +99,11 @@ acy_unit_test(
 );
 
 acy_unit_test(
+  "select_table_nth/parent_big",
+  &acy_test_big_table_parent_child_selection
+);
+
+acy_unit_test(
   "table_selection_visual",
   &acy_test_table_parent_child_visual
 );

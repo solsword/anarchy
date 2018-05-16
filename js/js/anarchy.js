@@ -137,7 +137,7 @@ define([], function() {
 
     // value scrambling:
     x ^= seed;
-    x = fold(x, seed + 3); // prime
+    x = fold(x, seed + 17); // prime
     x = flop(x);
     x = swirl(x, seed + 37); // prime
     x = fold(x, seed + 89); // prime
@@ -158,7 +158,7 @@ define([], function() {
     x = fold(x, seed + 89); // prime
     x = rev_swirl(x, seed + 37); // prime
     x = flop(x);
-    x = fold(x, seed + 3); // prime
+    x = fold(x, seed + 17); // prime
     x ^= seed;
     return x >>> 0;
   }
