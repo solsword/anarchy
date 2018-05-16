@@ -177,7 +177,17 @@ id acy_select_table_nth_child(
   id seed
 );
 
-// TODO: Are these correct or even useful?
+// Given a parent, returns the number of children that that parent will have
+// using acy_select_table_nth_child. Returns 0 for out-of-bounds values.
+id acy_count_select_table_children(
+  id parent,
+  id parent_cohort_size,
+  id child_cohort_size,
+  id const * const children_sumtable,
+  id children_sumtable_size,
+  id table_extra_multiplier,
+  id seed
+);
 
 // For table-based cohort selection (see above) returns the earliest possible
 // child of the given parent.

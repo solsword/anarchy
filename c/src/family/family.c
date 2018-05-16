@@ -25,9 +25,11 @@ struct acy_family_info_s {
   id birth_rate_per_day;
   id min_childbearing_age;
   id max_childbearing_age;
-  id average_children_per_mother; // so that population is stable TODO: gender!?
-  // TODO: Deal with the doubling of this value!
+  id mother_cohort_size;
   id max_children_per_mother;
+  // mother_cohort_size : max_children_per_mother will be the parent : child
+  // generation size ratio. Values for this ratio other than 1 will require
+  // matching nonlinear birthday assignment schemes (TODO: make those a thing).
 
   // tabulated cohort parameters:
   id const *birth_age_dist_sumtable;
@@ -84,7 +86,7 @@ acy_family_info const DEFAULT_FAMILY_INFO = {
   .birth_rate_per_day = 9984, // modern is 350,000+; this is divisible by 32
   .min_childbearing_age = 15 * ONE_EARTH_YEAR, // TODO: Adjust?
   .max_childbearing_age = 55 * ONE_EARTH_YEAR,
-  .average_children_per_mother = 1,
+  .mother_cohort_size = 32,
   .max_children_per_mother = 32,
 
   .birth_age_dist_sumtable = DEFAULT_BIRTH_AGE_SUMTABLE,
@@ -131,7 +133,7 @@ void acy_copy_family_info(
   dst->birth_rate_per_day = src->birth_rate_per_day;
   dst->min_childbearing_age = src->min_childbearing_age;
   dst->max_childbearing_age = src->max_childbearing_age;
-  dst->average_children_per_mother = src->average_children_per_mother;
+  dst->mother_cohort_size = src->mother_cohort_size;
   dst->max_children_per_mother = src->max_children_per_mother;
 
   dst->birth_age_dist_sumtable_size = src->birth_age_dist_sumtable_size;
@@ -188,6 +190,7 @@ static inline id acy_family_birth_age_table_multiplier(
   return (
     (
       info->birth_rate_per_day
+    / info->max_children_per_mother
     * ONE_EARTH_YEAR
     ) / table_total
   ) * table_total; // round to nearest multiple of table_total
@@ -208,6 +211,8 @@ void acy_mother_and_index(
     return;
   }
 
+  id multiplier = acy_family_birth_age_table_multiplier(info);
+
   // Correct age gap:
   id adjusted = person - acy_get_child_id_adjust(info);
   /*
@@ -224,11 +229,11 @@ void acy_mother_and_index(
   id mother, index;
   acy_select_table_parent_and_index(
     adjusted,
+    info->mother_cohort_size,
     info->max_children_per_mother,
-    info->max_children_per_mother * info->average_children_per_mother,
     info->birth_age_dist_sumtable,
     info->birth_age_dist_sumtable_size,
-    acy_family_birth_age_table_multiplier(info),
+    multiplier,
     info->seed,
     &mother,
     &index
@@ -247,10 +252,15 @@ void acy_mother_and_index(
   fprintf(stderr, "acy_mother_and_index::adjusted_mother::%lu\n", *r_mother);
 #endif
   if (mother != *r_mother) {
-    index += acy_count_select_children( // TODO: Is this accurate w/ table?
+    // Our final index is our index as a 'child' of our mother's duo plus the
+    // number of direct children our actual mother has:
+    index += acy_count_select_table_children(
       *r_mother,
-      info->average_children_per_mother,
+      info->mother_cohort_size,
       info->max_children_per_mother,
+      info->birth_age_dist_sumtable,
+      info->birth_age_dist_sumtable_size,
+      multiplier,
       info->seed
     );
 #ifdef DEBUG_FAMILY
@@ -258,7 +268,7 @@ void acy_mother_and_index(
 #endif
   }
 #ifdef DEBUG_FAMILY
-    fprintf(stderr, "\n");
+  fprintf(stderr, "\n");
 #endif
   *r_index = index;
 
@@ -279,10 +289,14 @@ id acy_direct_child(id person, id nth, acy_family_info const * const info) {
   if (!acy_is_child_bearer(person)) {
     return NONE;
   }
-  id first_count = acy_count_select_children( // TODO: Does this work w/ table?
+  id multiplier = acy_family_birth_age_table_multiplier(info);
+  id first_count = acy_count_select_table_children(
     person,
-    info->average_children_per_mother,
+    info->mother_cohort_size,
     info->max_children_per_mother,
+    info->birth_age_dist_sumtable,
+    info->birth_age_dist_sumtable_size,
+    multiplier,
     info->seed
   );
 #ifdef DEBUG_FAMILY
@@ -293,11 +307,11 @@ id acy_direct_child(id person, id nth, acy_family_info const * const info) {
     child = acy_select_table_nth_child(
       person,
       nth,
+      info->mother_cohort_size,
       info->max_children_per_mother,
-      info->max_children_per_mother * info->average_children_per_mother,
       info->birth_age_dist_sumtable,
       info->birth_age_dist_sumtable_size,
-      acy_family_birth_age_table_multiplier(info),
+      multiplier,
       info->seed
     );
 #ifdef DEBUG_FAMILY
@@ -307,11 +321,11 @@ id acy_direct_child(id person, id nth, acy_family_info const * const info) {
     child = acy_select_table_nth_child(
       acy_child_bearers_duo(person),
       nth - first_count,
+      info->mother_cohort_size,
       info->max_children_per_mother,
-      info->max_children_per_mother * info->average_children_per_mother,
       info->birth_age_dist_sumtable,
       info->birth_age_dist_sumtable_size,
-      acy_family_birth_age_table_multiplier(info),
+      multiplier,
       info->seed
     );
 #ifdef DEBUG_FAMILY
@@ -335,15 +349,22 @@ id acy_num_direct_children(id person, acy_family_info const * const info) {
   if (person == NONE || !acy_is_child_bearer(person)) {
     return 0;
   }
-  return acy_count_select_children(
+  id multiplier = acy_family_birth_age_table_multiplier(info);
+  return acy_count_select_table_children(
     person,
-    info->average_children_per_mother,
+    info->mother_cohort_size,
     info->max_children_per_mother,
+    info->birth_age_dist_sumtable,
+    info->birth_age_dist_sumtable_size,
+    multiplier,
     info->seed
-  ) + acy_count_select_children(
-    person + 1,
-    info->average_children_per_mother,
+  ) + acy_count_select_table_children(
+    acy_child_bearers_duo(person),
+    info->mother_cohort_size,
     info->max_children_per_mother,
+    info->birth_age_dist_sumtable,
+    info->birth_age_dist_sumtable_size,
+    multiplier,
     info->seed
   );
 }

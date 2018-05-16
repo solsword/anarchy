@@ -19,8 +19,8 @@ int acy_test_mothers() {
   id n_samples = 100000;
   id step = 918203813;
   for (
-    id child = 44878132757;
-    child < 44878132757 + n_samples * step;
+    id child = 448781327578432;
+    child < 448781327578432 + n_samples * step;
     child += step
   ) {
     valid_generations = 0;
@@ -286,11 +286,13 @@ int acy_test_mother_age_at_birth_gnuplot() {
       id mother = acy_mother(child, tinfo);
       fprintf(
         fout,
-        "%lu %lu\n",
-        child,
-        mother
-      //   (acy_birthdate(child, tinfo) - acy_birthdate(mother, tinfo))
-      // / ONE_EARTH_YEAR
+        "%lu %.4g\n",
+        child - 1911494693,
+        (
+          (acy_birthdate(child, tinfo) - acy_birthdate(mother, tinfo))
+        / ((float) ONE_EARTH_YEAR)
+        ) - 5.053e+16 - 3.962e+12 - 4.345e+08 + 2.192e+04
+        // TODO: DEBUG this T_T...
       );
     }
   }

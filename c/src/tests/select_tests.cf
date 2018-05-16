@@ -1717,7 +1717,7 @@ int acy_test_avg_table_parent_child_gap() {
 
   id parent_cohort_size = 32;
   id child_cohort_size = 32;
-  id multiplier = 32*9984;
+  id multiplier = 9984;
 
   id base_value = ((id) 2) << 50; // 14 bits from max
   double avg_parent_distance = 0; 
