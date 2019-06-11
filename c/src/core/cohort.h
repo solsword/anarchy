@@ -11,7 +11,7 @@
 
 #include <assert.h>
 #include <math.h> // for roundf and log
-#include <malloc.h> // for allocating sum tables and inverse sum trees
+#include <stdlib.h> // for allocating sum tables and inverse sum trees
 #ifdef DEBUG_COHORT
   #include <stdio.h>
 #endif

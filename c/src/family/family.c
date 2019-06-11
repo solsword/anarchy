@@ -6,7 +6,7 @@
  * @author: Peter Mawhorter (pmawhorter@gmail.com)
  */
 
-#include <malloc.h>
+#include <stdlib.h> // for malloc
 #ifdef DEBUG_FAMILY
   #include <stdio.h>
 #endif
