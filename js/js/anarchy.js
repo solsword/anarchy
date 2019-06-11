@@ -4,7 +4,7 @@
 define([], function() {
   // Note: anarchy.js operates using 32-bit integer values to remain
   // dependency-free. This breaks full compatibility with the C library, which
-  // uses 64-bit integers for obvious reason. Javascript does not support
+  // uses 64-bit integers for obvious reasons. Javascript does not support
   // 64-bit integers at this time (Number.MAX_SAFE_INTEGER is 2^53-1), and in
   // particular, bitwise operations only work on 32-bit integers.
   var ID_BITS = 32;
@@ -355,7 +355,7 @@ define([], function() {
         Math.floor(cohort_size / 2),
         seed + 464185
       );
-      return 2 * target + 1;
+      return (2 * target + 1) >>> 0;
     } else {
       target = rev_cohort_spin(
         Math.floor(even / 2),
