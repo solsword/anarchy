@@ -167,12 +167,8 @@ define([], function() {
     // Implements a max-cycle-length 32-bit linear-feedback-shift-register.
     // See: https://en.wikipedia.org/wiki/Linear-feedback_shift_register
     // Note that this is NOT reversible!
-    var lsb = x & 1;
-    var r = x >>> 1;
-    if (lsb) {
-      r ^= 0x80200003; // 32, 22, 2, 1
-    }
-    return r;
+    let lsb = x & 1;
+    return (x >>> 1) ^ (0x80200003 * lsb); // 32, 22, 2, 1
   }
 
   function udist(x) {
@@ -511,9 +507,9 @@ define([], function() {
     var first_half = Math.floor(n_segments / 2);
 
     // compute min/max split points according to roughness:
-    var half = Math.floor(total / 2);
-    var split_min = Math.floor(half - half * roughness);
-    var split_max = Math.floor(half + (total - half) * roughness);
+    var nat = Math.floor(total * (first_half / n_segments));
+    var split_min = Math.floor(nat - nat * roughness);
+    var split_max = Math.floor(nat + (total - nat) * roughness);
 
     // adjust for capacity limits:
     if ((total - split_min) > segment_capacity * (n_segments - first_half)) {
@@ -525,12 +521,12 @@ define([], function() {
     }
 
     // compute a random split point:
-    var split = half;
+    var split = nat;
     if (split_min >= split_max) {
       split = split_min;
     } else {
       split = split_min + posmod(
-        prng(total ^ prng(seed)),
+        prng(total, seed),
         (split_max - split_min)
       )
     }

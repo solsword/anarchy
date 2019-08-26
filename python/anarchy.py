@@ -569,9 +569,9 @@ def distribution_spilt_point(
   first_half = n_segments // 2
 
   # compute min/max split points according to roughness:
-  half = total // 2
-  split_min = math.floor(half - half * roughness)
-  split_max = math.floor(half + (total - half) * roughness)
+  nat = math.floor(total * (first_half / n_segments) )
+  split_min = math.floor(nat - nat * roughness)
+  split_max = math.floor(nat + (total - nat) * roughness)
 
   # adjust for capacity limits:
   if (total - split_min) > segment_capacity * (n_segments - first_half):
@@ -581,11 +581,13 @@ def distribution_spilt_point(
     split_max = segment_capacity * first_half
 
   # compute a random split point:
-  split = half
+  split = nat
   if split_min >= split_max:
     split = split_min
   else:
-    split = split_min + (prng(total ^ prng(seed)) % (split_max - split_min))
+    split = split_min + (
+      prng(total ^ prng(seed, seed), seed) % (split_max - split_min)
+    )
 
   return [split, first_half]
 
@@ -623,7 +625,7 @@ def distribution_portion(
   )
 
   # call ourselves recursively:
-  if segment < split:
+  if segment < first_half:
     return distribution_portion(
       segment,
       split,
