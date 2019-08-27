@@ -86,6 +86,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h1 class="title">Anarchy Library Documentation</h1>
 <p class="author">Peter Mawhorter (pmawhorter@gmail.com)</p>
 </header>
+<h1 id="anarchy-library-documentation">Anarchy Library Documentation</h1>
 <p><code>anarchy</code> is a library for generating random numbers in an incremental and reversible fashion. It also has routines for incremental shuffling and distribution of items. The goal is to give a high level of control to designers of PCG systems while maintaining incremental operation as is necessary in incrementally-generated open-world situations.</p>
 <p>However, it can also be used in simpler situations as it provides a variety of built-in convenience functions like pseudo-gaussian and exponentially-distributed random numbers (these are not reversible).</p>
 <h2 id="replacing-random">Replacing <code>random()</code></h2>
@@ -127,20 +128,21 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><a href="#expdist"><code>expdist</code></a></li>
 </ul>
 <h3 id="prng"><code>prng</code></h3>
-<p>A simple reversible pseudo-random number generator.</p>
+<p>Parameters: - <code>x</code> (int): The current random number (the next one is returned). - <code>seed</code> (int): The seed; each seed will produce a distinct sequence of numbers. Returns (int): The next random number in the sequence for the given seed. A reversible pseudo-random number generator. Uses low-level reversible functions to scramble a number and produce an hard-to-predict result. The <code>rev_prng</code> function is the inverse of this function.</p>
 <h3 id="rev_prng"><code>rev_prng</code></h3>
-<p>Inverse of prng (see above).</p>
+<p>Parameters: - <code>x</code> (int): the current random number (the previous one is returned). - <code>seed</code> (int): The seed; each seed will produce a distinct sequence of numbers. Returns (int): The previous random number in the sequence for the given seed. The inverse of <code>prng</code> (see above). Returns the previous number in a pseudo-random sequence, so that:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1"></a>prng(rev_prng(n, seed), seed) <span class="op">==</span> n</span>
+<span id="cb3-2"><a href="#cb3-2"></a>rev_prng(prng(n, seed), seed) <span class="op">==</span> n</span></code></pre></div>
 <h3 id="udist"><code>udist</code></h3>
-<p>Generates a random floating-point number between 0 (inclusive) and 1 (exclusive) given a seed value.</p>
+<p>Parameter (int): <code>seed</code>–The seed that determines the result (could be a result from <code>prng</code> or <code>lfsr</code>) Returns (float): A pseudo-random number between 0 (inclusive) and 1 (exclusive).</p>
 <h3 id="pgdist"><code>pgdist</code></h3>
-<p>Generates a floating point number between 0 (inclusive) and 1 (exclusive) with a pseudo-gaussian distribution by averaging three uniform numbers over that range.</p>
+<p>Parameter (int): <code>seed</code>–The seed that determines the result. Returns (float): A pseudo-random number between 0 (inclusive) and 1 (exclusive). The result is created by averaging three results from <code>udist</code>, and its distribution has a Gaussian-like shape centered at 0.5.</p>
 <h3 id="flip"><code>flip</code></h3>
-<p>Flips a biased coin with probability p of being true. Using the same seed always gives the same result.</p>
+<p>Parameters: - <code>p</code> (float): The probability of returning True. - <code>seed</code> (int): The seed value that determines the result. Returns (True or False): a decision value. Flips a biased coin with probability <code>p</code> of being true. Using the same seed always gives the same result, but over many seeds the given probability is adhered to.</p>
 <h3 id="idist"><code>idist</code></h3>
-<p>Even distribution over the given integer range, including the lower end but excluding the higher end (even if the lower end is given second). Distribution bias is about one part in (range/2^63).</p>
+<p>Parameters: - <code>seed</code> (int): The seed value that determines the result. - <code>start</code> (int): The minimum possible output value. - <code>end</code> (int): One more than the maximum possible output value. Returns (int): a pseudo-random integer between the start (inclusive) and the end (exclusive). Returns a number drawn evenly from the given integer range, including the lower end but excluding the higher end (even if the lower end is given second). Distribution bias is about one part in (range/2^63).</p>
 <h3 id="expdist"><code>expdist</code></h3>
-<p>Generates a number from an exponential distribution with mean 0.5 given a seed.</p>
-<p>See: https://math.stackexchange.com/questions/28004/random-exponential-like-distribution</p>
+<p>Parameter (int): <code>seed</code>–The seed that determines the result. Returns (float): A number with an exponential distribution. Generates a number from an exponential distribution with mean 0.5 given a seed. See: <a href="https://math.stackexchange.com/questions/28004/random-exponential-like-distribution">StackExchange answer on exponential distribution</a></p>
 <h3 id="cohort-functions">Cohort Functions</h3>
 <p>Deal similarly with numbers from a range.</p>
 <ul>
@@ -154,21 +156,25 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><a href="#distribution_segment"><code>distribution_segment</code></a></li>
 </ul>
 <h3 id="cohort"><code>cohort</code></h3>
-<p>Computes cohort number for the given outer index and cohort size.</p>
+<p>Parameters: - <code>outer</code> (int): An integer to be assigned to a cohort. - <code>cohort_size</code> (int): The size of each cohort. Returns (int): Which cohort the given outer item is assigned to. Simply returns the outer index divided by the cohort size, rounded down. Note that for extremely large integers, they will be truncated to fit within 64 bits.</p>
 <h3 id="cohort_inner"><code>cohort_inner</code></h3>
-<p>Computes within-cohort index for the given outer index and cohorts of the given size.</p>
+<p>Parameters: - <code>outer</code> (int): An integer to be assigned to a cohort. - <code>cohort_size</code> (int): The size of each cohort. Returns (int): Where within its cohort the given integer ends up. Computes within-cohort index for the given outer index and cohorts of the given size, which is just the index modulus the cohort size. Like <code>cohort</code>, truncates to 64 bits.</p>
 <h3 id="cohort_outer"><code>cohort_outer</code></h3>
-<p>Inverse of cohort_and_inner computes the outer index from a cohort number and inner index.</p>
+<p>Parameters: - <code>cohort</code> (int): Which cohort the item is in. - <code>inner</code> (int): The index of the item in that cohort. - <code>cohort_size</code> (int): The size of each cohort. Returns (int): The outer index that would be mapped to this within-cohort index. This is the Inverse of <code>cohort_and_inner</code>: it computes the outer index from a cohort number and inner index.</p>
 <h3 id="cohort_shuffle"><code>cohort_shuffle</code></h3>
-<p>Compose a bunch of the above functions to perform a nice thorough shuffle within a cohort.</p>
+<p>Parameters: - <code>inner</code> (int): The index of an item in a cohort. - <code>cohort_size</code> (int): The size of each cohort. - <code>seed</code> (int): The seed that determines the shuffle order. Returns (int): A new within-cohort index for the given item. Implements an incremental shuffle, such that if you were to call <code>cohort_shuffle</code> on each index in a cohort of a given size, each of the items would end up in a different new spot within that cohort. The shuffle is reversible using the <code>rev_cohort_shuffle</code> function. It works by composing several of the simpler reversible/indexable functions to produce a sufficiently complex operation that humans generally won’t be able to see the pattern it uses.</p>
+<p>Note that this should <em>not</em> be used for cryptography or statistics: when the cohort size is even moderately large (say 100), the number of possible shuffles (constrained by the seed, which is 64 bits, so 2^64) will be much smaller than the number of possible orderings of the items, so not all possible orderings will be able to be produced. Both the seed and the cohort size are used to determine the particular ordering of items, so the same seed with a different cohort size won’t necessarily produce a similar ordering to another run.</p>
 <h3 id="rev_cohort_shuffle"><code>rev_cohort_shuffle</code></h3>
-<p>Inverse shuffle (see above).</p>
+<p>Parameters: - <code>inner</code> (int): The index of an item in a cohort. - <code>cohort_size</code> (int): The size of each cohort. - <code>seed</code> (int): The seed that determines the shuffle order. Returns (int): A new within-cohort index for the given item. Works just like <code>cohort_shuffle</code>, but applies the same operations in the opposite order, so that:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>seed <span class="op">=</span> <span class="dv">478273827</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>y <span class="op">=</span> cohort_shuffle(x, <span class="dv">100</span>, seed)</span>
+<span id="cb4-3"><a href="#cb4-3"></a>x <span class="op">==</span> rev_cohort_shuffle(y, <span class="dv">100</span>, seed)</span></code></pre></div>
 <h3 id="distribution_portion"><code>distribution_portion</code></h3>
-<p>Given that ‘total’ items are to be distributed evenly among ‘n_segment’ segments each with at most ‘segment_capacity’ items and we’re in segment ‘segment’ of those, computes how many items are in this segment. The ‘roughness’ argument should be a number between 0 and 1 indicating how even the distribution is: 0 indicates a perfectly even distribution, while 1 indicates a perfectly random distribution. Does work proportional to the log of the number of segments.</p>
+<p>Parameters: - <code>segment</code> (int): Which segment of a distribution we are interested in. - <code>total</code> (int): The total number of items being distributed. - <code>n_segments</code> (int): The number of segments to distribute items among. - <code>segment_capacity</code> (int): The capacity of each segment. - <code>roughness</code> (float in [0,1]): How rough the distribution should be. - <code>seed</code> (int): The seed that determines a specific distribution. Returns (int): the number of items from a distribution that end up in the given segment. Given that <code>total</code> items are to be distributed evenly among <code>n_segment</code> segments each with at most <code>segment_capacity</code> items and we’re in segment <code>segment</code> of those, computes how many items are in this segment. The <code>roughness</code> argument must be a number between 0 and 1 indicating how even the distribution is: 0 indicates a perfectly even distribution, while 1 indicates a perfectly random distribution. Does work proportional to the log of the number of segments.</p>
 <p>Note that segment_capacity * n_segments should be &gt; total.</p>
 <h3 id="distribution_prior_sum"><code>distribution_prior_sum</code></h3>
-<p>Does similar math to the distribution_portion function above, but instead of returning the number of items in the given segment, it returns the number of items in all segments before the given segment. Only does work proportional to the log of the number of segments.</p>
+<p>Parameters: - <code>segment</code> (int): Which segment of a distribution we are interested in. - <code>total</code> (int): The total number of items being distributed. - <code>n_segments</code> (int): The number of segments to distribute items among. - <code>segment_capacity</code> (int): The capacity of each segment. - <code>roughness</code> (float in [0,1]): How rough the distribution should be. - <code>seed</code> (int): The seed that determines a specific distribution. Returns (int): the cumulative number of items from a distribution that are distributed before the given segment. Does similar math to the <code>distribution_portion</code> function above, but instead of returning the number of items in the given segment, it returns the number of items in all segments before the given segment. Only does work proportional to the log of the number of segments.</p>
 <h3 id="distribution_segment"><code>distribution_segment</code></h3>
-<p>Computes the segment number in which a certain item appears (one of the ‘total’ items distributed between segments; see distribution_portion above). Requires work proportional to the log of the number of segments.</p>
+<p>Parameters: - <code>index</code> (int): Which item are we asking about. - <code>total</code> (int): The total number of items being distributed. - <code>n_segments</code> (int): The number of segments to distribute items among. - <code>segment_capacity</code> (int): The capacity of each segment. - <code>roughness</code> (float in [0,1]): How rough the distribution should be. - <code>seed</code> (int): The seed that determines a specific distribution. Returns (int): the index of the segment that the item of interest is distributed into. Computes the segment number in which a certain item appears (one of the <code>total</code> items distributed between segments; see <code>distribution_portion</code> above). Requires work proportional to the log of the number of segments. Note that the index should be between 0 and <code>total - 1</code>.</p>
 </body>
 </html>

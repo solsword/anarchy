@@ -118,6 +118,7 @@ with open("doc.mkd", 'w') as fout:
 title: Anarchy Library Documentation
 author: Peter Mawhorter (pmawhorter@gmail.com)
 ...
+# Anarchy Library Documentation
 """)
   #fout.write("# `anarchy` Library Documentation\n")
   fout.write(INTRO)
