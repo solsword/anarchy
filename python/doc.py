@@ -128,7 +128,7 @@ author: Peter Mawhorter (pmawhorter@gmail.com)
   for f in PRNG_FUNCTIONS:
     fout.write("- [`{}`](#{})\n".format(f.__name__, f.__name__))
   for f in PRNG_FUNCTIONS:
-    fout.write("\n### `{}` {{#{}}}\n\n".format(f.__name__, f.__name__))
+    fout.write("\n### `{}`\n\n".format(f.__name__, f.__name__))
     fout.write(unindent(f.__doc__) + '\n')
 
   fout.write(
@@ -137,5 +137,5 @@ author: Peter Mawhorter (pmawhorter@gmail.com)
   for f in COHORT_FUNCTIONS:
     fout.write("- [`{}`](#{})\n".format(f.__name__, f.__name__))
   for f in COHORT_FUNCTIONS:
-    fout.write("\n### `{}` {{#{}}}\n\n".format(f.__name__, f.__name__))
+    fout.write("\n### `{}`\n\n".format(f.__name__, f.__name__))
     fout.write(unindent(f.__doc__) + '\n')

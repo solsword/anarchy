@@ -79,7 +79,7 @@ Deal with individual random numbers.
 - [`idist`](#idist)
 - [`expdist`](#expdist)
 
-### `prng` {#prng}
+### `prng`
 
 Parameters:
   - `x` (int): The current random number (the next one is returned).
@@ -92,7 +92,7 @@ functions to scramble a number and produce an hard-to-predict result. The
 
 
 
-### `rev_prng` {#rev_prng}
+### `rev_prng`
 
 Parameters:
   - `x` (int): the current random number (the previous one is returned).
@@ -109,7 +109,7 @@ rev_prng(prng(n, seed), seed) == n
 
 
 
-### `udist` {#udist}
+### `udist`
 
 Parameter (int): `seed`--The seed that determines the result (could be a
 result from `prng` or `lfsr`)
@@ -118,7 +118,7 @@ Returns (float): A pseudo-random number between 0 (inclusive) and 1
 
 
 
-### `pgdist` {#pgdist}
+### `pgdist`
 
 Parameter (int): `seed`--The seed that determines the result.
 Returns (float): A pseudo-random number between 0 (inclusive) and 1
@@ -128,7 +128,7 @@ distribution has a Gaussian-like shape centered at 0.5.
 
 
 
-### `flip` {#flip}
+### `flip`
 
 Parameters:
   - `p` (float): The probability of returning True.
@@ -140,7 +140,7 @@ adhered to.
 
 
 
-### `idist` {#idist}
+### `idist`
 
 Parameters:
   - `seed` (int): The seed value that determines the result.
@@ -155,7 +155,7 @@ Distribution bias is about one part in (range/2^63).
 
 
 
-### `expdist` {#expdist}
+### `expdist`
 
 Parameter (int): `seed`--The seed that determines the result.
 Returns (float): A number with an exponential distribution.
@@ -177,7 +177,7 @@ Deal similarly with numbers from a range.
 - [`distribution_prior_sum`](#distribution_prior_sum)
 - [`distribution_segment`](#distribution_segment)
 
-### `cohort` {#cohort}
+### `cohort`
 
 Parameters:
   - `outer` (int): An integer to be assigned to a cohort.
@@ -189,7 +189,7 @@ bits.
 
 
 
-### `cohort_inner` {#cohort_inner}
+### `cohort_inner`
 
 Parameters:
   - `outer` (int): An integer to be assigned to a cohort.
@@ -201,7 +201,7 @@ the given size, which is just the index modulus the cohort size. Like
 
 
 
-### `cohort_outer` {#cohort_outer}
+### `cohort_outer`
 
 Parameters:
   - `cohort` (int): Which cohort the item is in.
@@ -214,7 +214,7 @@ cohort number and inner index.
 
 
 
-### `cohort_shuffle` {#cohort_shuffle}
+### `cohort_shuffle`
 
 Parameters:
   - `inner` (int): The index of an item in a cohort.
@@ -240,7 +240,7 @@ necessarily produce a similar ordering to another run.
 
 
 
-### `rev_cohort_shuffle` {#rev_cohort_shuffle}
+### `rev_cohort_shuffle`
 
 Parameters:
   - `inner` (int): The index of an item in a cohort.
@@ -257,7 +257,7 @@ x == rev_cohort_shuffle(y, 100, seed)
 
 
 
-### `distribution_portion` {#distribution_portion}
+### `distribution_portion`
 
 Parameters:
   - `segment` (int): Which segment of a distribution we are interested
@@ -282,7 +282,7 @@ Note that segment_capacity * n_segments should be > total.
 
 
 
-### `distribution_prior_sum` {#distribution_prior_sum}
+### `distribution_prior_sum`
 
 Parameters:
   - `segment` (int): Which segment of a distribution we are interested
@@ -302,7 +302,7 @@ Only does work proportional to the log of the number of segments.
 
 
 
-### `distribution_segment` {#distribution_segment}
+### `distribution_segment`
 
 Parameters:
   - `index` (int): Which item are we asking about.
