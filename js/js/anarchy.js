@@ -61,7 +61,6 @@ define([], function() {
     // Inverse circular shift (see above).
     distance = posmod(distance, Math.floor(3 * ID_BITS / 4));
     var m = mask(distance);
-    var m = mask(distance);
     var fall_off = x & (m << (ID_BITS - distance));
     var shift_by = (ID_BITS - distance);
     return (
@@ -171,25 +170,41 @@ define([], function() {
     return (x >>> 1) ^ (0x80200003 * lsb); // 32, 22, 2, 1
   }
 
-  function udist(x) {
+  function udist(seed) {
     // Generates a random number between 0 and 1 given a seed value.
-    var ux = lfsr(x >>> 0);
-    var sc = (ux ^ (ux << 16)) >>> 0;
+    let ux = lfsr(seed >>> 0);
+    let sc = (ux ^ (ux << 16)) >>> 0;
     return (sc % 2147483659) / 2147483659; // prime near 2^31
   }
 
-  function idist(x, start, end) {
+  function pgdist(seed) {
+    // Generates and averages three rando numbers between 0 and 1 to give a
+    // pseudo-gaussian-distributed random number (still strictly on [0, 1) )
+    let t = 0;
+    for (let i = 0; i < 3; ++i) {
+      t += udist(seed + 9182793183*i);
+    }
+    return t/3;
+  }
+
+  function flip(p, seed) {
+    // Flips a coin with probability p of being True. Using the same seed
+    // always give the same result.
+    return udist(seed) < p;
+  }
+
+  function idist(seed, start, end) {
     // Even distribution over the given integer range, including the lower end
     // but excluding the higher end (even if the lower end is given second).
     // Distribution bias is about one part in (range/2^31).
-    return Math.floor(udist(x) * (end - start)) + start;
+    return Math.floor(udist(seed) * (end - start)) + start;
   }
 
-  function expdist(x) {
+  function expdist(seed) {
     // Generates a number from an exponential distribution with mean 0.5 given
     // a seed. See:
     // https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
-    var u = udist(x);
+    var u = udist(seed);
     return -Math.log(1 - u)/0.5;
   }
 

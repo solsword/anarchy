@@ -30,6 +30,13 @@ The core API is available in C, Python, and Javascript, and includes:
     * `distribution_segment` - For *N* items distributed among *K* segments of
       maximum size *S*, which segment does item *n* get distributed to?
 
+## Full documentation
+
+Full documentation for all core functions pulled directly from the Python
+implementation:
+
+[Core Documentation](python/doc.mkd)
+
 ## Further work
 
 - One long term goal is to use these operations to support family tree

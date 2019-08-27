@@ -1,0 +1,207 @@
+---
+title: Anarchy Library Documentation
+author: Peter Mawhorter (pmawhorter@gmail.com)
+...
+
+`anarchy` is a library for generating random numbers in an incremental and
+reversible fashion. It also has routines for incremental shuffling and
+distribution of items. The goal is to give a high level of control to designers
+of PCG systems while maintaining incremental operation as is necessary in
+incrementally-generated open-world situations.
+
+However, it can also be used in simpler situations as it provides a variety of
+built-in convenience functions like pseudo-gaussian and
+exponentially-distributed random numbers (these are not reversible).
+
+## Replacing `random()`
+
+The incremental shuffling algorithm can be used as a replacement for a standard
+random number generator in cases where you want to guarantee a global
+distribution of items and are currently using independent random number checks
+to control item distribution. For example, if you have code that looks like
+this:
+
+```python
+def roll_item():
+  r = random.random()
+  if r < 0.01: # 1% chance for Rare item
+    return "Rare"
+  elif r < 0.06: # 5% chance for Uncommon item
+    return "Uncommon"
+  else:
+    return "Common"
+```
+
+You have no guarantees about exactly how often rare/uncommon items will be, and
+some players will get lucky or unlucky. Instead, even if you don't know the
+number of roll_item calls, with `anarchy` you can do this:
+
+```python
+N = 0
+seed = 472389223
+
+def roll_item():
+  global N, seed
+  r = anarchy.cohort_shuffle(N, 100, seed + N//100)
+  if r < 1:
+    return "Rare"
+  elif r < 6:
+    return "Uncommon"
+  else:
+    return "Common"
+```
+
+In this code there are two extra variables that have to be managed in some way,
+but the benefit is that for every 100 calls to the function, "Rare" will be
+returned exactly once, and "Uncommon" will be returned exactly 5 times. Each
+group of 100 calls will still have a different ordering of the items, because
+it uses a different seed.
+
+There are many other potential applications of reversible/incremental
+shuffling; this is one of the most direct.
+
+## Core Functions
+
+(Note: these are the most useful functions available but there are others, like
+the individual reversible operations used for shuffling or random number
+generation. Those functions are documented in the source code.)
+
+### Single Number Functions
+
+Deal with individual random numbers.
+
+- [`prng`](#prng)
+- [`rev_prng`](#rev_prng)
+- [`udist`](#udist)
+- [`pgdist`](#pgdist)
+- [`flip`](#flip)
+- [`idist`](#idist)
+- [`expdist`](#expdist)
+
+### `prng` {#prng}
+
+A simple reversible pseudo-random number generator.
+
+
+
+### `rev_prng` {#rev_prng}
+
+Inverse of prng (see above).
+
+
+
+### `udist` {#udist}
+
+Generates a random floating-point number between 0 (inclusive) and 1
+(exclusive) given a seed value.
+
+
+
+### `pgdist` {#pgdist}
+
+Generates a floating point number between 0 (inclusive) and 1
+(exclusive) with a pseudo-gaussian distribution by averaging three
+uniform numbers over that range.
+
+
+
+### `flip` {#flip}
+
+Flips a biased coin with probability p of being true. Using the same
+seed always gives the same result.
+
+
+
+### `idist` {#idist}
+
+Even distribution over the given integer range, including the lower end
+but excluding the higher end (even if the lower end is given second).
+Distribution bias is about one part in (range/2^63).
+
+
+
+### `expdist` {#expdist}
+
+Generates a number from an exponential distribution with mean 0.5 given
+a seed.
+
+See: https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
+
+
+### Cohort Functions
+
+Deal similarly with numbers from a range.
+
+- [`cohort`](#cohort)
+- [`cohort_inner`](#cohort_inner)
+- [`cohort_outer`](#cohort_outer)
+- [`cohort_shuffle`](#cohort_shuffle)
+- [`rev_cohort_shuffle`](#rev_cohort_shuffle)
+- [`distribution_portion`](#distribution_portion)
+- [`distribution_prior_sum`](#distribution_prior_sum)
+- [`distribution_segment`](#distribution_segment)
+
+### `cohort` {#cohort}
+
+Computes cohort number for the given outer index and cohort size.
+
+
+
+### `cohort_inner` {#cohort_inner}
+
+Computes within-cohort index for the given outer index and cohorts of
+the given size.
+
+
+
+### `cohort_outer` {#cohort_outer}
+
+Inverse of cohort_and_inner computes the outer index from a cohort
+number and inner index.
+
+
+
+### `cohort_shuffle` {#cohort_shuffle}
+
+Compose a bunch of the above functions to perform a nice thorough
+shuffle within a cohort.
+
+
+
+### `rev_cohort_shuffle` {#rev_cohort_shuffle}
+
+Inverse shuffle (see above).
+
+
+
+### `distribution_portion` {#distribution_portion}
+
+Given that 'total' items are to be distributed evenly among 'n_segment'
+segments each with at most 'segment_capacity' items and we're in
+segment 'segment' of those, computes how many items are in this
+segment. The 'roughness' argument should be a number between 0 and 1
+indicating how even the distribution is: 0 indicates a perfectly even
+distribution, while 1 indicates a perfectly random distribution. Does
+work proportional to the log of the number of segments.
+
+Note that segment_capacity * n_segments should be > total.
+
+
+
+### `distribution_prior_sum` {#distribution_prior_sum}
+
+Does similar math to the distribution_portion function above, but
+instead of returning the number of items in the given segment, it
+returns the number of items in all segments before the given segment.
+Only does work proportional to the log of the number of segments.
+
+
+
+### `distribution_segment` {#distribution_segment}
+
+Computes the segment number in which a certain item appears (one of the
+'total' items distributed between segments; see distribution_portion
+above). Requires work proportional to the log of the number of
+segments.
+
+

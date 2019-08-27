@@ -283,6 +283,61 @@ def demo_distribute():
   a_demo.save(os.path.join("demos", "rng_dist_anarchy.png"), format="png")
   #b_demo.save(os.path.join("demos", "rng_dist_builtin.png"), format="png")
 
+WHITE, RED, BLUE = [
+  (255, 255, 255),
+  (255, 0, 83),
+  (0, 121, 210),
+]
+
+def pick_color(seed):
+  """
+  Simple independent distribution function.
+  """
+  x = anarchy.udist(seed)
+  if x < 1/100:
+    return RED
+  elif x < 6/100:
+    return BLUE
+  else:
+    return WHITE
+
+def demo_shuf_compare():
+  """
+  Creates an image demonstrating the difference between shuffling and
+  independent-chance-based distribution schemes.
+  """
+  seed = 9328810312
+  random.seed(seed)
+
+  demo = PIL.Image.new("RGB", (110, 110))
+
+  for xblock in range(10):
+    for yblock in range(10):
+      lseed = seed + xblock*729837 + yblock*92873
+      if yblock < 5:
+        items = [pick_color(lseed + i*4879283) for i in range(100)]
+      else:
+        items = [RED] + [BLUE]*5 + [WHITE]*(100-6)
+
+      for lx in range(10):
+        for ly in range(10):
+          x = xblock*11 + lx
+          y = yblock*11 + ly
+
+          # shift lower blocks down to create separation
+          if yblock >= 5:
+            y += 1
+
+          if yblock < 5:
+            color = items[lx*10 + ly]
+          else:
+            color = items[anarchy.cohort_shuffle(lx*10+ly, 100, lseed)]
+
+          demo.putpixel((x, y), color)
+
+  demo.save(os.path.join("demos", "rng_shuf_compare.png"), format="png")
+
+
 def main():
   if not os.path.exists("demos"):
     os.mkdir("demos")
@@ -290,6 +345,7 @@ def main():
   demo_prng()
   demo_shuffle()
   demo_distribute()
+  demo_shuf_compare()
 
 if __name__ == "__main__":
   main()

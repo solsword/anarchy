@@ -2,7 +2,7 @@
 anarchy.py
 Reversible chaos library.
 
-Compatible with python 3.
+Compatible with python 3; does not work with python 2!
 """
 
 import math
@@ -19,9 +19,9 @@ def posmod(x, y):
   """
   Modulus that's always positive (x % y) as long as y is positive.
   
-  Note: In python, the built-in % operator works this way, which is what this
-  function uses. It is retained for cross-language compatibility, but in
-  general the native operator should be preferred as it's faster.
+  Note: In python, the built-in % operator works this way, which is what
+  this function uses. It is retained for cross-language compatibility,
+  but in general the native operator should be preferred as it's faster.
   """
   return x % y
 
@@ -29,7 +29,8 @@ def posmod(x, y):
 def hash_string(s):
   """
   A string hashing function.
-  See: https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
+
+  See: [StackOverflow answer on hashing strings](https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery).
   """
   hash = 0
   if len(s) == 0:
@@ -91,8 +92,8 @@ def rev_swirl(x, distance):
 
 def fold(x, where):
   """
-  Folds lower bits into upper bits using xor. 'where' is restricted to fall
-  between 1/4 and 1/2 of ID_BITS.
+  Folds lower bits into upper bits using xor. 'where' is restricted to
+  fall between 1/4 and 1/2 of ID_BITS.
   """
   quarter = ID_BITS // 4
   where = (where % quarter) + quarter
@@ -121,8 +122,7 @@ def scramble(x):
   """
   trigger = x & 0x80200003
   r = swirl(x, 1)
-  if trigger:
-    r ^= 0x03040610
+  r ^= 0x03040610 * trigger # pseudo-if
 
   return r & ID_MASK
 
@@ -161,7 +161,17 @@ def scramble_seed(s):
 
 def prng(x, seed):
   """
-  A simple reversible pseudo-random number generator.
+  Parameters:
+
+    - `x` (int): The current random number (the next one is returned).
+    - `seed` (int): The seed; each seed will produce a distinct sequence of
+        numbers.
+
+  Returns (int): The next random number in the sequence for the given seed.
+
+  A reversible pseudo-random number generator. Uses low-level reversible
+  functions to scramble a number and produce an hard-to-predict result. The
+  `rev_prng` function is the inverse of this function.
   """
 
   # seed scrambling:
@@ -179,7 +189,21 @@ def prng(x, seed):
 
 def rev_prng(x, seed):
   """
-  Inverse of prng (see above).
+  Parameters:
+
+    - `x` (int): the current random number (the previous one is returned).
+    - `seed` (int): The seed; each seed will produce a distinct sequence of
+        numbers.
+
+  Returns (int): The previous random number in the sequence for the given seed.
+
+  The inverse of `prng` (see above). Returns the previous number in a
+  pseudo-random sequence, so that:
+    
+  ```py
+  prng(rev_prng(n, seed), seed) == n
+  rev_prng(prng(n, seed), seed) == n
+  ```
   """
 
   # seed scrambling:
@@ -198,49 +222,103 @@ def rev_prng(x, seed):
 
 def lfsr(x):
   """
-  Implements a max-cycle-length 32-bit linear-feedback-shift-register.
-  See: https://en.wikipedia.org/wiki/Linear-feedback_shift_register
+  Parameters:
+
+    - `x` (int): The current random number.
+
+  Returns (int): The next random number in a pseudo-random sequence.
+
+  Implements a max-cycle-length 64-bit linear-feedback-shift-register.
+  See: [the Wikipedia article on Linear Feedback Shift Registers](https://en.wikipedia.org/wiki/Linear-feedback_shift_register).
   Note that this is NOT reversible!
 
-  See also: http://courses.cse.tamu.edu/walker/csce680/lfsr_table.pdf
+  See also: [a PDF table of max-length LFSR parameters](http://courses.cse.tamu.edu/walker/csce680/lfsr_table.pdf).
   """
   lsb = x & 1
   r = x >> 1
-  if lsb:
-    r ^= 0xe800000000000000 # 64, 63, 61, 60
+  # pseudo-if
+  r ^= lsb * 0xe800000000000000 # 64, 63, 61, 60
 
   return r & ID_MASK
 
-# Distribution functions
-#-----------------------
+# Sampling functions
+#-------------------
 
-def udist(x):
+def udist(seed):
   """
-  Generates a random floating-point number between 0 (inclusive) and 1
-  (exclusive) given a seed value.
+  Parameter (int): `seed`--The seed that determines the result (could be a
+  result from `prng` or `lfsr`)
+
+  Returns (float): A pseudo-random number between 0 (inclusive) and 1
+  (exclusive).
   """
-  sc = scramble_seed(x)
+  sc = scramble_seed(seed)
   sc = lfsr(sc)
   sc = lfsr(sc)
   return (sc % 9223372036854775783) / 9223372036854775783 # prime near 2^63
 
-
-def idist(x, start, end):
+def pgdist(seed):
   """
-  Even distribution over the given integer range, including the lower end
-  but excluding the higher end (even if the lower end is given second).
+  Parameter (int): `seed`--The seed that determines the result.
+
+  Returns (float): A pseudo-random number between 0 (inclusive) and 1
+  (exclusive).
+
+  The result is created by averaging three results from `udist`, and its
+  distribution has a Gaussian-like shape centered at 0.5.
+  """
+  t = 0
+  for i in range(3):
+    t += udist(seed + 9182793183*i)
+  return t / 3
+
+def flip(p, seed):
+  """
+  Parameters:
+
+    - `p` (float): The probability of returning True.
+    - `seed` (int): The seed value that determines the result.
+
+  Returns (True or False): a decision value.
+
+  Flips a biased coin with probability `p` of being true. Using the same seed
+  always gives the same result, but over many seeds the given probability is
+  adhered to.
+  """
+  return udist(seed) < p
+
+def idist(seed, start, end):
+  """
+  Parameters:
+
+    - `seed` (int): The seed value that determines the result.
+    - `start` (int): The minimum possible output value.
+    - `end` (int): One more than the maximum possible output value.
+
+  Returns (int): a pseudo-random integer between the start (inclusive) and the
+  end (exclusive).
+
+  Returns a number drawn evenly from the given integer range, including the
+  lower end but excluding the higher end (even if the lower end is given
+  second).
+
   Distribution bias is about one part in (range/2^63).
   """
-  return math.floor(udist(x) * (end - start)) + start
+  return math.floor(udist(seed) * (end - start)) + start
 
 
-def expdist(x):
+def expdist(seed):
   """
-  Generates a number from an exponential distribution with mean 0.5 given a
-  seed. See:
-  https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
+  Parameter (int): `seed`--The seed that determines the result.
+
+  Returns (float): A number with an exponential distribution.
+
+  Generates a number from an exponential distribution with mean 0.5 given
+  a seed.
+
+  See: [StackExchange answer on exponential distribution](https://math.stackexchange.com/questions/28004/random-exponential-like-distribution)
   """
-  u = udist(x)
+  u = udist(seed)
   return -math.log(1 - u)/0.5
 
 # Cohort functions
@@ -248,35 +326,68 @@ def expdist(x):
 
 def cohort(outer, cohort_size):
   """
-  Computes cohort number for the given outer index and cohort size.
+  Parameters:
+
+    - `outer` (int): An integer to be assigned to a cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+  Returns (int): Which cohort the given outer item is assigned to.
+
+  Simply returns the outer index divided by the cohort size, rounded down. Note
+  that for extremely large integers, they will be truncated to fit within 64
+  bits.
   """
   return math.floor(outer // cohort_size) & ID_MASK
 
 
 def cohort_inner(outer, cohort_size):
   """
-  Computes within-cohort index for the given outer index and cohorts of the
-  given size.
+  Parameters:
+
+    - `outer` (int): An integer to be assigned to a cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+  Returns (int): Where within its cohort the given integer ends up.
+
+  Computes within-cohort index for the given outer index and cohorts of
+  the given size, which is just the index modulus the cohort size. Like
+  `cohort`, truncates to 64 bits.
   """
   return (outer % cohort_size) & ID_MASK
 
 def cohort_and_inner(outer, cohort_size):
   """
-  Returns an array containing both the cohort number and inner index for the
-  given outer index and cohort size.
+  Parameters:
+
+    - `outer` (int): An integer to be assigned to a cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+  Returns (length-2 list): A cohort number and within-cohort index.
+    
+  Simply returns the results of the `cohort` and `cohort_inner` as a pair.
   """
   return [ cohort(outer, cohort_size), cohort_inner(outer, cohort_size) ]
 
 def cohort_outer(cohort, inner, cohort_size):
   """
-  Inverse of cohort_and_inner computes the outer index from a cohort number and
-  inner index.
+  Parameters:
+
+    - `cohort` (int): Which cohort the item is in.
+    - `inner` (int): The index of the item in that cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+  Returns (int): The outer index that would be mapped to this within-cohort
+  index.
+
+  This is the Inverse of `cohort_and_inner`: it computes the outer index from a
+  cohort number and inner index.
   """
   return (cohort_size * cohort + inner) & ID_MASK
 
 def cohort_interleave(inner, cohort_size):
   """
-  Interleaves cohort members by folding the top half into the bottom half.
+  Interleaves cohort members by folding the top half into the bottom
+  half.
   """
   if inner < (cohort_size + 1) // 2:
     return (inner * 2) & ID_MASK
@@ -294,9 +405,9 @@ def rev_cohort_interleave(inner, cohort_size):
 
 def cohort_fold(inner, cohort_size, seed):
   """
-  Folds items past an arbitrary split point (in the second half of the cohort)
-  into the middle of the cohort. The split will always leave an odd number at
-  the end.
+  Folds items past an arbitrary split point (in the second half of the
+  cohort) into the middle of the cohort. The split will always leave an
+  odd number at the end.
   """
   half = cohort_size // 2
   quarter = cohort_size // 4
@@ -424,8 +535,8 @@ MAX_REGION_COUNT = 16
 
 def cohort_spread(inner, cohort_size, seed):
   """
-  Spreads items out between a random number of different regions within the
-  cohort.
+  Spreads items out between a random number of different regions within
+  the cohort.
   """
   min_regions = 2
   if cohort_size < 2 * MIN_REGION_SIZE:
@@ -506,8 +617,32 @@ def cohort_upend(inner, cohort_size, seed):
 
 def cohort_shuffle(inner, cohort_size, seed):
   """
-  Compose a bunch of the above functions to perform a nice thorough shuffle
-  within a cohort.
+  Parameters:
+
+    - `inner` (int): The index of an item in a cohort.
+    - `cohort_size` (int): The size of each cohort.
+    - `seed` (int): The seed that determines the shuffle order.
+
+  Returns (int): A new within-cohort index for the given item.
+
+  Implements an incremental shuffle, such that if you were to call
+  `cohort_shuffle` on each index in a cohort of a given size, each of the
+  items would end up in a different new spot within that cohort. The
+  shuffle is reversible using the `rev_cohort_shuffle` function.
+
+  It works by composing several of the simpler reversible/indexable
+  functions to produce a sufficiently complex operation that humans
+  generally won't be able to see the pattern it uses.
+  
+  Note that this should *not* be used for cryptography or statistics:
+  when the cohort size is even moderately large (say 100), the number of
+  possible shuffles (constrained by the seed, which is 64 bits, so 2^64)
+  will be much smaller than the number of possible orderings of the
+  items, so not all possible orderings will be able to be produced.
+
+  Both the seed and the cohort size are used to determine the particular
+  ordering of items, so the same seed with a different cohort size won't
+  necessarily produce a similar ordering to another run.
   """
   r = inner
   seed = seed ^ cohort_size
@@ -530,7 +665,22 @@ def cohort_shuffle(inner, cohort_size, seed):
 
 def rev_cohort_shuffle(inner, cohort_size, seed):
   """
-  Inverse shuffle (see above).
+  Parameters:
+
+    - `inner` (int): The index of an item in a cohort.
+    - `cohort_size` (int): The size of each cohort.
+    - `seed` (int): The seed that determines the shuffle order.
+
+  Returns (int): A new within-cohort index for the given item.
+
+  Works just like `cohort_shuffle`, but applies the same operations in
+  the opposite order, so that:
+
+  ```py
+  seed = 478273827
+  y = cohort_shuffle(x, 100, seed)
+  x == rev_cohort_shuffle(y, 100, seed)
+  ```
   """
   r = inner
   seed = seed ^ cohort_size
@@ -600,13 +750,27 @@ def distribution_portion(
   seed
 ):
   """
-  Given that 'total' items are to be distributed evenly among 'n_segment'
-  segments each with at most 'segment_capacity' items and we're in segment
-  'segment' of those, computes how many items are in this segment. The
-  'roughness' argument should be a number between 0 and 1 indicating how
-  even the distribution is: 0 indicates a perfectly even distribution,
-  while 1 indicates a perfectly random distribution. Does work
-  proportional to the log of the number of segments.
+  Parameters:
+
+    - `segment` (int): Which segment of a distribution we are interested
+    in.
+    - `total` (int): The total number of items being distributed.
+    - `n_segments` (int): The number of segments to distribute items
+        among.
+    - `segment_capacity` (int): The capacity of each segment.
+    - `roughness` (float in [0,1]): How rough the distribution should be.
+    - `seed` (int): The seed that determines a specific distribution.
+
+  Returns (int): the number of items from a distribution that end up in
+  the given segment.
+
+  Given that `total` items are to be distributed evenly among `n_segment`
+  segments each with at most `segment_capacity` items and we're in
+  segment `segment` of those, computes how many items are in this
+  segment. The `roughness` argument must be a number between 0 and 1
+  indicating how even the distribution is: 0 indicates a perfectly even
+  distribution, while 1 indicates a perfectly random distribution. Does
+  work proportional to the log of the number of segments.
   
   Note that segment_capacity * n_segments should be > total.
   """
@@ -653,7 +817,21 @@ def distribution_prior_sum(
   seed
 ):
   """
-  Does similar math to the distribution_portion function above, but
+  Parameters:
+
+    - `segment` (int): Which segment of a distribution we are interested
+    in.
+    - `total` (int): The total number of items being distributed.
+    - `n_segments` (int): The number of segments to distribute items
+        among.
+    - `segment_capacity` (int): The capacity of each segment.
+    - `roughness` (float in [0,1]): How rough the distribution should be.
+    - `seed` (int): The seed that determines a specific distribution.
+
+  Returns (int): the cumulative number of items from a distribution that
+  are distributed before the given segment.
+
+  Does similar math to the `distribution_portion` function above, but
   instead of returning the number of items in the given segment, it
   returns the number of items in all segments before the given segment.
   Only does work proportional to the log of the number of segments.
@@ -701,9 +879,25 @@ def distribution_segment(
   seed
 ):
   """
+  Parameters:
+
+    - `index` (int): Which item are we asking about.
+    - `total` (int): The total number of items being distributed.
+    - `n_segments` (int): The number of segments to distribute items
+        among.
+    - `segment_capacity` (int): The capacity of each segment.
+    - `roughness` (float in [0,1]): How rough the distribution should be.
+    - `seed` (int): The seed that determines a specific distribution.
+
+  Returns (int): the index of the segment that the item of interest is
+  distributed into.
+
   Computes the segment number in which a certain item appears (one of the
-  'total' items distributed between segments see distribution_portion
-  above). Requires work proportional to the log of the number of segments.
+  `total` items distributed between segments; see `distribution_portion`
+  above). Requires work proportional to the log of the number of
+  segments.
+
+  Note that the index should be between 0 and `total - 1`.
   """
 
   # base case
@@ -745,6 +939,8 @@ def max_smaller(value, sumtable):
   the given sumtable that's smaller than the given value. Works in time
   proportional to the logarithm of the sumtable size. Returns -1 if there
   is no entry in the sumtable smaller than the given value.
+
+  TODO: more sumtable functions in Python?
   """
   fr = 0
   to = len(sumtable)
