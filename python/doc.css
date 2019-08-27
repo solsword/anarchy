@@ -1,0 +1,23 @@
+body {
+  max-width: 40em;
+  margin: auto;
+  font-size: larger;
+  font-family: sans-serif;
+}
+
+a:link, a:visited {
+  color: #0063b4;
+}
+
+a:hover, a:visited:hover {
+  color: #0085ff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  border-bottom: 1.5pt solid black;
+  padding-bottom: 4pt;
+}
+
+h3 {
+  margin-top: 32pt;
+}
