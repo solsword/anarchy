@@ -30,14 +30,16 @@ The core API is available in C, Python, and Javascript, and includes:
     * `distribution_segment` - For *N* items distributed among *K* segments of
       maximum size *S*, which segment does item *n* get distributed to?
 
-## Full documentation
+## Core documentation
 
 Full documentation for all core functions pulled directly from the Python
-implementation:
+implementation (applies to all implementations):
 
-[Core Documentation](python/doc.mkd)
+[Core Documentation](solsword.github.io/anarchy/python/doc.html)
 
-## Further work
+## Example code
 
-- One long term goal is to use these operations to support family tree
-  generation.
+Example code using the JavaScript implementation that demonstrates things
+to do with the library.
+
+[Examples](solsword.github.io/anarchy/js/examples.html)

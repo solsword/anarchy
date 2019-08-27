@@ -77,6 +77,7 @@ code span.va { color: #19177c; } /* Variable */
 code span.vs { color: #4070a0; } /* VerbatimString */
 code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
+  <link rel="stylesheet" href="doc.css" />
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
@@ -86,7 +87,6 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h1 class="title">Anarchy Library Documentation</h1>
 <p class="author">Peter Mawhorter (pmawhorter@gmail.com)</p>
 </header>
-<h1 id="anarchy-library-documentation">Anarchy Library Documentation</h1>
 <p><code>anarchy</code> is a library for generating random numbers in an incremental and reversible fashion. It also has routines for incremental shuffling and distribution of items. The goal is to give a high level of control to designers of PCG systems while maintaining incremental operation as is necessary in incrementally-generated open-world situations.</p>
 <p>However, it can also be used in simpler situations as it provides a variety of built-in convenience functions like pseudo-gaussian and exponentially-distributed random numbers (these are not reversible).</p>
 <p>Note that this documentation applies most closely to the Python implementation, and it drawn from that code. Each different language implementation has its own idiosyncrasies, but the higher-level things, like number and meaning of parameters, are the same for these core functions.</p>

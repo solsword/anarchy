@@ -1,7 +1,7 @@
 doc.mkd: doc.py
 	python3 doc.py
 
-doc.html: doc.mkd anarchy.py
-	pandoc --standalone doc.mkd -o doc.html
+doc.html: doc.mkd anarchy.py doc.css
+	pandoc --standalone doc.mkd --css doc.css -o doc.html
 
 .DEFAULT_GOAL := doc.html

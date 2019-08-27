@@ -2,7 +2,6 @@
 title: Anarchy Library Documentation
 author: Peter Mawhorter (pmawhorter@gmail.com)
 ...
-# Anarchy Library Documentation
 
 `anarchy` is a library for generating random numbers in an incremental and
 reversible fashion. It also has routines for incremental shuffling and
