@@ -35,11 +35,11 @@ The core API is available in C, Python, and Javascript, and includes:
 Full documentation for all core functions pulled directly from the Python
 implementation (applies to all implementations):
 
-[Core Documentation](solsword.github.io/anarchy/python/doc.html)
+[Core Documentation](https://solsword.github.io/anarchy/python/doc.html)
 
 ## Example code
 
 Example code using the JavaScript implementation that demonstrates things
 to do with the library.
 
-[Examples](solsword.github.io/anarchy/js/examples.html)
+[Examples](https://solsword.github.io/anarchy/js/examples.html)
