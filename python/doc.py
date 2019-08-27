@@ -18,10 +18,11 @@ def unindent(docstr):
   result = ''
   for line in lines:
     if line == '':
-      continue
-    if line[:indent].strip() != '':
-      print("Warning: non-indented line:\n{}".format(line), file=sys.stderr)
-    result += line[indent:] + '\n'
+      result += '\n'
+    else:
+      if line[:indent].strip() != '':
+        print("Warning: non-indented line:\n{}".format(line), file=sys.stderr)
+      result += line[indent:] + '\n'
 
   return result
 
