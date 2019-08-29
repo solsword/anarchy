@@ -22,3 +22,9 @@ h1, h2, h3, h4, h5, h6 {
 h3 {
   margin-top: 32pt;
 }
+
+pre.sourceCode {
+  background-color: #eee;
+  padding: 8pt;
+  border-radius: 8pt;
+}

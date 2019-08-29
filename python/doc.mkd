@@ -1,6 +1,6 @@
 ---
 title: Anarchy Library Documentation
-author: Peter Mawhorter (pmawhorter@gmail.com)
+author: Peter Mawhorter
 ...
 
 `anarchy` is a library for generating random numbers in an incremental and

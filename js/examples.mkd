@@ -1,0 +1,1213 @@
+---
+title: Anarchy Example Code
+author: Peter Mawhorter
+...
+
+# Anarchy Examples
+
+This page contains worked examples of how to use the Anarchy library, using the
+JavaScript version of the library. Each example below shows the code used and
+then the result running live in the page.
+
+## Basic Shuffling
+
+Here's a basic example showing how to use the shuffling interface.
+
+You can enter a numerical seed value and hit shuffle to pick a specific
+shuffle, or just hit next to increment the seed and re-shuffle.
+
+<div id="shuffle_demo_controls">
+<input id="shuffle_demo_seed" type="text" value="0"/>
+<input id="shuffle_demo_shuffle" type="button" value="shuffle"/>
+<input id="shuffle_demo_next" type="button" value="next"/>
+</div>
+
+<div id="shuffle_demo">
+</div>
+
+Here is the core function that does the shuffle:
+
+```js
+// Function for setting the CSS grid-location properties of an item via
+// anarchy.
+function do_shuffle(seed) {
+  for (let i in items) {
+    let it = items[i];
+    // Use anarchy to get a shuffled index for just this item:
+    let position = anarchy.cohort_shuffle(i, items.length, seed);
+    //let y = position % 4;
+    //let x = Math.floor(position / 4);
+    let x = position % 7;
+    let y = Math.floor(position / 7);
+    it.style.gridColumnStart = "" + (x + 1);
+    it.style.gridColumnEnd = "" + (x + 2);
+    it.style.gridRowStart = "" + (y + 1);
+    it.style.gridRowEnd = "" + (y + 2);
+  }
+}
+```
+
+<details>
+<summary>Full code for the demo</summary>
+```js
+// Grab the div that we want to work with
+let div = document.getElementById("shuffle_demo")
+
+// Create 26 divs each containing a single capital letter:
+let items = [];
+let letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+for (let i in letters) {
+  let item = document.createElement("div")
+  item.innerText = letters[i];
+  items.push(item);
+}
+
+// Add our divs to the grid in order:
+for (let i in items) {
+  div.appendChild(items[i]);
+}
+
+// Function for setting the CSS grid-location properties of an item via
+// anarchy.
+function do_shuffle(seed) {
+  for (let i in items) {
+    let it = items[i];
+    // Use anarchy to get a shuffled index for just this item:
+    let position = anarchy.cohort_shuffle(i, items.length, seed);
+    //let y = position % 4;
+    //let x = Math.floor(position / 4);
+    let x = position % 7;
+    let y = Math.floor(position / 7);
+    it.style.gridColumnStart = "" + (x + 1);
+    it.style.gridColumnEnd = "" + (x + 2);
+    it.style.gridRowStart = "" + (y + 1);
+    it.style.gridRowEnd = "" + (y + 2);
+  }
+}
+
+// Function for picking up seed from input
+function get_seed() {
+  let seed_input = document.getElementById("shuffle_demo_seed");
+  let s = parseInt(seed_input.value);
+  if (s == undefined) {
+    s = 0;
+    seed_input.value = s;
+  }
+  return s;
+}
+
+// Function for updating seed input
+function set_seed(x) {
+  let seed_input = document.getElementById("shuffle_demo_seed");
+  seed_input.value = x;
+}
+
+// Do an initial shuffle
+do_shuffle(get_seed());
+
+// Set up shuffle button to use current seed:
+let shuffle_button = document.getElementById("shuffle_demo_shuffle")
+shuffle_button.addEventListener("click", function () {
+  do_shuffle(get_seed());
+});
+
+// Set up next button to increment and shuffle:
+let next_button = document.getElementById("shuffle_demo_next")
+next_button.addEventListener("click", function () {
+  let seed = get_seed();
+  seed += 1;
+  set_seed(seed);
+  do_shuffle(seed);
+});
+```
+</details>
+
+<style>
+#shuffle_demo {
+  display: grid;
+  width: 14em;
+  height: 8em;
+  width: calc(14em*0.75);
+  height: calc(8em*0.75);
+  margin: auto;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr 1fr;
+  align-items: center;
+  justify-items: center;
+}
+
+#shuffle_demo_controls {
+  text-align: center;
+}
+
+</style>
+<script type="text/javascript">
+// Grab the div that we want to work with
+let div = document.getElementById("shuffle_demo")
+
+// Create 26 divs each containing a single capital letter:
+let items = [];
+let letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+for (let i in letters) {
+  let item = document.createElement("div")
+  item.innerText = letters[i];
+  items.push(item);
+}
+
+// Add our divs to the grid in order:
+for (let i in items) {
+  div.appendChild(items[i]);
+}
+
+// Function for setting the CSS grid-location properties of an item via
+// anarchy.
+function do_shuffle(seed) {
+  for (let i in items) {
+    let it = items[i];
+    // Use anarchy to get a shuffled index for just this item:
+    let position = anarchy.cohort_shuffle(i, items.length, seed);
+    //let y = position % 4;
+    //let x = Math.floor(position / 4);
+    let x = position % 7;
+    let y = Math.floor(position / 7);
+    it.style.gridColumnStart = "" + (x + 1);
+    it.style.gridColumnEnd = "" + (x + 2);
+    it.style.gridRowStart = "" + (y + 1);
+    it.style.gridRowEnd = "" + (y + 2);
+  }
+}
+
+// Function for picking up seed from input
+function get_seed() {
+  let seed_input = document.getElementById("shuffle_demo_seed");
+  let s = parseInt(seed_input.value);
+  if (s == undefined) {
+    s = 0;
+    seed_input.value = s;
+  }
+  return s;
+}
+
+// Function for updating seed input
+function set_seed(x) {
+  let seed_input = document.getElementById("shuffle_demo_seed");
+  seed_input.value = x;
+}
+
+// Do an initial shuffle
+do_shuffle(get_seed());
+
+// Set up shuffle button to use current seed:
+let shuffle_button = document.getElementById("shuffle_demo_shuffle")
+shuffle_button.addEventListener("click", function () {
+  do_shuffle(get_seed());
+});
+
+// Set up next button to increment and shuffle:
+let next_button = document.getElementById("shuffle_demo_next")
+next_button.addEventListener("click", function () {
+  let seed = get_seed();
+  seed += 1;
+  set_seed(seed);
+  do_shuffle(seed);
+});
+
+</script>
+
+## Scramble an Enumerable Space
+
+In some cases it's easy to write an algorithm that generates a vast (but known) number of interesting artifacts, but the algorithm generates them in an ordered way so that locally they look quite similar. A standard augmentation is to just pick a random number from the potential space and use that to determine which item to generate, but those independent random numbers can in theory lead to repeats, and in practice this modification means that the algorithm which generates interesting artifacts in a more interesting order is no longer also an algorithm that will exhaustively enumerate the underlying space. Using `anarchy`'s shuffling mechanisms, we can incrementally pick numbers within a large possibility space (well, up to $2^{64}$ at least; that limitation is something to work on).
+
+Here's an example of a very simple enumerable space: We draw a line and then branch it into two, recursively in three layers to draw a tree. When the line splits, we make four binary decisions: we use either PI/6 or PI/4 for the angle of each new branch, and either 0.6 or 0.7 for the scale of each branches relative to the original line. Given four binary decisions for each subtree, with 3 layers we have 7 subtrees that aren't terminal and so we require 28 bits to make all of the decisions, so there are $2^{28}$ trees in the space.
+
+Here's a canvas showing the first four items in the space. Note that we can see
+an obvious progression between the adjacent trees, which would be noticeable to
+a player: the first tree uses the smaller size and angle for both branches, the
+next tree uses a larger size for the left branch, then the next tree has a
+larger right branch, and the last tree has the larger size for both branches.
+
+<canvas width=650 height=300 id="enumeration_demo">
+</canvas>
+
+Here's the code that draws the trees:
+
+<details>
+<summary>Tree Enumeration Code</summary>
+```js
+// Draws a line between the given pair of coordinates on the given canvas
+function draw_line(canvas, fr, to) {
+  ctx = canvas.getContext("2d");
+  ctx.beginPath();
+  ctx.moveTo(fr[0], fr[1]);
+  ctx.lineTo(to[0], to[1]);
+  ctx.stroke();
+}
+
+// Draws a tree on a canvas recursively
+function draw_tree(canvas, root, size, seed, which_branch, angle) {
+  // Define any unspecified arguments
+  if (which_branch == undefined) { which_branch = 0; }
+  if (size == undefined) { size = 100; }
+  if (angle == undefined) { angle = 3*Math.PI/2; }
+  if (root == undefined) { root = [250, 250]; }
+
+  let end = [
+    size * Math.cos(angle) + root[0],
+    size * Math.sin(angle) + root[1]
+  ];
+  draw_line(canvas, root, end);
+
+  let my_seed = seed >>> (which_branch * 4);
+
+  // Three decisions:
+  let d1 = my_seed & 1;
+  let d2 = my_seed & 2;
+  let d3 = my_seed & 4;
+  let d4 = my_seed & 8;
+
+  let sub_size_a = 0.6;
+  if (d1) { sub_size_a = 0.7; }
+  let sub_size_b = 0.6;
+  if (d2) { sub_size_b = 0.7; }
+  let angle_a = Math.PI/6;
+  if (d3) { angle_a = Math.PI/4; }
+  let angle_b = Math.PI/6;
+  if (d4) { angle_b = Math.PI/4; }
+
+  // Recursive calls if we're in the body of the tree:
+  if (which_branch < 16) {
+    draw_tree(
+      canvas,
+      end,
+      sub_size_a * size,
+      seed,
+      (which_branch * 2) + 1,
+      angle + angle_a
+    );
+    draw_tree(
+      canvas,
+      end,
+      sub_size_b * size,
+      seed,
+      (which_branch * 2) + 1,
+      angle - angle_b
+    );
+  }
+}
+
+// Grab the canvas and draw the trees corresponding to the first four seeds:
+let canvas = document.getElementById("enumeration_demo");
+draw_tree(canvas, [100, 200], 50, 0);
+draw_tree(canvas, [250, 200], 50, 1);
+draw_tree(canvas, [400, 200], 50, 2);
+draw_tree(canvas, [550, 200], 50, 3);
+```
+</details>
+
+<script type="text/javascript">
+// Draws a line between the given pair of coordinates on the given canvas
+function draw_line(canvas, fr, to) {
+  ctx = canvas.getContext("2d");
+  ctx.beginPath();
+  ctx.moveTo(fr[0], fr[1]);
+  ctx.lineTo(to[0], to[1]);
+  ctx.stroke();
+}
+
+// Draws a tree on a canvas recursively
+function draw_tree(canvas, root, size, seed, which_branch, angle) {
+  // Define any unspecified arguments
+  if (which_branch == undefined) { which_branch = 0; }
+  if (size == undefined) { size = 100; }
+  if (angle == undefined) { angle = 3*Math.PI/2; }
+  if (root == undefined) { root = [250, 250]; }
+
+  let end = [
+    size * Math.cos(angle) + root[0],
+    size * Math.sin(angle) + root[1]
+  ];
+  draw_line(canvas, root, end);
+
+  let my_seed = seed >>> (which_branch * 4);
+
+  // Three decisions:
+  let d1 = my_seed & 1;
+  let d2 = my_seed & 2;
+  let d3 = my_seed & 4;
+  let d4 = my_seed & 8;
+
+  let sub_size_a = 0.6;
+  if (d1) { sub_size_a = 0.7; }
+  let sub_size_b = 0.6;
+  if (d2) { sub_size_b = 0.7; }
+  let angle_a = Math.PI/6;
+  if (d3) { angle_a = Math.PI/4; }
+  let angle_b = Math.PI/6;
+  if (d4) { angle_b = Math.PI/4; }
+
+  // Recursive calls if we're in the body of the tree:
+  if (which_branch < 16) {
+    draw_tree(
+      canvas,
+      end,
+      sub_size_a * size,
+      seed,
+      (which_branch * 2) + 1,
+      angle + angle_a
+    );
+    draw_tree(
+      canvas,
+      end,
+      sub_size_b * size,
+      seed,
+      (which_branch * 2) + 1,
+      angle - angle_b
+    );
+  }
+}
+
+// Grab the canvas and draw the trees corresponding to the first four seeds:
+let canvas = document.getElementById("enumeration_demo");
+draw_tree(canvas, [100, 200], 50, 0);
+draw_tree(canvas, [250, 200], 50, 1);
+draw_tree(canvas, [400, 200], 50, 2);
+draw_tree(canvas, [550, 200], 50, 3);
+</script>
+
+This canvas shows four trees which were seeded using shuffled numbers. In this
+setup, the trees are still being enumerated, and the enumeration will not
+repeat until it completes, but we're moving through the seeds in a
+pseudo-random order, and there's no longer an obvious relationship between
+adjacent trees.
+
+<canvas width=650 height=300 id="shuffled_enumeration_demo">
+</canvas>
+
+Here's the code for the shuffled trees:
+
+<details>
+<summary>Code Using Shuffling</summary>
+```js
+// Grab the canvas and draw the trees corresponding to the first four seeds,
+// but shuffled:
+let s_canvas = document.getElementById("shuffled_enumeration_demo");
+let N = 1 << 28;
+let seed = 129837123;
+draw_tree(s_canvas, [100, 200], 50, anarchy.cohort_shuffle(0, N, seed));
+draw_tree(s_canvas, [250, 200], 50, anarchy.cohort_shuffle(1, N, seed));
+draw_tree(s_canvas, [400, 200], 50, anarchy.cohort_shuffle(2, N, seed));
+draw_tree(s_canvas, [550, 200], 50, anarchy.cohort_shuffle(3, N, seed));
+```
+</details>
+
+<script type="text/javascript">
+// Grab the canvas and draw the trees corresponding to the first four seeds,
+// but shuffled:
+let s_canvas = document.getElementById("shuffled_enumeration_demo");
+let N = 1 << 28;
+let seed = 129837123;
+draw_tree(s_canvas, [100, 200], 50, anarchy.cohort_shuffle(0, N, seed));
+draw_tree(s_canvas, [250, 200], 50, anarchy.cohort_shuffle(1, N, seed));
+draw_tree(s_canvas, [400, 200], 50, anarchy.cohort_shuffle(2, N, seed));
+draw_tree(s_canvas, [550, 200], 50, anarchy.cohort_shuffle(3, N, seed));
+</script>
+
+Note that the $2^64$ limit on the space being scrambled here (and it's only
+$2^32$ in JavaScript!). That's a huge issue for this particular application,
+and it would be nice if someone found a clever way around this.
+
+The canvas below shows unshuffled trees on the top row and shuffled ones on the bottom. You can click the buttons to scroll through the space of trees (the end of the space is at 268435452).
+
+<input type="button" value="<" id="enumeration_demo_previous">
+<input type="text" value="0" id="enumeration_demo_here">
+<input type="button" value=">" id="enumeration_demo_next">
+
+<canvas width=650 height=600 id="interactive_enumeration_demo">
+</canvas>
+
+<script type="text/javascript">
+let pr = document.getElementById("enumeration_demo_previous");
+let hr = document.getElementById("enumeration_demo_here");
+let nx = document.getElementById("enumeration_demo_next");
+
+function redraw(n) {
+  if (n == undefined) { n = 0; }
+  let canvas = document.getElementById("interactive_enumeration_demo");
+  canvas.getContext("2d").clearRect(0, 0, 650, 600);
+  let N = 1 << 28;
+  let seed = 129837123;
+  draw_tree(canvas, [100, 200], 50, n + 0);
+  draw_tree(canvas, [250, 200], 50, n + 1);
+  draw_tree(canvas, [400, 200], 50, n + 2);
+  draw_tree(canvas, [550, 200], 50, n + 3);
+
+  draw_tree(canvas, [100, 500], 50, anarchy.cohort_shuffle(n + 0, N, seed));
+  draw_tree(canvas, [250, 500], 50, anarchy.cohort_shuffle(n + 1, N, seed));
+  draw_tree(canvas, [400, 500], 50, anarchy.cohort_shuffle(n + 2, N, seed));
+  draw_tree(canvas, [550, 500], 50, anarchy.cohort_shuffle(n + 3, N, seed));
+}
+
+let here = 0;
+
+function cycle_prev() {
+  here = parseInt(hr.value);
+  here -= 1;
+  if (here <= 0) {
+    here = 0;
+    pr.disabled = true;
+  } else {
+    pr.disabled = false;
+  }
+  nx.disabled = false;
+  hr.value = here;
+  redraw(here);
+}
+
+function cycle_next() {
+  here = parseInt(hr.value);
+  here += 1;
+  if (here >= (1 << 28) - 4) {
+    here = (1 << 28) - 4;
+    nx.disabled = true;
+  } else {
+    nx.disabled = false;
+  }
+  pr.disabled = false;
+  hr.value = here;
+  redraw(here);
+}
+
+pr.addEventListener("click", cycle_prev);
+nx.addEventListener("click", cycle_next);
+hr.addEventListener("blur", function () { redraw(parseInt(hr.value)) });
+
+redraw(0);
+hr.value = 0;
+pr.disabled = true;
+</script>
+
+### Another Enumerable Space
+
+Here's another example of an enumerable space: a grammar-based space of
+generated poems. The code for the generator uses bits from a seed to make each
+decision it comes across, and we're cheating because our grammar is incredibly
+simple (it has no recursion nor even any nodes that will ever be expanded more
+than once; it also only needs 30 bits of entropy, including wasted half bits).
+
+The cheating is nice because it allows me to easily figure out which bits will
+be used to make which decision, and therefore be able to filter the grammar to
+produce only expansions where a particular key expands in a particular way
+(I've done the math to figure out how to fix the "plums" result in this case).
+That math would be... more difficult, in a non-trivial grammar.
+
+The code for the grammar including the filtering is below. To find only poems
+matching a filter, you use the `expand_limited_seed` function and give it a
+seed that's smaller than `lim_gr_full`, which is the number of possible seed
+bit configurations excluding the choice about plums. You also tell it which
+value you want the plums key to expand to, and it then gives you back a seed
+that's in the full range (up to `gr_full`) with the desired bits for the plums
+decision baked in.
+
+<details>
+<summary>Grammar Code</summary>
+```js
+let grammar = {
+  "root": "{title}<br/><br/>{graf1}<br/>{graf2}<br/>{graf3}",
+  "title": [ "This Is Just To Say", "Re: Your Inquiry" ],
+  "graf1": [
+    "I have {eaten}<br/>the {plums}<br/>that were in<br/>the {container}<br/>",
+    "Although you<br/>did not mention<br/>the {plums}<br/>that you had {collected}<br/>"
+  ],
+  "graf2": [
+    "and which<br/>you were probably<br/>{saving}<br/>for {breakfast}<br/>"
+  ],
+  "graf3": [
+    "{forgive} me<br/>they were {delicious}<br/>so {sweet}<br/> and so {cold}",
+    "considering your<br/>{outrageous} behavior<br/>I cannot<br/>{regret} my actions"
+  ],
+  "eaten": [ "eaten", "consumed", "eliminated", "transformed", "crushed" ],
+  "plums": [ "plums", "peaches", "apples", "larvae" ], // 6th and 7th bits?
+  "container": [ "icebox", "refridgerator", "paper bag", "kitchen", "underworld" ],
+  "saving": [ "saving", "hoarding", "eyeing", "considering" ],
+  "breakfast": [ "breakfast", "lunch", "dinner", "the ritual" ],
+  "forgive": [ "forgive", "pardon", "excuse" ],
+  "delicious": [ "delicious", "delectible", "tempting" ],
+  "sweet": [ "sweet", "juicy", "purple", "soft" ],
+  "cold": [ "cold", "round", "smooth" ],
+  "collected": [ "acquired", "collected", "obtained" ],
+  "outrageous": [ "outrageous", "past", "current", "uncouth", "magnanimous"],
+  "regret": [ "regret", "excuse", "repudiate" ],
+}
+
+let gr_combinations = 1*2*2*1*2*5*4*5*4*4*3*3*4*3*3*5*3; // ~ 19 bits
+let gr_bits = 0+1+1+0+1+3+2+3+2+2+2+2+2+2+2+3+2; // bits actually used
+let gr_full = 1 << gr_bits; // full # of bits used
+let lim_gr_bits = gr_bits - 2; // minus the plums choice
+let lim_gr_full = 1 << lim_gr_bits; // full # of bits used while limited
+
+// Takes a seed in the range [0, lim_gr_full), which is the right number of
+// bits to specify every decision except the 2-bit decision for the grammar key
+// "plums", and expands it into the range [0, gr_full) so that it includes the
+// bits necessary to specify the given value for the "plums" key. This is
+// complicated by the fact that the "plums" decision happens in a different
+// place depending on the decision for the expansion of graf1.
+function expand_limited_seed(ls, plums_value) {
+  let dbits;
+  if (plums_value == "plums") {
+    dbits = 0;
+  } else if (plums_value == "peaches") {
+    dbits = 1;
+  } else if (plums_value == "apples") {
+    dbits = 2;
+  } else if (plums_value == "larvae") {
+    dbits = 3;
+  } else {
+    console.warn("Invalid plums_value: '" + plums_value + "'");
+    dbits = 0;
+  }
+  if (ls & (1 << 1)) { // second bit is the graf1 decision
+    // In this case the plums decision is the 3rd and 4th bits
+    let before = ls & 3;
+    let after = ls & ((~3) >>> 0);
+    let result = before | (dbits << 2) | (after << 2)
+    return result;
+  } else {
+    // In this case the plums decision is the 6th and 7th bits, because the
+    // eaten decision needs 3 bits and comes before the plums decision.
+    let mask = ((1 << 5) - 1);
+    let before = ls & mask;
+    let after = ls & ((~mask) >>> 0);
+    let result = before | (dbits << 5) | (after << 2);
+    return result;
+  }
+}
+
+// Generates a poem according to a particular seed
+function generate_poem(grammar, seed) {
+  // start at the root (which is not a list; just a string)
+  let sofar = grammar["root"];
+  let bits_used = 0; // track bits used to generate a warning if we need to
+
+  // loop until there aren't any expansions
+  while (sofar.indexOf("{") >= 0) {
+
+    // Look for the first expansion (denoted by curly braces) and figure out
+    // the before, after, and key:
+    let start = sofar.indexOf("{");
+    let end = sofar.indexOf("}");
+    let before = sofar.substr(0, start);
+    let after = sofar.substr(end+1);
+    let key = sofar.substr(start+1, end - start - 1);
+
+    if (grammar.hasOwnProperty(key)) {
+      // See what our options are and pick one, using up some bits of the seed.
+      let options = grammar[key];
+      let bits = Math.ceil(Math.log2(options.length));
+      let sel = seed % options.length;
+      let selected = options[sel];
+      seed = seed >> bits; // throw away used-up bits (wastes extra half bits)
+      bits_used += bits;
+      sofar = before + selected + after; // Reassemble a new working result
+    } else {
+      // For missing keys, use the key as the value and issue a warning
+      sofar = before + key + after;
+      console.warn("Missing grammar key: '" + key + "'");
+    }
+    // Double-check that we haven't used too many bits
+    if (bits_used > 32) {
+      console.warn("Used more than 32 bits: " + bits_used);
+    }
+  }
+  return sofar;
+}
+```
+</details>
+
+In this code block, you can see the code for managing the UI elements and
+actually calling the generator. We use `anarchy`'s shuffling capabilities for
+the bottom row, so that subsequent poems are quite distinct, in contrast with
+the top row even when filtering is involved.
+
+<details>
+<summary>UI and Anarchy Code</summary>
+```js
+// Get handles for each of our interface elements:
+let p_pr = document.getElementById("poetry_demo_previous");
+let p_hr = document.getElementById("poetry_demo_here");
+let p_nx = document.getElementById("poetry_demo_next");
+let p_fl = document.getElementById("poetry_demo_filter");
+let p_sd = document.getElementById("poetry_demo_seed");
+let p_sp = document.getElementById("poetry_demo_seed_prev");
+let p_sn = document.getElementById("poetry_demo_seed_next");
+
+let p_bucket = document.getElementById("poetry_demo");
+
+// This function does the heavy lifting: it looks at interface elements to
+// determine the seed and where we are in the space, and overwrites nonsensical
+// values, then it calls generate_poem to create the required poems, puts them
+// in divs, labels them with their seeds, and uses them to replace the contents
+// of the demo div.
+function display_poems() {
+  // Grab parameters (seed and position) from the UI and overwrite bad values:
+  let p_seed = parseInt(p_sd.value) >>> 0;
+  if (p_seed == undefined || isNaN(p_seed)) {
+    p_seed = 0;
+    p_sd.value = p_seed;
+  }
+  let first = parseInt(p_hr.value);
+  if (first == undefined || first <= 0) {
+    first = 0;
+    p_pr.disabled = true;
+  } else {
+    p_pr.disabled = false;
+  }
+  if (first >= gr_combinations - 4) {
+    first = gr_combinations - 4;
+    p_nx.disabled = true;
+  } else {
+    p_nx.disabled = false;
+  }
+  p_hr.value = first;
+
+  // Figure out seeds for our non-shuffled poems:
+  let s1, s2, s3, s4;
+  if (p_fl.value == "none") {
+    // If we're not filtering, we just base it on the position
+    s1 = first;
+    s2 = first + 1;
+    s3 = first + 2;
+    s4 = first + 3;
+  } else {
+    // Otherwise, we use the expand_limited_seed to figure out our seeds, still
+    // based on position.
+    let filter = p_fl.value;
+    s1 = expand_limited_seed(first, filter);
+    s2 = expand_limited_seed(first + 1, filter);
+    s3 = expand_limited_seed(first + 2, filter);
+    s4 = expand_limited_seed(first + 3, filter);
+  }
+
+  // Now we can generate our non-shuffled poems:
+  let p1 = generate_poem(grammar, s1);
+  let p2 = generate_poem(grammar, s2);
+  let p3 = generate_poem(grammar, s3);
+  let p4 = generate_poem(grammar, s4);
+
+  // Here we figure out the seeds for our shuffled poems. Same code as above,
+  // except we call anarchy.cohort_shuffle on the thing that would have been the
+  // seed.
+  let ss1, ss2, ss3, ss4;
+  if (p_fl.value == "none") {
+    ss1 = anarchy.cohort_shuffle(first, gr_full, p_seed);
+    ss2 = anarchy.cohort_shuffle(first + 1, gr_full, p_seed);
+    ss3 = anarchy.cohort_shuffle(first + 2, gr_full, p_seed);
+    ss4 = anarchy.cohort_shuffle(first + 3, gr_full, p_seed);
+  } else {
+    // Note that in this case, we need to know the size of the smaller
+    // possibility space, and we apply expand_limited_seed after shuffling. If
+    // we did it in the other order, we would have expanded seeds (a very
+    // special subset of all seeds) being shuffled among all seeds, and the
+    // filter would be broken.
+    let filter = p_fl.value;
+    let base_s1 = anarchy.cohort_shuffle(first, lim_gr_full, p_seed);
+    ss1 = expand_limited_seed(base_s1, filter);
+    let base_s2 = anarchy.cohort_shuffle(first + 1, lim_gr_full, p_seed);
+    ss2 = expand_limited_seed(base_s2, filter);
+    let base_s3 = anarchy.cohort_shuffle(first + 2, lim_gr_full, p_seed);
+    ss3 = expand_limited_seed(base_s3, filter);
+    let base_s4 = anarchy.cohort_shuffle(first + 3, lim_gr_full, p_seed);
+    ss4 = expand_limited_seed(base_s4, filter);
+  }
+
+  // Here we generate the shuffled poems
+  let sp1 = generate_poem(grammar, ss1);
+  let sp2 = generate_poem(grammar, ss2);
+  let sp3 = generate_poem(grammar, ss3);
+  let sp4 = generate_poem(grammar, ss4);
+
+  // Here we get rid of the old content of the results div
+  p_bucket.innerHTML = "";
+
+  // Now we create divs for each poem, put in the text, and give them classes
+  // so that we can assign them to the top or bottom row with CSS (that style
+  // code isn't shown, but you can look at the page source to see it; it's in a
+  // style block nearby.).
+  let d1 = document.createElement("div");
+  d1.innerHTML = p1;
+  d1.classList.add("default_poem")
+  let d2 = document.createElement("div");
+  d2.innerHTML = p2;
+  d2.classList.add("default_poem")
+  let d3 = document.createElement("div");
+  d3.innerHTML = p3;
+  d3.classList.add("default_poem")
+  let d4 = document.createElement("div");
+  d4.innerHTML = p4;
+  d4.classList.add("default_poem")
+  p_bucket.appendChild(d1);
+  p_bucket.appendChild(d2);
+  p_bucket.appendChild(d3);
+  p_bucket.appendChild(d4);
+
+  // Here are the divs for the shuffled poems:
+  let sd1 = document.createElement("div");
+  sd1.innerHTML = sp1;
+  sd1.classList.add("shuffled_poem")
+  let sd2 = document.createElement("div");
+  sd2.innerHTML = sp2;
+  sd2.classList.add("shuffled_poem")
+  let sd3 = document.createElement("div");
+  sd3.innerHTML = sp3;
+  sd3.classList.add("shuffled_poem")
+  let sd4 = document.createElement("div");
+  sd4.innerHTML = sp4;
+  sd4.classList.add("shuffled_poem")
+  p_bucket.appendChild(sd1);
+  p_bucket.appendChild(sd2);
+  p_bucket.appendChild(sd3);
+  p_bucket.appendChild(sd4);
+
+
+  // These are the labels so that you can see which seed created which poem:
+  let l1 = document.createElement("div");
+  l1.innerText = '#' + s1;
+  d1.insertBefore(l1, d1.firstChild);
+  let l2 = document.createElement("div");
+  l2.innerText = '#' + s2;
+  d2.insertBefore(l2, d2.firstChild);
+  let l3 = document.createElement("div");
+  l3.innerText = '#' + s3;
+  d3.insertBefore(l3, d3.firstChild);
+  let l4 = document.createElement("div");
+  l4.innerText = '#' + s4;
+  d4.insertBefore(l4, d4.firstChild);
+
+  // These are the labels for the shuffled poems:
+  let sl1 = document.createElement("div");
+  sl1.innerText = '#' + ss1;
+  sd1.insertBefore(sl1, sd1.firstChild);
+  let sl2 = document.createElement("div");
+  sl2.innerText = '#' + ss2;
+  sd2.insertBefore(sl2, sd2.firstChild);
+  let sl3 = document.createElement("div");
+  sl3.innerText = '#' + ss3;
+  sd3.insertBefore(sl3, sd3.firstChild);
+  let sl4 = document.createElement("div");
+  sl4.innerText = '#' + ss4;
+  sd4.insertBefore(sl4, sd4.firstChild);
+}
+
+// Now we call our display function once to initialize things
+display_poems();
+
+// These functions respond to the buttons for incrementing/decrementing the
+// location and seed values. They all call display_poems to handle out-of-range
+// values and the like.
+function p_cycle_prev() {
+  p_hr.value = parseInt(p_hr.value) - 1;
+  display_poems();
+}
+
+function p_cycle_next() {
+  p_hr.value = parseInt(p_hr.value) + 1;
+  display_poems();
+}
+
+function p_cycle_pseed() {
+  p_sd.value = parseInt(p_sd.value) - 1;
+  display_poems();
+}
+
+function p_cycle_nseed() {
+  p_sd.value = parseInt(p_sd.value) + 1;
+  display_poems();
+}
+
+// Finally we just have to wire up our events so that the UI works:
+p_pr.addEventListener("click", p_cycle_prev);
+p_nx.addEventListener("click", p_cycle_next);
+p_hr.addEventListener("blur", display_poems);
+p_fl.addEventListener("change", display_poems);
+p_sd.addEventListener("blur", display_poems);
+p_sp.addEventListener("click", p_cycle_pseed);
+p_sn.addEventListener("click", p_cycle_nseed);
+```
+</details>
+
+Here are the actual results. The top row shows un-shuffled poems, and the
+bottom row shows shuffled poems from the same space. Note that with traditional
+shuffling where results are stored in an array, we'd need to store an array of
+length `gr_full` ($2^{30}$ = 1073741824, which is about 1 GB, or 4 GB
+considering each entry would likely need 4 bytes). Additionally, we'd need at
+least one more array of length `lim_gr_full` ($2^{28} = 268435456; 1 GB) if we
+wanted to also handle the filter we've implemented, and additional arrays for
+other filters. Anarchy is happy to give us virtual shuffles without using any
+space, and only computing the parts that are actually requested, and it can
+also give us a new shuffle on demand if we just change the seed value, without
+any extra overhead of re-shuffling things.
+
+<input type="button" value="<" id="poetry_demo_previous">
+<input type="text" value="0" id="poetry_demo_here">
+<input type="button" value=">" id="poetry_demo_next">
+filter for:
+<select id="poetry_demo_filter">
+  <option value="none" selected>&lt;no filter&gt;</option>
+  <option value="plums">plums</option>
+  <option value="peaches">peaches</option>
+  <option value="apples">apples</option>
+  <option value="larvae">???</option>
+</select>
+seed:
+<input type="text" value="0" id="poetry_demo_seed">
+<input type="button" value="-" id="poetry_demo_seed_prev">
+<input type="button" value="+" id="poetry_demo_seed_next">
+
+<div id="poetry_demo">
+</div>
+
+<style>
+#poetry_demo {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-row-gap: 24pt;
+  grid-column-gap: 12pt;
+  font-size: smaller;
+  font-family: serif;
+}
+
+.default_poem {
+  grid-row: 1 / 2;
+}
+
+.shuffled_poem {
+  grid-row: 2 / 3;
+}
+
+.default_poem div, .shuffled_poem div {
+  /* The labels */
+  margin-bottom: 6pt;
+  background: #eee;
+  border-radius: 4pt;
+  padding: 4pt;
+}
+</style>
+
+<script type="text/javascript">
+let grammar = {
+  "root": "{title}<br/><br/>{graf1}<br/>{graf2}<br/>{graf3}",
+  "title": [ "This Is Just To Say", "Re: Your Inquiry" ],
+  "graf1": [
+    "I have {eaten}<br/>the {plums}<br/>that were in<br/>the {container}<br/>",
+    "Although you<br/>did not mention<br/>the {plums}<br/>that you had {collected}<br/>"
+  ],
+  "graf2": [
+    "and which<br/>you were probably<br/>{saving}<br/>for {breakfast}<br/>"
+  ],
+  "graf3": [
+    "{forgive} me<br/>they were {delicious}<br/>so {sweet}<br/> and so {cold}",
+    "considering your<br/>{outrageous} behavior<br/>I cannot<br/>{regret} my actions"
+  ],
+  "eaten": [ "eaten", "consumed", "eliminated", "transformed", "crushed" ],
+  "plums": [ "plums", "peaches", "apples", "larvae" ], // 6th and 7th bits?
+  "container": [ "icebox", "refridgerator", "paper bag", "kitchen", "underworld" ],
+  "saving": [ "saving", "hoarding", "eyeing", "considering" ],
+  "breakfast": [ "breakfast", "lunch", "dinner", "the ritual" ],
+  "forgive": [ "forgive", "pardon", "excuse" ],
+  "delicious": [ "delicious", "delectible", "tempting" ],
+  "sweet": [ "sweet", "juicy", "purple", "soft" ],
+  "cold": [ "cold", "round", "smooth" ],
+  "collected": [ "acquired", "collected", "obtained" ],
+  "outrageous": [ "outrageous", "past", "current", "uncouth", "magnanimous"],
+  "regret": [ "regret", "excuse", "repudiate" ],
+}
+
+let gr_combinations = 1*2*2*1*2*5*4*5*4*4*3*3*4*3*3*5*3; // ~ 19 bits
+let gr_bits = 0+1+1+0+1+3+2+3+2+2+2+2+2+2+2+3+2; // bits actually used
+let gr_full = 1 << gr_bits; // full # of bits used
+let lim_gr_bits = gr_bits - 2; // minus the plums choice
+let lim_gr_full = 1 << lim_gr_bits; // full # of bits used while limited
+
+// Takes a seed in the range [0, lim_gr_full), which is the right number of
+// bits to specify every decision except the 2-bit decision for the grammar key
+// "plums", and expands it into the range [0, gr_full) so that it includes the
+// bits necessary to specify the given value for the "plums" key. This is
+// complicated by the fact that the "plums" decision happens in a different
+// place depending on the decision for the expansion of graf1.
+function expand_limited_seed(ls, plums_value) {
+  let dbits;
+  if (plums_value == "plums") {
+    dbits = 0;
+  } else if (plums_value == "peaches") {
+    dbits = 1;
+  } else if (plums_value == "apples") {
+    dbits = 2;
+  } else if (plums_value == "larvae") {
+    dbits = 3;
+  } else {
+    console.warn("Invalid plums_value: '" + plums_value + "'");
+    dbits = 0;
+  }
+  if (ls & (1 << 1)) { // second bit is the graf1 decision
+    // In this case the plums decision is the 3rd and 4th bits
+    let before = ls & 3;
+    let after = ls & ((~3) >>> 0);
+    let result = before | (dbits << 2) | (after << 2)
+    return result;
+  } else {
+    // In this case the plums decision is the 6th and 7th bits, because the
+    // eaten decision needs 3 bits and comes before the plums decision.
+    let mask = ((1 << 5) - 1);
+    let before = ls & mask;
+    let after = ls & ((~mask) >>> 0);
+    let result = before | (dbits << 5) | (after << 2);
+    return result;
+  }
+}
+
+// Generates a poem according to a particular seed
+function generate_poem(grammar, seed) {
+  // start at the root (which is not a list; just a string)
+  let sofar = grammar["root"];
+  let bits_used = 0; // track bits used to generate a warning if we need to
+
+  // loop until there aren't any expansions
+  while (sofar.indexOf("{") >= 0) {
+
+    // Look for the first expansion (denoted by curly braces) and figure out
+    // the before, after, and key:
+    let start = sofar.indexOf("{");
+    let end = sofar.indexOf("}");
+    let before = sofar.substr(0, start);
+    let after = sofar.substr(end+1);
+    let key = sofar.substr(start+1, end - start - 1);
+
+    if (grammar.hasOwnProperty(key)) {
+      // See what our options are and pick one, using up some bits of the seed.
+      let options = grammar[key];
+      let bits = Math.ceil(Math.log2(options.length));
+      let sel = seed % options.length;
+      let selected = options[sel];
+      seed = seed >> bits; // throw away used-up bits (wastes extra half bits)
+      bits_used += bits;
+      sofar = before + selected + after; // Reassemble a new working result
+    } else {
+      // For missing keys, use the key as the value and issue a warning
+      sofar = before + key + after;
+      console.warn("Missing grammar key: '" + key + "'");
+    }
+    // Double-check that we haven't used too many bits
+    if (bits_used > 32) {
+      console.warn("Used more than 32 bits: " + bits_used);
+    }
+  }
+  return sofar;
+}
+</script>
+
+<script type="text/javascript">
+// Get handles for each of our interface elements:
+let p_pr = document.getElementById("poetry_demo_previous");
+let p_hr = document.getElementById("poetry_demo_here");
+let p_nx = document.getElementById("poetry_demo_next");
+let p_fl = document.getElementById("poetry_demo_filter");
+let p_sd = document.getElementById("poetry_demo_seed");
+let p_sp = document.getElementById("poetry_demo_seed_prev");
+let p_sn = document.getElementById("poetry_demo_seed_next");
+
+let p_bucket = document.getElementById("poetry_demo");
+
+// This function does the heavy lifting: it looks at interface elements to
+// determine the seed and where we are in the space, and overwrites nonsensical
+// values, then it calls generate_poem to create the required poems, puts them
+// in divs, labels them with their seeds, and uses them to replace the contents
+// of the demo div.
+function display_poems() {
+  // Grab parameters (seed and position) from the UI and overwrite bad values:
+  let p_seed = parseInt(p_sd.value) >>> 0;
+  if (p_seed == undefined || isNaN(p_seed)) {
+    p_seed = 0;
+    p_sd.value = p_seed;
+  }
+  let first = parseInt(p_hr.value);
+  if (first == undefined || first <= 0) {
+    first = 0;
+    p_pr.disabled = true;
+  } else {
+    p_pr.disabled = false;
+  }
+  if (first >= gr_combinations - 4) {
+    first = gr_combinations - 4;
+    p_nx.disabled = true;
+  } else {
+    p_nx.disabled = false;
+  }
+  p_hr.value = first;
+
+  // Figure out seeds for our non-shuffled poems:
+  let s1, s2, s3, s4;
+  if (p_fl.value == "none") {
+    // If we're not filtering, we just base it on the position
+    s1 = first;
+    s2 = first + 1;
+    s3 = first + 2;
+    s4 = first + 3;
+  } else {
+    // Otherwise, we use the expand_limited_seed to figure out our seeds, still
+    // based on position.
+    let filter = p_fl.value;
+    s1 = expand_limited_seed(first, filter);
+    s2 = expand_limited_seed(first + 1, filter);
+    s3 = expand_limited_seed(first + 2, filter);
+    s4 = expand_limited_seed(first + 3, filter);
+  }
+
+  // Now we can generate our non-shuffled poems:
+  let p1 = generate_poem(grammar, s1);
+  let p2 = generate_poem(grammar, s2);
+  let p3 = generate_poem(grammar, s3);
+  let p4 = generate_poem(grammar, s4);
+
+  // Here we figure out the seeds for our shuffled poems. Same code as above,
+  // except we call anarchy.cohort_shuffle on the thing that would have been the
+  // seed.
+  let ss1, ss2, ss3, ss4;
+  if (p_fl.value == "none") {
+    ss1 = anarchy.cohort_shuffle(first, gr_full, p_seed);
+    ss2 = anarchy.cohort_shuffle(first + 1, gr_full, p_seed);
+    ss3 = anarchy.cohort_shuffle(first + 2, gr_full, p_seed);
+    ss4 = anarchy.cohort_shuffle(first + 3, gr_full, p_seed);
+  } else {
+    // Note that in this case, we need to know the size of the smaller
+    // possibility space, and we apply expand_limited_seed after shuffling. If
+    // we did it in the other order, we would have expanded seeds (a very
+    // special subset of all seeds) being shuffled among all seeds, and the
+    // filter would be broken.
+    let filter = p_fl.value;
+    let base_s1 = anarchy.cohort_shuffle(first, lim_gr_full, p_seed);
+    ss1 = expand_limited_seed(base_s1, filter);
+    let base_s2 = anarchy.cohort_shuffle(first + 1, lim_gr_full, p_seed);
+    ss2 = expand_limited_seed(base_s2, filter);
+    let base_s3 = anarchy.cohort_shuffle(first + 2, lim_gr_full, p_seed);
+    ss3 = expand_limited_seed(base_s3, filter);
+    let base_s4 = anarchy.cohort_shuffle(first + 3, lim_gr_full, p_seed);
+    ss4 = expand_limited_seed(base_s4, filter);
+  }
+
+  // Here we generate the shuffled poems
+  let sp1 = generate_poem(grammar, ss1);
+  let sp2 = generate_poem(grammar, ss2);
+  let sp3 = generate_poem(grammar, ss3);
+  let sp4 = generate_poem(grammar, ss4);
+
+  // Here we get rid of the old content of the results div
+  p_bucket.innerHTML = "";
+
+  // Now we create divs for each poem, put in the text, and give them classes
+  // so that we can assign them to the top or bottom row with CSS (that style
+  // code isn't shown, but you can look at the page source to see it; it's in a
+  // style block nearby.).
+  let d1 = document.createElement("div");
+  d1.innerHTML = p1;
+  d1.classList.add("default_poem")
+  let d2 = document.createElement("div");
+  d2.innerHTML = p2;
+  d2.classList.add("default_poem")
+  let d3 = document.createElement("div");
+  d3.innerHTML = p3;
+  d3.classList.add("default_poem")
+  let d4 = document.createElement("div");
+  d4.innerHTML = p4;
+  d4.classList.add("default_poem")
+  p_bucket.appendChild(d1);
+  p_bucket.appendChild(d2);
+  p_bucket.appendChild(d3);
+  p_bucket.appendChild(d4);
+
+  // Here are the divs for the shuffled poems:
+  let sd1 = document.createElement("div");
+  sd1.innerHTML = sp1;
+  sd1.classList.add("shuffled_poem")
+  let sd2 = document.createElement("div");
+  sd2.innerHTML = sp2;
+  sd2.classList.add("shuffled_poem")
+  let sd3 = document.createElement("div");
+  sd3.innerHTML = sp3;
+  sd3.classList.add("shuffled_poem")
+  let sd4 = document.createElement("div");
+  sd4.innerHTML = sp4;
+  sd4.classList.add("shuffled_poem")
+  p_bucket.appendChild(sd1);
+  p_bucket.appendChild(sd2);
+  p_bucket.appendChild(sd3);
+  p_bucket.appendChild(sd4);
+
+
+  // These are the labels so that you can see which seed created which poem:
+  let l1 = document.createElement("div");
+  l1.innerText = '#' + s1;
+  d1.insertBefore(l1, d1.firstChild);
+  let l2 = document.createElement("div");
+  l2.innerText = '#' + s2;
+  d2.insertBefore(l2, d2.firstChild);
+  let l3 = document.createElement("div");
+  l3.innerText = '#' + s3;
+  d3.insertBefore(l3, d3.firstChild);
+  let l4 = document.createElement("div");
+  l4.innerText = '#' + s4;
+  d4.insertBefore(l4, d4.firstChild);
+
+  // These are the labels for the shuffled poems:
+  let sl1 = document.createElement("div");
+  sl1.innerText = '#' + ss1;
+  sd1.insertBefore(sl1, sd1.firstChild);
+  let sl2 = document.createElement("div");
+  sl2.innerText = '#' + ss2;
+  sd2.insertBefore(sl2, sd2.firstChild);
+  let sl3 = document.createElement("div");
+  sl3.innerText = '#' + ss3;
+  sd3.insertBefore(sl3, sd3.firstChild);
+  let sl4 = document.createElement("div");
+  sl4.innerText = '#' + ss4;
+  sd4.insertBefore(sl4, sd4.firstChild);
+}
+
+// Now we call our display function once to initialize things
+display_poems();
+
+// These functions respond to the buttons for incrementing/decrementing the
+// location and seed values. They all call display_poems to handle out-of-range
+// values and the like.
+function p_cycle_prev() {
+  p_hr.value = parseInt(p_hr.value) - 1;
+  display_poems();
+}
+
+function p_cycle_next() {
+  p_hr.value = parseInt(p_hr.value) + 1;
+  display_poems();
+}
+
+function p_cycle_pseed() {
+  p_sd.value = parseInt(p_sd.value) - 1;
+  display_poems();
+}
+
+function p_cycle_nseed() {
+  p_sd.value = parseInt(p_sd.value) + 1;
+  display_poems();
+}
+
+// Finally we just have to wire up our events so that the UI works:
+p_pr.addEventListener("click", p_cycle_prev);
+p_nx.addEventListener("click", p_cycle_next);
+p_hr.addEventListener("blur", display_poems);
+p_fl.addEventListener("change", display_poems);
+p_sd.addEventListener("blur", display_poems);
+p_sp.addEventListener("click", p_cycle_pseed);
+p_sn.addEventListener("click", p_cycle_nseed);
+</script>
+
+## More Examples?
+
+Have you used this library in an interesting way? Do you have an idea for a cool example? I'd be happy to link to gists or examples to help spread more ideas for using `anarchy`, or even incorporate more mini-demos here directly. You can open an issue on this repository at [the issues page](https://github.com/solsword/anarchy/issues) if you've got an idea or demo you'd like me to link to.
