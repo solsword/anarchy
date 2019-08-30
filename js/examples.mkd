@@ -1208,6 +1208,94 @@ p_sp.addEventListener("click", p_cycle_pseed);
 p_sn.addEventListener("click", p_cycle_nseed);
 </script>
 
+## A More Complicated Grammar
+
+Potion ingredients:
+
+<div id="complex_grammar_demo">
+</div>
+
+<script type=text/javascript>
+let grammar2 = {
+  "root": "{start}",
+  "start": [
+    "{ingredient}",
+    "{ingredient} and {ingredient}",
+    "{ingredient}, {ingredient} and {ingredient}",
+  ],
+  "ingredient": [
+    "{countable-adj-phrase} {countable-noun-phrase}",
+    "{uncountable-adj-phrase} {uncountable-noun-phrase}"
+  ],
+  "countable-noun-phrase": [
+    "{animal} {countable-object}",
+    "{countable-object} of {animal}",
+    "{countable-object}",
+    "{animal}",
+  ],
+  "uncountable-noun-phrase": [
+    "{animal} {uncountable-object}",
+    "{uncountable-object} of {animal}",
+    "{uncountable-object}"
+  ],
+  "animal": ["cassowary", "okapi", "anole", "bullfrog", "mackerel", "sea-hare"],
+  "countable-object": [ "eye", "feather", "foot" ],
+  "uncountable-object": [ "skin", "excretion", "blood", "bile" ],
+  "countable-adj-phrase": [
+    "{size} {color} {state}",
+    "{size} {color}",
+    "{size} {state}",
+  ],
+  "uncountable-adj-phrase": [
+    "{amount} {state} {color}",
+    "{amount} {color}",
+    "{amount} {state}",
+  ],
+  "amount": [ "lots of", "a small amount of", "just a bit of" ],
+  "size": [ "a large", "a small", "a pair of" ],
+  "color": [ "blue", "yellow", "red", "discolored", "brown", "translucent" ],
+  "state": [ "preserved", "fresh", "rotten", "fermented" ],
+}
+
+// Generates a concrete expansion of the given grammar, in such a way that
+// sequential seeds make similar choices during expansion.
+function generate_exact(grammar, seed) {
+  // start at the root (which is not a list; just a string)
+  let sofar = grammar["root"];
+  let rng = seed + 18923712;
+
+  // loop until there aren't any expansions
+  while (sofar.indexOf("{") >= 0) {
+
+    // Look for the first expansion (denoted by curly braces) and figure out
+    // the before, after, and key:
+    let start = sofar.indexOf("{");
+    let end = sofar.indexOf("}");
+    let before = sofar.substr(0, start);
+    let after = sofar.substr(end+1);
+    let key = sofar.substr(start+1, end - start - 1);
+
+    if (grammar.hasOwnProperty(key)) {
+      // See what our options are and pick one, using up some bits of the seed.
+      let options = grammar[key];
+      let sel = rng % options.length;
+      rng = anarchy.prng(rng, seed);
+      let selected = options[sel];
+      sofar = before + selected + after; // Reassemble a new working result
+    } else {
+      // For missing keys, use the key as the value and issue a warning
+      sofar = before + key + after;
+      console.warn("Missing grammar key: '" + key + "'");
+    }
+  }
+  return sofar;
+}
+
+let poem = generate_exact(grammar2, 0);
+let cgd = document.getElementById("complex_grammar_demo");
+cgd.innerText = poem;
+</script>
+
 ## More Examples?
 
 Have you used this library in an interesting way? Do you have an idea for a cool example? I'd be happy to link to gists or examples to help spread more ideas for using `anarchy`, or even incorporate more mini-demos here directly. You can open an issue on this repository at [the issues page](https://github.com/solsword/anarchy/issues) if you've got an idea or demo you'd like me to link to.
