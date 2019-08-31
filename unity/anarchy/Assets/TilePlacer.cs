@@ -16,8 +16,11 @@ public class TilePlacer : MonoBehaviour
   public ulong seed;
 
   // Start is called before the first frame update
-  void Start()
-  {
+  void Start() {
+    placeTiles();
+  }
+
+  void placeTiles() {
     Anarchy anarchy = GetComponent<Anarchy>();
     for (int x = 0; x < size.x; x += 1) {
       for (int y = 0; y < size.y; y += 1) {
@@ -47,8 +50,18 @@ public class TilePlacer : MonoBehaviour
   }
 
   // Update is called once per frame
-  void Update()
-  {
+  void Update() {
+    if (Input.GetButtonDown("Fire1")) {
+      seed += 1;
+      placeTiles();
+    } else if (Input.GetButtonDown("Fire2")) {
+      if (seed > 0) {
+        seed -= 1;
+        placeTiles();
+      } else {
+        seed = 0;
+      }
+    }
       
   }
 }

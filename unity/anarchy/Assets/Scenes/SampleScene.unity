@@ -258,6 +258,8 @@ GameObject:
   - component: {fileID: 1606492374}
   - component: {fileID: 1606492376}
   - component: {fileID: 1606492375}
+  - component: {fileID: 1606492377}
+  - component: {fileID: 1606492378}
   m_Layer: 0
   m_Name: Tilemap
   m_TagString: Untagged
@@ -335,14 +337,46 @@ Tilemap:
   m_Enabled: 1
   m_Tiles: {}
   m_AnimatedTiles: {}
-  m_TileAssetArray: []
-  m_TileSpriteArray: []
-  m_TileMatrixArray: []
-  m_TileColorArray: []
+  m_TileAssetArray:
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  m_TileSpriteArray:
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  - m_RefCount: 0
+    m_Data: {fileID: 0}
+  m_TileMatrixArray:
+  - m_RefCount: 0
+    m_Data:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+  m_TileColorArray:
+  - m_RefCount: 0
+    m_Data: {r: 1, g: 1, b: 1, a: 1}
   m_AnimationFrameRate: 1
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Origin: {x: 0, y: 0, z: 0}
-  m_Size: {x: 0, y: 0, z: 1}
+  m_Origin: {x: -11, y: -5, z: 0}
+  m_Size: {x: 21, y: 12, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
   m_TileOrientation: 0
   m_TileOrientationMatrix:
@@ -362,3 +396,35 @@ Tilemap:
     e31: 0
     e32: 0
     e33: 1
+--- !u!114 &1606492377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1606492373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 18de4181c2fe944229353c63063317b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  where: {x: -4, y: -4}
+  size: {x: 8, y: 8}
+  common: {fileID: 11400000, guid: 4d74bd92b863a47e98e013ead7242b3e, type: 2}
+  uncommon: {fileID: 11400000, guid: ae174451c17ac4931b645d5fda77221e, type: 2}
+  rare: {fileID: 11400000, guid: 0445231b3686849ea9114ba1d3ed5ffb, type: 2}
+  seed: 2
+--- !u!114 &1606492378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1606492373}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ac880ea8a3a84fb1aeac7e533278944, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MIN_REGION_SIZE: 2
+  MAX_REGION_COUNT: 16
