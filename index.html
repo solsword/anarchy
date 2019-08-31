@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="js/examples.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<h1 id="anarchy">anarchy</h1>
+<p>Incremental &amp; reversible chaos library. Generates pseudo-random numbers (not suitable for cryptographic or statistical applications) in a reversible and incremental manner.</p>
+<p>Capabilities include:</p>
+<ul>
+<li>Reversible PRNG</li>
+<li>Reversible &amp; incremental shuffling</li>
+<li>Reversible &amp; incremental random distribution (items among ranges)</li>
+</ul>
+<p>The core API is available in C, Python, Javascript, and Unity/C#, and includes:</p>
+<ul>
+<li>Reversible pseudo-random number generation:
+<ul>
+<li><code>prng</code> and <code>rev_prng</code> the forward and reverse PRNG functions</li>
+<li><code>lfsr</code> as a simple non-reversible PRNG (Linear Feedback Shift Register)</li>
+<li><code>udist</code>, <code>idist</code>, and <code>expdist</code> for floating-point, integer-range, and floating-point exponential distributions (only in Python and Javascript for now).</li>
+</ul></li>
+<li>Incremental &amp; reversible shuffling:
+<ul>
+<li><code>cohort_shuffle</code> and <code>rev_cohort_shuffle</code> for finding shuffled/unshuffled indices one-at-a-time.</li>
+</ul></li>
+<li>Incremental &amp; reversible distribution:
+<ul>
+<li><code>distribution_portion</code> - For <em>N</em> items distributed among <em>K</em> segments each of maximum size <em>S</em>, how many items are in segment <em>k</em>?</li>
+<li><code>distribution_prior_sum</code> - For <em>N</em> items distributed among <em>K</em> segments of maximum size <em>S</em>, how many of the items are in segments that preceed segment <em>k</em>?</li>
+<li><code>distribution_segment</code> - For <em>N</em> items distributed among <em>K</em> segments of maximum size <em>S</em>, which segment does item <em>n</em> get distributed to?</li>
+</ul></li>
+</ul>
+<h2 id="core-documentation">Core documentation</h2>
+<p>Full documentation for all core functions pulled directly from the Python implementation (applies to all implementations):</p>
+<p><a href="https://solsword.github.io/anarchy/python/doc.html">Core Documentation</a></p>
+<h2 id="example-code">Example code</h2>
+<p>Example code using the JavaScript implementation that demonstrates things to do with the library.</p>
+<p><a href="https://solsword.github.io/anarchy/js/examples.html">Examples</a></p>
+<h2 id="unity-example">Unity Example</h2>
+<p>The <code>unity/anarchy</code> folder is a complete Unity project which includes a component implementation of the library and a simple demo component that uses it to shuffle tiles in a <code>Tilemap</code>. When it’s running, you can left-click to advance to the next seed, or right-click to go back to the previous seed. The code in the <code>Tilepicker</code> component demonstrates how to use <code>anarchy</code>.</p>
+<p>That said, I’m not a Unity expert and this probably isn’t the right way to release the library; it seems like a plugin would be more appropriate, but I haven’t yet figured out the details of building and deploying one. If you’d like to use anarchy more seriously in a Unity context, let me know (even just by opening an issue) and I can make that more of a priority.</p>
+</body>
+</html>

@@ -10,7 +10,7 @@ Capabilities include:
 - Reversible & incremental shuffling
 - Reversible & incremental random distribution (items among ranges)
 
-The core API is available in C, Python, and Javascript, and includes:
+The core API is available in C, Python, Javascript, and Unity/C#, and includes:
 
 - Reversible pseudo-random number generation:
     * `prng` and `rev_prng` the forward and reverse PRNG functions
@@ -43,3 +43,17 @@ Example code using the JavaScript implementation that demonstrates things
 to do with the library.
 
 [Examples](https://solsword.github.io/anarchy/js/examples.html)
+
+## Unity Example
+
+The `unity/anarchy` folder is a complete Unity project which includes a
+component implementation of the library and a simple demo component that uses
+it to shuffle tiles in a `Tilemap`. When it's running, you can left-click to
+advance to the next seed, or right-click to go back to the previous seed. The
+code in the `Tilepicker` component demonstrates how to use `anarchy`.
+
+That said, I'm not a Unity expert and this probably isn't the right way to
+release the library; it seems like a plugin would be more appropriate, but I
+haven't yet figured out the details of building and deploying one. If you'd
+like to use anarchy more seriously in a Unity context, let me know (even just
+by opening an issue) and I can make that more of a priority.
