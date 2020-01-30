@@ -166,6 +166,7 @@ define([], function() {
     // Implements a max-cycle-length 32-bit linear-feedback-shift-register.
     // See: https://en.wikipedia.org/wiki/Linear-feedback_shift_register
     // Note that this is NOT reversible!
+    // Note: Do not use this as an irreversible PRNG; it's a terrible one!
     let lsb = x & 1;
     return (x >>> 1) ^ (0x80200003 * lsb); // 32, 22, 2, 1
   }
