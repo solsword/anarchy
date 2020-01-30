@@ -293,6 +293,173 @@ next_button.addEventListener("click", function () {
 </div>
 <canvas id="compare_demo" width="800" height="300">
 </canvas>
+<p>Here is the code for the two random number generators that generate sequences of 0’s, 1’s, and 2’s to determine color:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">// Creates RNG that spits out 0, 1, or 2 independently with 90%, 8%, and 2%</span></span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="co">// probabilities.</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="kw">function</span> <span class="at">make_independent_rng</span>(seed) <span class="op">{</span></span>
+<span id="cb3-4"><a href="#cb3-4"></a>  <span class="kw">let</span> val <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-5"><a href="#cb3-5"></a>  <span class="cf">return</span> <span class="kw">function</span> () <span class="op">{</span></span>
+<span id="cb3-6"><a href="#cb3-6"></a>    val <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">prng</span>(val<span class="op">,</span> seed)<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7"></a>    <span class="kw">let</span> u <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">udist</span>(val)<span class="op">;</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a>    <span class="cf">if</span> (u <span class="op">&lt;=</span> <span class="fl">0.02</span>) <span class="op">{</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a>      <span class="cf">return</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb3-10"><a href="#cb3-10"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (u <span class="op">&lt;=</span> <span class="fl">0.1</span>) <span class="op">{</span></span>
+<span id="cb3-11"><a href="#cb3-11"></a>      <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb3-12"><a href="#cb3-12"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb3-13"><a href="#cb3-13"></a>      <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-14"><a href="#cb3-14"></a>    <span class="op">}</span></span>
+<span id="cb3-15"><a href="#cb3-15"></a>  <span class="op">}</span></span>
+<span id="cb3-16"><a href="#cb3-16"></a><span class="op">}</span></span>
+<span id="cb3-17"><a href="#cb3-17"></a></span>
+<span id="cb3-18"><a href="#cb3-18"></a><span class="co">// Creates RNG that spits out 0, 1, or 2 based on shuffling 100 items, 90 of</span></span>
+<span id="cb3-19"><a href="#cb3-19"></a><span class="co">// which are 0&#39;s, 8 of which are 1&#39;s, and 2 of which are 2&#39;s. Repeats pattern</span></span>
+<span id="cb3-20"><a href="#cb3-20"></a><span class="co">// exactly after the 100th item.</span></span>
+<span id="cb3-21"><a href="#cb3-21"></a><span class="kw">function</span> <span class="at">make_shuffle_rng</span>(seed) <span class="op">{</span></span>
+<span id="cb3-22"><a href="#cb3-22"></a>  <span class="kw">let</span> idx <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-23"><a href="#cb3-23"></a>  <span class="cf">return</span> <span class="kw">function</span> () <span class="op">{</span></span>
+<span id="cb3-24"><a href="#cb3-24"></a>    <span class="kw">let</span> val <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(idx<span class="op">,</span> <span class="dv">100</span><span class="op">,</span> seed)<span class="op">;</span></span>
+<span id="cb3-25"><a href="#cb3-25"></a>    idx <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb3-26"><a href="#cb3-26"></a>    idx <span class="op">%=</span> <span class="dv">100</span><span class="op">;</span></span>
+<span id="cb3-27"><a href="#cb3-27"></a>    <span class="cf">if</span> (val <span class="op">&lt;=</span> <span class="dv">1</span>) <span class="op">{</span></span>
+<span id="cb3-28"><a href="#cb3-28"></a>      <span class="cf">return</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb3-29"><a href="#cb3-29"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (val <span class="op">&lt;=</span> <span class="dv">9</span>) <span class="op">{</span></span>
+<span id="cb3-30"><a href="#cb3-30"></a>      <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb3-31"><a href="#cb3-31"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb3-32"><a href="#cb3-32"></a>      <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-33"><a href="#cb3-33"></a>    <span class="op">}</span></span>
+<span id="cb3-34"><a href="#cb3-34"></a>  <span class="op">}</span></span>
+<span id="cb3-35"><a href="#cb3-35"></a><span class="op">}</span></span></code></pre></div>
+<details>
+<p><summary>Full code for the demo</summary></p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1"></a><span class="kw">function</span> <span class="at">enable_compare_demo</span>() <span class="op">{</span></span>
+<span id="cb4-2"><a href="#cb4-2"></a>  <span class="co">// Grab the div that we want to work with</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>  <span class="kw">let</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;compare_demo&quot;</span>)<span class="op">;</span></span>
+<span id="cb4-4"><a href="#cb4-4"></a></span>
+<span id="cb4-5"><a href="#cb4-5"></a>  <span class="kw">let</span> ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&quot;2d&quot;</span>)<span class="op">;</span></span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
+<span id="cb4-7"><a href="#cb4-7"></a>  <span class="kw">let</span> rect_size <span class="op">=</span> <span class="dv">10</span><span class="op">;</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a></span>
+<span id="cb4-9"><a href="#cb4-9"></a>  <span class="kw">let</span> colors <span class="op">=</span> [<span class="st">&quot;white&quot;</span><span class="op">,</span> <span class="st">&quot;red&quot;</span><span class="op">,</span> <span class="st">&quot;blue&quot;</span>]<span class="op">;</span></span>
+<span id="cb4-10"><a href="#cb4-10"></a></span>
+<span id="cb4-11"><a href="#cb4-11"></a>  <span class="co">// Draws rectangle grid at the given x/y location using color values drawn</span></span>
+<span id="cb4-12"><a href="#cb4-12"></a>  <span class="co">// repeatedly from the given RNG function. That function must return a number</span></span>
+<span id="cb4-13"><a href="#cb4-13"></a>  <span class="co">// that&#39;s a valid index into the colors array.</span></span>
+<span id="cb4-14"><a href="#cb4-14"></a>  <span class="kw">function</span> <span class="at">draw_result</span>(where<span class="op">,</span> rng) <span class="op">{</span></span>
+<span id="cb4-15"><a href="#cb4-15"></a>    <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">100</span><span class="op">;</span> <span class="op">++</span>i) <span class="op">{</span></span>
+<span id="cb4-16"><a href="#cb4-16"></a>      <span class="kw">let</span> r <span class="op">=</span> <span class="at">rng</span>()</span>
+<span id="cb4-17"><a href="#cb4-17"></a>      <span class="kw">let</span> x <span class="op">=</span> i <span class="op">%</span> <span class="dv">10</span><span class="op">;</span></span>
+<span id="cb4-18"><a href="#cb4-18"></a>      <span class="kw">let</span> y <span class="op">=</span> <span class="va">Math</span>.<span class="at">floor</span>(i<span class="op">/</span><span class="dv">10</span>)<span class="op">;</span></span>
+<span id="cb4-19"><a href="#cb4-19"></a>      <span class="kw">let</span> cx <span class="op">=</span> where[<span class="dv">0</span>] <span class="op">+</span> rect_size<span class="op">/</span><span class="dv">2</span> <span class="op">+</span> x <span class="op">*</span> rect_size<span class="op">;</span></span>
+<span id="cb4-20"><a href="#cb4-20"></a>      <span class="kw">let</span> cy <span class="op">=</span> where[<span class="dv">1</span>] <span class="op">+</span> rect_size<span class="op">/</span><span class="dv">2</span> <span class="op">+</span> y <span class="op">*</span> rect_size<span class="op">;</span></span>
+<span id="cb4-21"><a href="#cb4-21"></a>      <span class="va">ctx</span>.<span class="at">fillStyle</span> <span class="op">=</span> colors[r]<span class="op">;</span></span>
+<span id="cb4-22"><a href="#cb4-22"></a>      <span class="va">ctx</span>.<span class="at">fillRect</span>(cx<span class="op">,</span> cy<span class="op">,</span> rect_size<span class="op">,</span> rect_size)<span class="op">;</span></span>
+<span id="cb4-23"><a href="#cb4-23"></a>      <span class="va">ctx</span>.<span class="at">strokeWidth</span> <span class="op">=</span> <span class="fl">0.5</span><span class="op">;</span></span>
+<span id="cb4-24"><a href="#cb4-24"></a>      <span class="va">ctx</span>.<span class="at">strokeStyle</span> <span class="op">=</span> <span class="st">&quot;black&quot;</span><span class="op">;</span></span>
+<span id="cb4-25"><a href="#cb4-25"></a>      <span class="va">ctx</span>.<span class="at">strokeRect</span>(cx<span class="op">,</span> cy<span class="op">,</span> rect_size<span class="op">,</span> rect_size)<span class="op">;</span></span>
+<span id="cb4-26"><a href="#cb4-26"></a>    <span class="op">}</span></span>
+<span id="cb4-27"><a href="#cb4-27"></a>  <span class="op">}</span></span>
+<span id="cb4-28"><a href="#cb4-28"></a></span>
+<span id="cb4-29"><a href="#cb4-29"></a>  <span class="co">// Creates RNG that spits out 0, 1, or 2 independently with 90%, 8%, and 2%</span></span>
+<span id="cb4-30"><a href="#cb4-30"></a>  <span class="co">// probabilities.</span></span>
+<span id="cb4-31"><a href="#cb4-31"></a>  <span class="kw">function</span> <span class="at">make_independent_rng</span>(seed) <span class="op">{</span></span>
+<span id="cb4-32"><a href="#cb4-32"></a>    <span class="kw">let</span> val <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-33"><a href="#cb4-33"></a>    <span class="cf">return</span> <span class="kw">function</span> () <span class="op">{</span></span>
+<span id="cb4-34"><a href="#cb4-34"></a>      val <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">prng</span>(val<span class="op">,</span> seed)<span class="op">;</span></span>
+<span id="cb4-35"><a href="#cb4-35"></a>      <span class="kw">let</span> u <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">udist</span>(val)<span class="op">;</span></span>
+<span id="cb4-36"><a href="#cb4-36"></a>      <span class="cf">if</span> (u <span class="op">&lt;=</span> <span class="fl">0.02</span>) <span class="op">{</span></span>
+<span id="cb4-37"><a href="#cb4-37"></a>        <span class="cf">return</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb4-38"><a href="#cb4-38"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (u <span class="op">&lt;=</span> <span class="fl">0.1</span>) <span class="op">{</span></span>
+<span id="cb4-39"><a href="#cb4-39"></a>        <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb4-40"><a href="#cb4-40"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb4-41"><a href="#cb4-41"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-42"><a href="#cb4-42"></a>      <span class="op">}</span></span>
+<span id="cb4-43"><a href="#cb4-43"></a>    <span class="op">}</span></span>
+<span id="cb4-44"><a href="#cb4-44"></a>  <span class="op">}</span></span>
+<span id="cb4-45"><a href="#cb4-45"></a></span>
+<span id="cb4-46"><a href="#cb4-46"></a>  <span class="co">// Creates RNG that spits out 0, 1, or 2 based on shuffling 100 items, 90 of</span></span>
+<span id="cb4-47"><a href="#cb4-47"></a>  <span class="co">// which are 0&#39;s, 8 of which are 1&#39;s, and 2 of which are 2&#39;s. Repeats pattern</span></span>
+<span id="cb4-48"><a href="#cb4-48"></a>  <span class="co">// exactly after the 100th item.</span></span>
+<span id="cb4-49"><a href="#cb4-49"></a>  <span class="kw">function</span> <span class="at">make_shuffle_rng</span>(seed) <span class="op">{</span></span>
+<span id="cb4-50"><a href="#cb4-50"></a>    <span class="kw">let</span> idx <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-51"><a href="#cb4-51"></a>    <span class="cf">return</span> <span class="kw">function</span> () <span class="op">{</span></span>
+<span id="cb4-52"><a href="#cb4-52"></a>      <span class="kw">let</span> val <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(idx<span class="op">,</span> <span class="dv">100</span><span class="op">,</span> seed)<span class="op">;</span></span>
+<span id="cb4-53"><a href="#cb4-53"></a>      idx <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb4-54"><a href="#cb4-54"></a>      idx <span class="op">%=</span> <span class="dv">100</span><span class="op">;</span></span>
+<span id="cb4-55"><a href="#cb4-55"></a>      <span class="cf">if</span> (val <span class="op">&lt;=</span> <span class="dv">1</span>) <span class="op">{</span></span>
+<span id="cb4-56"><a href="#cb4-56"></a>        <span class="cf">return</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb4-57"><a href="#cb4-57"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (val <span class="op">&lt;=</span> <span class="dv">9</span>) <span class="op">{</span></span>
+<span id="cb4-58"><a href="#cb4-58"></a>        <span class="cf">return</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb4-59"><a href="#cb4-59"></a>      <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb4-60"><a href="#cb4-60"></a>        <span class="cf">return</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-61"><a href="#cb4-61"></a>      <span class="op">}</span></span>
+<span id="cb4-62"><a href="#cb4-62"></a>    <span class="op">}</span></span>
+<span id="cb4-63"><a href="#cb4-63"></a>  <span class="op">}</span></span>
+<span id="cb4-64"><a href="#cb4-64"></a></span>
+<span id="cb4-65"><a href="#cb4-65"></a></span>
+<span id="cb4-66"><a href="#cb4-66"></a>  <span class="co">// Shows results for the given seed by drawing four sampled results on the</span></span>
+<span id="cb4-67"><a href="#cb4-67"></a>  <span class="co">// left and four shuffled results on the right.</span></span>
+<span id="cb4-68"><a href="#cb4-68"></a>  <span class="kw">function</span> <span class="at">show_results</span>(seed) <span class="op">{</span></span>
+<span id="cb4-69"><a href="#cb4-69"></a>    <span class="kw">let</span> base_seed <span class="op">=</span> seed <span class="op">*</span> <span class="dv">4</span><span class="op">;</span></span>
+<span id="cb4-70"><a href="#cb4-70"></a></span>
+<span id="cb4-71"><a href="#cb4-71"></a>    <span class="kw">let</span> pad <span class="op">=</span> <span class="dv">100</span><span class="op">/</span><span class="dv">3</span><span class="op">;</span></span>
+<span id="cb4-72"><a href="#cb4-72"></a>    <span class="cf">for</span> (<span class="kw">let</span> i <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i <span class="op">&lt;</span> <span class="dv">4</span><span class="op">;</span> <span class="op">++</span>i) <span class="op">{</span></span>
+<span id="cb4-73"><a href="#cb4-73"></a>      <span class="kw">let</span> xo <span class="op">=</span> (i <span class="op">%</span> <span class="dv">2</span>) <span class="op">*</span> (<span class="dv">100</span> <span class="op">+</span> pad)<span class="op">;</span></span>
+<span id="cb4-74"><a href="#cb4-74"></a>      <span class="kw">let</span> yo <span class="op">=</span> <span class="va">Math</span>.<span class="at">floor</span>(i <span class="op">/</span> <span class="dv">2</span>) <span class="op">*</span> (<span class="dv">100</span> <span class="op">+</span> pad)<span class="op">;</span></span>
+<span id="cb4-75"><a href="#cb4-75"></a>      <span class="kw">let</span> irng <span class="op">=</span> <span class="at">make_independent_rng</span>(base_seed <span class="op">+</span> i)<span class="op">;</span></span>
+<span id="cb4-76"><a href="#cb4-76"></a>      <span class="kw">let</span> srng <span class="op">=</span> <span class="at">make_shuffle_rng</span>(base_seed <span class="op">+</span> i)<span class="op">;</span></span>
+<span id="cb4-77"><a href="#cb4-77"></a></span>
+<span id="cb4-78"><a href="#cb4-78"></a>      <span class="at">draw_result</span>([pad <span class="op">+</span> xo<span class="op">,</span> pad <span class="op">+</span> yo]<span class="op">,</span> irng)<span class="op">;</span></span>
+<span id="cb4-79"><a href="#cb4-79"></a>      <span class="at">draw_result</span>([<span class="dv">200</span> <span class="op">+</span> <span class="dv">4</span><span class="op">*</span>pad <span class="op">+</span> xo<span class="op">,</span> pad <span class="op">+</span> yo]<span class="op">,</span> srng)<span class="op">;</span></span>
+<span id="cb4-80"><a href="#cb4-80"></a>    <span class="op">}</span></span>
+<span id="cb4-81"><a href="#cb4-81"></a></span>
+<span id="cb4-82"><a href="#cb4-82"></a>    <span class="co">// add dividing line</span></span>
+<span id="cb4-83"><a href="#cb4-83"></a>    <span class="va">ctx</span>.<span class="at">strokeWidth</span> <span class="op">=</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb4-84"><a href="#cb4-84"></a>    <span class="va">ctx</span>.<span class="at">strokeStyle</span> <span class="op">=</span> <span class="st">&quot;black&quot;</span><span class="op">;</span></span>
+<span id="cb4-85"><a href="#cb4-85"></a>    <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></span>
+<span id="cb4-86"><a href="#cb4-86"></a>    <span class="va">ctx</span>.<span class="at">moveTo</span>(<span class="dv">300</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb4-87"><a href="#cb4-87"></a>    <span class="va">ctx</span>.<span class="at">lineTo</span>(<span class="dv">300</span><span class="op">,</span> <span class="dv">600</span>)<span class="op">;</span></span>
+<span id="cb4-88"><a href="#cb4-88"></a>    <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></span>
+<span id="cb4-89"><a href="#cb4-89"></a>  <span class="op">}</span></span>
+<span id="cb4-90"><a href="#cb4-90"></a></span>
+<span id="cb4-91"><a href="#cb4-91"></a>  <span class="co">// Function for picking up seed from input</span></span>
+<span id="cb4-92"><a href="#cb4-92"></a>  <span class="kw">function</span> <span class="at">get_seed</span>() <span class="op">{</span></span>
+<span id="cb4-93"><a href="#cb4-93"></a>    <span class="kw">let</span> seed_input <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;compare_demo_seed&quot;</span>)<span class="op">;</span></span>
+<span id="cb4-94"><a href="#cb4-94"></a>    <span class="kw">let</span> s <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">seed_input</span>.<span class="at">value</span>)<span class="op">;</span></span>
+<span id="cb4-95"><a href="#cb4-95"></a>    <span class="cf">if</span> (s <span class="op">==</span> <span class="kw">undefined</span>) <span class="op">{</span></span>
+<span id="cb4-96"><a href="#cb4-96"></a>      s <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb4-97"><a href="#cb4-97"></a>      <span class="va">seed_input</span>.<span class="at">value</span> <span class="op">=</span> s<span class="op">;</span></span>
+<span id="cb4-98"><a href="#cb4-98"></a>    <span class="op">}</span></span>
+<span id="cb4-99"><a href="#cb4-99"></a>    <span class="cf">return</span> s<span class="op">;</span></span>
+<span id="cb4-100"><a href="#cb4-100"></a>  <span class="op">}</span></span>
+<span id="cb4-101"><a href="#cb4-101"></a></span>
+<span id="cb4-102"><a href="#cb4-102"></a>  <span class="co">// Show initial results:</span></span>
+<span id="cb4-103"><a href="#cb4-103"></a>  <span class="at">show_results</span>(<span class="at">get_seed</span>())</span>
+<span id="cb4-104"><a href="#cb4-104"></a></span>
+<span id="cb4-105"><a href="#cb4-105"></a>  <span class="co">// Function for updating seed input</span></span>
+<span id="cb4-106"><a href="#cb4-106"></a>  <span class="kw">function</span> <span class="at">set_seed</span>(x) <span class="op">{</span></span>
+<span id="cb4-107"><a href="#cb4-107"></a>    <span class="kw">let</span> seed_input <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;compare_demo_seed&quot;</span>)<span class="op">;</span></span>
+<span id="cb4-108"><a href="#cb4-108"></a>    <span class="va">seed_input</span>.<span class="at">value</span> <span class="op">=</span> x<span class="op">;</span></span>
+<span id="cb4-109"><a href="#cb4-109"></a>  <span class="op">}</span></span>
+<span id="cb4-110"><a href="#cb4-110"></a></span>
+<span id="cb4-111"><a href="#cb4-111"></a>  <span class="co">// Set up shuffle button to use current seed:</span></span>
+<span id="cb4-112"><a href="#cb4-112"></a>  <span class="kw">let</span> cmp_update_button <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;compare_demo_update&quot;</span>)</span>
+<span id="cb4-113"><a href="#cb4-113"></a>  <span class="va">cmp_update_button</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> <span class="kw">function</span> () <span class="op">{</span></span>
+<span id="cb4-114"><a href="#cb4-114"></a>    <span class="at">show_results</span>(<span class="at">get_seed</span>())<span class="op">;</span></span>
+<span id="cb4-115"><a href="#cb4-115"></a>  <span class="op">}</span>)<span class="op">;</span></span>
+<span id="cb4-116"><a href="#cb4-116"></a></span>
+<span id="cb4-117"><a href="#cb4-117"></a>  <span class="co">// Set up next button to increment and shuffle:</span></span>
+<span id="cb4-118"><a href="#cb4-118"></a>  <span class="kw">let</span> cmp_next_button <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;compare_demo_next&quot;</span>)</span>
+<span id="cb4-119"><a href="#cb4-119"></a>  <span class="va">cmp_next_button</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> <span class="kw">function</span> () <span class="op">{</span></span>
+<span id="cb4-120"><a href="#cb4-120"></a>    <span class="kw">let</span> seed <span class="op">=</span> <span class="at">get_seed</span>()<span class="op">;</span></span>
+<span id="cb4-121"><a href="#cb4-121"></a>    seed <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb4-122"><a href="#cb4-122"></a>    <span class="at">set_seed</span>(seed)<span class="op">;</span></span>
+<span id="cb4-123"><a href="#cb4-123"></a>    <span class="at">show_results</span>(seed)<span class="op">;</span></span>
+<span id="cb4-124"><a href="#cb4-124"></a>  <span class="op">}</span>)<span class="op">;</span></span>
+<span id="cb4-125"><a href="#cb4-125"></a><span class="op">}</span></span>
+<span id="cb4-126"><a href="#cb4-126"></a></span>
+<span id="cb4-127"><a href="#cb4-127"></a><span class="co">// Run all this stuff:</span></span>
+<span id="cb4-128"><a href="#cb4-128"></a><span class="at">enable_compare_demo</span>()<span class="op">;</span></span></code></pre></div>
+</details>
 <script>
 
 function enable_compare_demo() {
@@ -324,11 +491,10 @@ function enable_compare_demo() {
   }
 
   // Creates RNG that spits out 0, 1, or 2 independently with 90%, 8%, and 2%
-  // probabilities when next() is called.
+  // probabilities.
   function make_independent_rng(seed) {
     let val = 0;
     return function () {
-      // TODO: Fix seed!
       val = anarchy.prng(val, seed);
       let u = anarchy.udist(val);
       if (u <= 0.02) {
@@ -349,6 +515,7 @@ function enable_compare_demo() {
     return function () {
       let val = anarchy.cohort_shuffle(idx, 100, seed);
       idx += 1;
+      idx %= 100;
       if (val <= 1) {
         return 2;
       } else if (val <= 9) {
@@ -421,7 +588,7 @@ function enable_compare_demo() {
   });
 }
 
-// Run all this stuff when the document loads:
+// Run all this stuff:
 enable_compare_demo();
 </script>
 <h2 id="scramble-an-enumerable-space">Scramble an Enumerable Space</h2>
@@ -433,73 +600,73 @@ enable_compare_demo();
 <p>Here’s the code that draws the trees:</p>
 <details>
 <p><summary>Tree Enumeration Code</summary></p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb3-1"><a href="#cb3-1"></a><span class="co">// Draws a line between the given pair of coordinates on the given canvas</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="kw">function</span> <span class="at">draw_line</span>(canvas<span class="op">,</span> fr<span class="op">,</span> to) <span class="op">{</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a>  ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&quot;2d&quot;</span>)<span class="op">;</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a>  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></span>
-<span id="cb3-5"><a href="#cb3-5"></a>  <span class="va">ctx</span>.<span class="at">moveTo</span>(fr[<span class="dv">0</span>]<span class="op">,</span> fr[<span class="dv">1</span>])<span class="op">;</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a>  <span class="va">ctx</span>.<span class="at">lineTo</span>(to[<span class="dv">0</span>]<span class="op">,</span> to[<span class="dv">1</span>])<span class="op">;</span></span>
-<span id="cb3-7"><a href="#cb3-7"></a>  <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></span>
-<span id="cb3-8"><a href="#cb3-8"></a><span class="op">}</span></span>
-<span id="cb3-9"><a href="#cb3-9"></a></span>
-<span id="cb3-10"><a href="#cb3-10"></a><span class="co">// Draws a tree on a canvas recursively</span></span>
-<span id="cb3-11"><a href="#cb3-11"></a><span class="kw">function</span> <span class="at">draw_tree</span>(canvas<span class="op">,</span> root<span class="op">,</span> size<span class="op">,</span> seed<span class="op">,</span> which_branch<span class="op">,</span> angle) <span class="op">{</span></span>
-<span id="cb3-12"><a href="#cb3-12"></a>  <span class="co">// Define any unspecified arguments</span></span>
-<span id="cb3-13"><a href="#cb3-13"></a>  <span class="cf">if</span> (which_branch <span class="op">==</span> <span class="kw">undefined</span>) <span class="op">{</span> which_branch <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="op">}</span></span>
-<span id="cb3-14"><a href="#cb3-14"></a>  <span class="cf">if</span> (size <span class="op">==</span> <span class="kw">undefined</span>) <span class="op">{</span> size <span class="op">=</span> <span class="dv">100</span><span class="op">;</span> <span class="op">}</span></span>
-<span id="cb3-15"><a href="#cb3-15"></a>  <span class="cf">if</span> (angle <span class="op">==</span> <span class="kw">undefined</span>) <span class="op">{</span> angle <span class="op">=</span> <span class="dv">3</span><span class="op">*</span><span class="va">Math</span>.<span class="at">PI</span><span class="op">/</span><span class="dv">2</span><span class="op">;</span> <span class="op">}</span></span>
-<span id="cb3-16"><a href="#cb3-16"></a>  <span class="cf">if</span> (root <span class="op">==</span> <span class="kw">undefined</span>) <span class="op">{</span> root <span class="op">=</span> [<span class="dv">250</span><span class="op">,</span> <span class="dv">250</span>]<span class="op">;</span> <span class="op">}</span></span>
-<span id="cb3-17"><a href="#cb3-17"></a></span>
-<span id="cb3-18"><a href="#cb3-18"></a>  <span class="kw">let</span> end <span class="op">=</span> [</span>
-<span id="cb3-19"><a href="#cb3-19"></a>    size <span class="op">*</span> <span class="va">Math</span>.<span class="at">cos</span>(angle) <span class="op">+</span> root[<span class="dv">0</span>]<span class="op">,</span></span>
-<span id="cb3-20"><a href="#cb3-20"></a>    size <span class="op">*</span> <span class="va">Math</span>.<span class="at">sin</span>(angle) <span class="op">+</span> root[<span class="dv">1</span>]</span>
-<span id="cb3-21"><a href="#cb3-21"></a>  ]<span class="op">;</span></span>
-<span id="cb3-22"><a href="#cb3-22"></a>  <span class="at">draw_line</span>(canvas<span class="op">,</span> root<span class="op">,</span> end)<span class="op">;</span></span>
-<span id="cb3-23"><a href="#cb3-23"></a></span>
-<span id="cb3-24"><a href="#cb3-24"></a>  <span class="kw">let</span> my_seed <span class="op">=</span> seed <span class="op">&gt;&gt;&gt;</span> (which_branch <span class="op">*</span> <span class="dv">4</span>)<span class="op">;</span></span>
-<span id="cb3-25"><a href="#cb3-25"></a></span>
-<span id="cb3-26"><a href="#cb3-26"></a>  <span class="co">// Three decisions:</span></span>
-<span id="cb3-27"><a href="#cb3-27"></a>  <span class="kw">let</span> d1 <span class="op">=</span> my_seed <span class="op">&amp;</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb3-28"><a href="#cb3-28"></a>  <span class="kw">let</span> d2 <span class="op">=</span> my_seed <span class="op">&amp;</span> <span class="dv">2</span><span class="op">;</span></span>
-<span id="cb3-29"><a href="#cb3-29"></a>  <span class="kw">let</span> d3 <span class="op">=</span> my_seed <span class="op">&amp;</span> <span class="dv">4</span><span class="op">;</span></span>
-<span id="cb3-30"><a href="#cb3-30"></a>  <span class="kw">let</span> d4 <span class="op">=</span> my_seed <span class="op">&amp;</span> <span class="dv">8</span><span class="op">;</span></span>
-<span id="cb3-31"><a href="#cb3-31"></a></span>
-<span id="cb3-32"><a href="#cb3-32"></a>  <span class="kw">let</span> sub_size_a <span class="op">=</span> <span class="fl">0.6</span><span class="op">;</span></span>
-<span id="cb3-33"><a href="#cb3-33"></a>  <span class="cf">if</span> (d1) <span class="op">{</span> sub_size_a <span class="op">=</span> <span class="fl">0.7</span><span class="op">;</span> <span class="op">}</span></span>
-<span id="cb3-34"><a href="#cb3-34"></a>  <span class="kw">let</span> sub_size_b <span class="op">=</span> <span class="fl">0.6</span><span class="op">;</span></span>
-<span id="cb3-35"><a href="#cb3-35"></a>  <span class="cf">if</span> (d2) <span class="op">{</span> sub_size_b <span class="op">=</span> <span class="fl">0.7</span><span class="op">;</span> <span class="op">}</span></span>
-<span id="cb3-36"><a href="#cb3-36"></a>  <span class="kw">let</span> angle_a <span class="op">=</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">/</span><span class="dv">6</span><span class="op">;</span></span>
-<span id="cb3-37"><a href="#cb3-37"></a>  <span class="cf">if</span> (d3) <span class="op">{</span> angle_a <span class="op">=</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">/</span><span class="dv">4</span><span class="op">;</span> <span class="op">}</span></span>
-<span id="cb3-38"><a href="#cb3-38"></a>  <span class="kw">let</span> angle_b <span class="op">=</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">/</span><span class="dv">6</span><span class="op">;</span></span>
-<span id="cb3-39"><a href="#cb3-39"></a>  <span class="cf">if</span> (d4) <span class="op">{</span> angle_b <span class="op">=</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">/</span><span class="dv">4</span><span class="op">;</span> <span class="op">}</span></span>
-<span id="cb3-40"><a href="#cb3-40"></a></span>
-<span id="cb3-41"><a href="#cb3-41"></a>  <span class="co">// Recursive calls if we&#39;re in the body of the tree:</span></span>
-<span id="cb3-42"><a href="#cb3-42"></a>  <span class="cf">if</span> (which_branch <span class="op">&lt;</span> <span class="dv">16</span>) <span class="op">{</span></span>
-<span id="cb3-43"><a href="#cb3-43"></a>    <span class="at">draw_tree</span>(</span>
-<span id="cb3-44"><a href="#cb3-44"></a>      canvas<span class="op">,</span></span>
-<span id="cb3-45"><a href="#cb3-45"></a>      end<span class="op">,</span></span>
-<span id="cb3-46"><a href="#cb3-46"></a>      sub_size_a <span class="op">*</span> size<span class="op">,</span></span>
-<span id="cb3-47"><a href="#cb3-47"></a>      seed<span class="op">,</span></span>
-<span id="cb3-48"><a href="#cb3-48"></a>      (which_branch <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">1</span><span class="op">,</span></span>
-<span id="cb3-49"><a href="#cb3-49"></a>      angle <span class="op">+</span> angle_a</span>
-<span id="cb3-50"><a href="#cb3-50"></a>    )<span class="op">;</span></span>
-<span id="cb3-51"><a href="#cb3-51"></a>    <span class="at">draw_tree</span>(</span>
-<span id="cb3-52"><a href="#cb3-52"></a>      canvas<span class="op">,</span></span>
-<span id="cb3-53"><a href="#cb3-53"></a>      end<span class="op">,</span></span>
-<span id="cb3-54"><a href="#cb3-54"></a>      sub_size_b <span class="op">*</span> size<span class="op">,</span></span>
-<span id="cb3-55"><a href="#cb3-55"></a>      seed<span class="op">,</span></span>
-<span id="cb3-56"><a href="#cb3-56"></a>      (which_branch <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">1</span><span class="op">,</span></span>
-<span id="cb3-57"><a href="#cb3-57"></a>      angle <span class="op">-</span> angle_b</span>
-<span id="cb3-58"><a href="#cb3-58"></a>    )<span class="op">;</span></span>
-<span id="cb3-59"><a href="#cb3-59"></a>  <span class="op">}</span></span>
-<span id="cb3-60"><a href="#cb3-60"></a><span class="op">}</span></span>
-<span id="cb3-61"><a href="#cb3-61"></a></span>
-<span id="cb3-62"><a href="#cb3-62"></a><span class="co">// Grab the canvas and draw the trees corresponding to the first four seeds:</span></span>
-<span id="cb3-63"><a href="#cb3-63"></a><span class="kw">let</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;enumeration_demo&quot;</span>)<span class="op">;</span></span>
-<span id="cb3-64"><a href="#cb3-64"></a><span class="at">draw_tree</span>(canvas<span class="op">,</span> [<span class="dv">100</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
-<span id="cb3-65"><a href="#cb3-65"></a><span class="at">draw_tree</span>(canvas<span class="op">,</span> [<span class="dv">250</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></span>
-<span id="cb3-66"><a href="#cb3-66"></a><span class="at">draw_tree</span>(canvas<span class="op">,</span> [<span class="dv">400</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span>
-<span id="cb3-67"><a href="#cb3-67"></a><span class="at">draw_tree</span>(canvas<span class="op">,</span> [<span class="dv">550</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">// Draws a line between the given pair of coordinates on the given canvas</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="kw">function</span> <span class="at">draw_line</span>(canvas<span class="op">,</span> fr<span class="op">,</span> to) <span class="op">{</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a>  ctx <span class="op">=</span> <span class="va">canvas</span>.<span class="at">getContext</span>(<span class="st">&quot;2d&quot;</span>)<span class="op">;</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a>  <span class="va">ctx</span>.<span class="at">beginPath</span>()<span class="op">;</span></span>
+<span id="cb5-5"><a href="#cb5-5"></a>  <span class="va">ctx</span>.<span class="at">moveTo</span>(fr[<span class="dv">0</span>]<span class="op">,</span> fr[<span class="dv">1</span>])<span class="op">;</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a>  <span class="va">ctx</span>.<span class="at">lineTo</span>(to[<span class="dv">0</span>]<span class="op">,</span> to[<span class="dv">1</span>])<span class="op">;</span></span>
+<span id="cb5-7"><a href="#cb5-7"></a>  <span class="va">ctx</span>.<span class="at">stroke</span>()<span class="op">;</span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="op">}</span></span>
+<span id="cb5-9"><a href="#cb5-9"></a></span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="co">// Draws a tree on a canvas recursively</span></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="kw">function</span> <span class="at">draw_tree</span>(canvas<span class="op">,</span> root<span class="op">,</span> size<span class="op">,</span> seed<span class="op">,</span> which_branch<span class="op">,</span> angle) <span class="op">{</span></span>
+<span id="cb5-12"><a href="#cb5-12"></a>  <span class="co">// Define any unspecified arguments</span></span>
+<span id="cb5-13"><a href="#cb5-13"></a>  <span class="cf">if</span> (which_branch <span class="op">==</span> <span class="kw">undefined</span>) <span class="op">{</span> which_branch <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb5-14"><a href="#cb5-14"></a>  <span class="cf">if</span> (size <span class="op">==</span> <span class="kw">undefined</span>) <span class="op">{</span> size <span class="op">=</span> <span class="dv">100</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb5-15"><a href="#cb5-15"></a>  <span class="cf">if</span> (angle <span class="op">==</span> <span class="kw">undefined</span>) <span class="op">{</span> angle <span class="op">=</span> <span class="dv">3</span><span class="op">*</span><span class="va">Math</span>.<span class="at">PI</span><span class="op">/</span><span class="dv">2</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb5-16"><a href="#cb5-16"></a>  <span class="cf">if</span> (root <span class="op">==</span> <span class="kw">undefined</span>) <span class="op">{</span> root <span class="op">=</span> [<span class="dv">250</span><span class="op">,</span> <span class="dv">250</span>]<span class="op">;</span> <span class="op">}</span></span>
+<span id="cb5-17"><a href="#cb5-17"></a></span>
+<span id="cb5-18"><a href="#cb5-18"></a>  <span class="kw">let</span> end <span class="op">=</span> [</span>
+<span id="cb5-19"><a href="#cb5-19"></a>    size <span class="op">*</span> <span class="va">Math</span>.<span class="at">cos</span>(angle) <span class="op">+</span> root[<span class="dv">0</span>]<span class="op">,</span></span>
+<span id="cb5-20"><a href="#cb5-20"></a>    size <span class="op">*</span> <span class="va">Math</span>.<span class="at">sin</span>(angle) <span class="op">+</span> root[<span class="dv">1</span>]</span>
+<span id="cb5-21"><a href="#cb5-21"></a>  ]<span class="op">;</span></span>
+<span id="cb5-22"><a href="#cb5-22"></a>  <span class="at">draw_line</span>(canvas<span class="op">,</span> root<span class="op">,</span> end)<span class="op">;</span></span>
+<span id="cb5-23"><a href="#cb5-23"></a></span>
+<span id="cb5-24"><a href="#cb5-24"></a>  <span class="kw">let</span> my_seed <span class="op">=</span> seed <span class="op">&gt;&gt;&gt;</span> (which_branch <span class="op">*</span> <span class="dv">4</span>)<span class="op">;</span></span>
+<span id="cb5-25"><a href="#cb5-25"></a></span>
+<span id="cb5-26"><a href="#cb5-26"></a>  <span class="co">// Three decisions:</span></span>
+<span id="cb5-27"><a href="#cb5-27"></a>  <span class="kw">let</span> d1 <span class="op">=</span> my_seed <span class="op">&amp;</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb5-28"><a href="#cb5-28"></a>  <span class="kw">let</span> d2 <span class="op">=</span> my_seed <span class="op">&amp;</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb5-29"><a href="#cb5-29"></a>  <span class="kw">let</span> d3 <span class="op">=</span> my_seed <span class="op">&amp;</span> <span class="dv">4</span><span class="op">;</span></span>
+<span id="cb5-30"><a href="#cb5-30"></a>  <span class="kw">let</span> d4 <span class="op">=</span> my_seed <span class="op">&amp;</span> <span class="dv">8</span><span class="op">;</span></span>
+<span id="cb5-31"><a href="#cb5-31"></a></span>
+<span id="cb5-32"><a href="#cb5-32"></a>  <span class="kw">let</span> sub_size_a <span class="op">=</span> <span class="fl">0.6</span><span class="op">;</span></span>
+<span id="cb5-33"><a href="#cb5-33"></a>  <span class="cf">if</span> (d1) <span class="op">{</span> sub_size_a <span class="op">=</span> <span class="fl">0.7</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb5-34"><a href="#cb5-34"></a>  <span class="kw">let</span> sub_size_b <span class="op">=</span> <span class="fl">0.6</span><span class="op">;</span></span>
+<span id="cb5-35"><a href="#cb5-35"></a>  <span class="cf">if</span> (d2) <span class="op">{</span> sub_size_b <span class="op">=</span> <span class="fl">0.7</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb5-36"><a href="#cb5-36"></a>  <span class="kw">let</span> angle_a <span class="op">=</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">/</span><span class="dv">6</span><span class="op">;</span></span>
+<span id="cb5-37"><a href="#cb5-37"></a>  <span class="cf">if</span> (d3) <span class="op">{</span> angle_a <span class="op">=</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">/</span><span class="dv">4</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb5-38"><a href="#cb5-38"></a>  <span class="kw">let</span> angle_b <span class="op">=</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">/</span><span class="dv">6</span><span class="op">;</span></span>
+<span id="cb5-39"><a href="#cb5-39"></a>  <span class="cf">if</span> (d4) <span class="op">{</span> angle_b <span class="op">=</span> <span class="va">Math</span>.<span class="at">PI</span><span class="op">/</span><span class="dv">4</span><span class="op">;</span> <span class="op">}</span></span>
+<span id="cb5-40"><a href="#cb5-40"></a></span>
+<span id="cb5-41"><a href="#cb5-41"></a>  <span class="co">// Recursive calls if we&#39;re in the body of the tree:</span></span>
+<span id="cb5-42"><a href="#cb5-42"></a>  <span class="cf">if</span> (which_branch <span class="op">&lt;</span> <span class="dv">16</span>) <span class="op">{</span></span>
+<span id="cb5-43"><a href="#cb5-43"></a>    <span class="at">draw_tree</span>(</span>
+<span id="cb5-44"><a href="#cb5-44"></a>      canvas<span class="op">,</span></span>
+<span id="cb5-45"><a href="#cb5-45"></a>      end<span class="op">,</span></span>
+<span id="cb5-46"><a href="#cb5-46"></a>      sub_size_a <span class="op">*</span> size<span class="op">,</span></span>
+<span id="cb5-47"><a href="#cb5-47"></a>      seed<span class="op">,</span></span>
+<span id="cb5-48"><a href="#cb5-48"></a>      (which_branch <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">1</span><span class="op">,</span></span>
+<span id="cb5-49"><a href="#cb5-49"></a>      angle <span class="op">+</span> angle_a</span>
+<span id="cb5-50"><a href="#cb5-50"></a>    )<span class="op">;</span></span>
+<span id="cb5-51"><a href="#cb5-51"></a>    <span class="at">draw_tree</span>(</span>
+<span id="cb5-52"><a href="#cb5-52"></a>      canvas<span class="op">,</span></span>
+<span id="cb5-53"><a href="#cb5-53"></a>      end<span class="op">,</span></span>
+<span id="cb5-54"><a href="#cb5-54"></a>      sub_size_b <span class="op">*</span> size<span class="op">,</span></span>
+<span id="cb5-55"><a href="#cb5-55"></a>      seed<span class="op">,</span></span>
+<span id="cb5-56"><a href="#cb5-56"></a>      (which_branch <span class="op">*</span> <span class="dv">2</span>) <span class="op">+</span> <span class="dv">1</span><span class="op">,</span></span>
+<span id="cb5-57"><a href="#cb5-57"></a>      angle <span class="op">-</span> angle_b</span>
+<span id="cb5-58"><a href="#cb5-58"></a>    )<span class="op">;</span></span>
+<span id="cb5-59"><a href="#cb5-59"></a>  <span class="op">}</span></span>
+<span id="cb5-60"><a href="#cb5-60"></a><span class="op">}</span></span>
+<span id="cb5-61"><a href="#cb5-61"></a></span>
+<span id="cb5-62"><a href="#cb5-62"></a><span class="co">// Grab the canvas and draw the trees corresponding to the first four seeds:</span></span>
+<span id="cb5-63"><a href="#cb5-63"></a><span class="kw">let</span> canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;enumeration_demo&quot;</span>)<span class="op">;</span></span>
+<span id="cb5-64"><a href="#cb5-64"></a><span class="at">draw_tree</span>(canvas<span class="op">,</span> [<span class="dv">100</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb5-65"><a href="#cb5-65"></a><span class="at">draw_tree</span>(canvas<span class="op">,</span> [<span class="dv">250</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb5-66"><a href="#cb5-66"></a><span class="at">draw_tree</span>(canvas<span class="op">,</span> [<span class="dv">400</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb5-67"><a href="#cb5-67"></a><span class="at">draw_tree</span>(canvas<span class="op">,</span> [<span class="dv">550</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></span></code></pre></div>
 </details>
 <script type="text/javascript">
 // Draws a line between the given pair of coordinates on the given canvas
@@ -576,15 +743,15 @@ draw_tree(canvas, [550, 200], 50, 3);
 <p>Here’s the code for the shuffled trees:</p>
 <details>
 <p><summary>Code Using Shuffling</summary></p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb4-1"><a href="#cb4-1"></a><span class="co">// Grab the canvas and draw the trees corresponding to the first four seeds,</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a><span class="co">// but shuffled:</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a><span class="kw">let</span> s_canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;shuffled_enumeration_demo&quot;</span>)<span class="op">;</span></span>
-<span id="cb4-4"><a href="#cb4-4"></a><span class="kw">let</span> N <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">28</span><span class="op">;</span></span>
-<span id="cb4-5"><a href="#cb4-5"></a><span class="kw">let</span> seed <span class="op">=</span> <span class="dv">129837123</span><span class="op">;</span></span>
-<span id="cb4-6"><a href="#cb4-6"></a><span class="at">draw_tree</span>(s_canvas<span class="op">,</span> [<span class="dv">100</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(<span class="dv">0</span><span class="op">,</span> N<span class="op">,</span> seed))<span class="op">;</span></span>
-<span id="cb4-7"><a href="#cb4-7"></a><span class="at">draw_tree</span>(s_canvas<span class="op">,</span> [<span class="dv">250</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(<span class="dv">1</span><span class="op">,</span> N<span class="op">,</span> seed))<span class="op">;</span></span>
-<span id="cb4-8"><a href="#cb4-8"></a><span class="at">draw_tree</span>(s_canvas<span class="op">,</span> [<span class="dv">400</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(<span class="dv">2</span><span class="op">,</span> N<span class="op">,</span> seed))<span class="op">;</span></span>
-<span id="cb4-9"><a href="#cb4-9"></a><span class="at">draw_tree</span>(s_canvas<span class="op">,</span> [<span class="dv">550</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(<span class="dv">3</span><span class="op">,</span> N<span class="op">,</span> seed))<span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">// Grab the canvas and draw the trees corresponding to the first four seeds,</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="co">// but shuffled:</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="kw">let</span> s_canvas <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;shuffled_enumeration_demo&quot;</span>)<span class="op">;</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="kw">let</span> N <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">28</span><span class="op">;</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="kw">let</span> seed <span class="op">=</span> <span class="dv">129837123</span><span class="op">;</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="at">draw_tree</span>(s_canvas<span class="op">,</span> [<span class="dv">100</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(<span class="dv">0</span><span class="op">,</span> N<span class="op">,</span> seed))<span class="op">;</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="at">draw_tree</span>(s_canvas<span class="op">,</span> [<span class="dv">250</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(<span class="dv">1</span><span class="op">,</span> N<span class="op">,</span> seed))<span class="op">;</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="at">draw_tree</span>(s_canvas<span class="op">,</span> [<span class="dv">400</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(<span class="dv">2</span><span class="op">,</span> N<span class="op">,</span> seed))<span class="op">;</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="at">draw_tree</span>(s_canvas<span class="op">,</span> [<span class="dv">550</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(<span class="dv">3</span><span class="op">,</span> N<span class="op">,</span> seed))<span class="op">;</span></span></code></pre></div>
 </details>
 <script type="text/javascript">
 // Grab the canvas and draw the trees corresponding to the first four seeds,
@@ -668,319 +835,319 @@ pr.disabled = true;
 <p>The code for the grammar including the filtering is below. To find only poems matching a filter, you use the <code>expand_limited_seed</code> function and give it a seed that’s smaller than <code>lim_gr_full</code>, which is the number of possible seed bit configurations excluding the choice about plums. You also tell it which value you want the plums key to expand to, and it then gives you back a seed that’s in the full range (up to <code>gr_full</code>) with the desired bits for the plums decision baked in.</p>
 <details>
 <p><summary>Grammar Code</summary></p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb5-1"><a href="#cb5-1"></a><span class="kw">let</span> grammar <span class="op">=</span> <span class="op">{</span></span>
-<span id="cb5-2"><a href="#cb5-2"></a>  <span class="st">&quot;root&quot;</span><span class="op">:</span> <span class="st">&quot;{title}&lt;br/&gt;&lt;br/&gt;{graf1}&lt;br/&gt;{graf2}&lt;br/&gt;{graf3}&quot;</span><span class="op">,</span></span>
-<span id="cb5-3"><a href="#cb5-3"></a>  <span class="st">&quot;title&quot;</span><span class="op">:</span> [ <span class="st">&quot;This Is Just To Say&quot;</span><span class="op">,</span> <span class="st">&quot;Re: Your Inquiry&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-4"><a href="#cb5-4"></a>  <span class="st">&quot;graf1&quot;</span><span class="op">:</span> [</span>
-<span id="cb5-5"><a href="#cb5-5"></a>    <span class="st">&quot;I have {eaten}&lt;br/&gt;the {plums}&lt;br/&gt;that were in&lt;br/&gt;the {container}&lt;br/&gt;&quot;</span><span class="op">,</span></span>
-<span id="cb5-6"><a href="#cb5-6"></a>    <span class="st">&quot;Although you&lt;br/&gt;did not mention&lt;br/&gt;the {plums}&lt;br/&gt;that you had {collected}&lt;br/&gt;&quot;</span></span>
-<span id="cb5-7"><a href="#cb5-7"></a>  ]<span class="op">,</span></span>
-<span id="cb5-8"><a href="#cb5-8"></a>  <span class="st">&quot;graf2&quot;</span><span class="op">:</span> [</span>
-<span id="cb5-9"><a href="#cb5-9"></a>    <span class="st">&quot;and which&lt;br/&gt;you were probably&lt;br/&gt;{saving}&lt;br/&gt;for {breakfast}&lt;br/&gt;&quot;</span></span>
-<span id="cb5-10"><a href="#cb5-10"></a>  ]<span class="op">,</span></span>
-<span id="cb5-11"><a href="#cb5-11"></a>  <span class="st">&quot;graf3&quot;</span><span class="op">:</span> [</span>
-<span id="cb5-12"><a href="#cb5-12"></a>    <span class="st">&quot;{forgive} me&lt;br/&gt;they were {delicious}&lt;br/&gt;so {sweet}&lt;br/&gt; and so {cold}&quot;</span><span class="op">,</span></span>
-<span id="cb5-13"><a href="#cb5-13"></a>    <span class="st">&quot;considering your&lt;br/&gt;{outrageous} behavior&lt;br/&gt;I cannot&lt;br/&gt;{regret} my actions&quot;</span></span>
-<span id="cb5-14"><a href="#cb5-14"></a>  ]<span class="op">,</span></span>
-<span id="cb5-15"><a href="#cb5-15"></a>  <span class="st">&quot;eaten&quot;</span><span class="op">:</span> [ <span class="st">&quot;eaten&quot;</span><span class="op">,</span> <span class="st">&quot;consumed&quot;</span><span class="op">,</span> <span class="st">&quot;eliminated&quot;</span><span class="op">,</span> <span class="st">&quot;transformed&quot;</span><span class="op">,</span> <span class="st">&quot;crushed&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-16"><a href="#cb5-16"></a>  <span class="st">&quot;plums&quot;</span><span class="op">:</span> [ <span class="st">&quot;plums&quot;</span><span class="op">,</span> <span class="st">&quot;peaches&quot;</span><span class="op">,</span> <span class="st">&quot;apples&quot;</span><span class="op">,</span> <span class="st">&quot;larvae&quot;</span> ]<span class="op">,</span> <span class="co">// 6th and 7th bits?</span></span>
-<span id="cb5-17"><a href="#cb5-17"></a>  <span class="st">&quot;container&quot;</span><span class="op">:</span> [ <span class="st">&quot;icebox&quot;</span><span class="op">,</span> <span class="st">&quot;refridgerator&quot;</span><span class="op">,</span> <span class="st">&quot;paper bag&quot;</span><span class="op">,</span> <span class="st">&quot;kitchen&quot;</span><span class="op">,</span> <span class="st">&quot;underworld&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-18"><a href="#cb5-18"></a>  <span class="st">&quot;saving&quot;</span><span class="op">:</span> [ <span class="st">&quot;saving&quot;</span><span class="op">,</span> <span class="st">&quot;hoarding&quot;</span><span class="op">,</span> <span class="st">&quot;eyeing&quot;</span><span class="op">,</span> <span class="st">&quot;considering&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-19"><a href="#cb5-19"></a>  <span class="st">&quot;breakfast&quot;</span><span class="op">:</span> [ <span class="st">&quot;breakfast&quot;</span><span class="op">,</span> <span class="st">&quot;lunch&quot;</span><span class="op">,</span> <span class="st">&quot;dinner&quot;</span><span class="op">,</span> <span class="st">&quot;the ritual&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-20"><a href="#cb5-20"></a>  <span class="st">&quot;forgive&quot;</span><span class="op">:</span> [ <span class="st">&quot;forgive&quot;</span><span class="op">,</span> <span class="st">&quot;pardon&quot;</span><span class="op">,</span> <span class="st">&quot;excuse&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-21"><a href="#cb5-21"></a>  <span class="st">&quot;delicious&quot;</span><span class="op">:</span> [ <span class="st">&quot;delicious&quot;</span><span class="op">,</span> <span class="st">&quot;delectible&quot;</span><span class="op">,</span> <span class="st">&quot;tempting&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-22"><a href="#cb5-22"></a>  <span class="st">&quot;sweet&quot;</span><span class="op">:</span> [ <span class="st">&quot;sweet&quot;</span><span class="op">,</span> <span class="st">&quot;juicy&quot;</span><span class="op">,</span> <span class="st">&quot;purple&quot;</span><span class="op">,</span> <span class="st">&quot;soft&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-23"><a href="#cb5-23"></a>  <span class="st">&quot;cold&quot;</span><span class="op">:</span> [ <span class="st">&quot;cold&quot;</span><span class="op">,</span> <span class="st">&quot;round&quot;</span><span class="op">,</span> <span class="st">&quot;smooth&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-24"><a href="#cb5-24"></a>  <span class="st">&quot;collected&quot;</span><span class="op">:</span> [ <span class="st">&quot;acquired&quot;</span><span class="op">,</span> <span class="st">&quot;collected&quot;</span><span class="op">,</span> <span class="st">&quot;obtained&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-25"><a href="#cb5-25"></a>  <span class="st">&quot;outrageous&quot;</span><span class="op">:</span> [ <span class="st">&quot;outrageous&quot;</span><span class="op">,</span> <span class="st">&quot;past&quot;</span><span class="op">,</span> <span class="st">&quot;current&quot;</span><span class="op">,</span> <span class="st">&quot;uncouth&quot;</span><span class="op">,</span> <span class="st">&quot;magnanimous&quot;</span>]<span class="op">,</span></span>
-<span id="cb5-26"><a href="#cb5-26"></a>  <span class="st">&quot;regret&quot;</span><span class="op">:</span> [ <span class="st">&quot;regret&quot;</span><span class="op">,</span> <span class="st">&quot;excuse&quot;</span><span class="op">,</span> <span class="st">&quot;repudiate&quot;</span> ]<span class="op">,</span></span>
-<span id="cb5-27"><a href="#cb5-27"></a><span class="op">}</span></span>
-<span id="cb5-28"><a href="#cb5-28"></a></span>
-<span id="cb5-29"><a href="#cb5-29"></a><span class="kw">let</span> gr_combinations <span class="op">=</span> <span class="dv">1</span><span class="op">*</span><span class="dv">2</span><span class="op">*</span><span class="dv">2</span><span class="op">*</span><span class="dv">1</span><span class="op">*</span><span class="dv">2</span><span class="op">*</span><span class="dv">5</span><span class="op">*</span><span class="dv">4</span><span class="op">*</span><span class="dv">5</span><span class="op">*</span><span class="dv">4</span><span class="op">*</span><span class="dv">4</span><span class="op">*</span><span class="dv">3</span><span class="op">*</span><span class="dv">3</span><span class="op">*</span><span class="dv">4</span><span class="op">*</span><span class="dv">3</span><span class="op">*</span><span class="dv">3</span><span class="op">*</span><span class="dv">5</span><span class="op">*</span><span class="dv">3</span><span class="op">;</span> <span class="co">// ~ 19 bits</span></span>
-<span id="cb5-30"><a href="#cb5-30"></a><span class="kw">let</span> gr_bits <span class="op">=</span> <span class="dv">0</span><span class="op">+</span><span class="dv">1</span><span class="op">+</span><span class="dv">1</span><span class="op">+</span><span class="dv">0</span><span class="op">+</span><span class="dv">1</span><span class="op">+</span><span class="dv">3</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">3</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">3</span><span class="op">+</span><span class="dv">2</span><span class="op">;</span> <span class="co">// bits actually used</span></span>
-<span id="cb5-31"><a href="#cb5-31"></a><span class="kw">let</span> gr_full <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> gr_bits<span class="op">;</span> <span class="co">// full # of bits used</span></span>
-<span id="cb5-32"><a href="#cb5-32"></a><span class="kw">let</span> lim_gr_bits <span class="op">=</span> gr_bits <span class="op">-</span> <span class="dv">2</span><span class="op">;</span> <span class="co">// minus the plums choice</span></span>
-<span id="cb5-33"><a href="#cb5-33"></a><span class="kw">let</span> lim_gr_full <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> lim_gr_bits<span class="op">;</span> <span class="co">// full # of bits used while limited</span></span>
-<span id="cb5-34"><a href="#cb5-34"></a></span>
-<span id="cb5-35"><a href="#cb5-35"></a><span class="co">// Takes a seed in the range [0, lim_gr_full), which is the right number of</span></span>
-<span id="cb5-36"><a href="#cb5-36"></a><span class="co">// bits to specify every decision except the 2-bit decision for the grammar key</span></span>
-<span id="cb5-37"><a href="#cb5-37"></a><span class="co">// &quot;plums&quot;, and expands it into the range [0, gr_full) so that it includes the</span></span>
-<span id="cb5-38"><a href="#cb5-38"></a><span class="co">// bits necessary to specify the given value for the &quot;plums&quot; key. This is</span></span>
-<span id="cb5-39"><a href="#cb5-39"></a><span class="co">// complicated by the fact that the &quot;plums&quot; decision happens in a different</span></span>
-<span id="cb5-40"><a href="#cb5-40"></a><span class="co">// place depending on the decision for the expansion of graf1.</span></span>
-<span id="cb5-41"><a href="#cb5-41"></a><span class="kw">function</span> <span class="at">expand_limited_seed</span>(ls<span class="op">,</span> plums_value) <span class="op">{</span></span>
-<span id="cb5-42"><a href="#cb5-42"></a>  <span class="kw">let</span> dbits<span class="op">;</span></span>
-<span id="cb5-43"><a href="#cb5-43"></a>  <span class="cf">if</span> (plums_value <span class="op">==</span> <span class="st">&quot;plums&quot;</span>) <span class="op">{</span></span>
-<span id="cb5-44"><a href="#cb5-44"></a>    dbits <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb5-45"><a href="#cb5-45"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (plums_value <span class="op">==</span> <span class="st">&quot;peaches&quot;</span>) <span class="op">{</span></span>
-<span id="cb5-46"><a href="#cb5-46"></a>    dbits <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb5-47"><a href="#cb5-47"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (plums_value <span class="op">==</span> <span class="st">&quot;apples&quot;</span>) <span class="op">{</span></span>
-<span id="cb5-48"><a href="#cb5-48"></a>    dbits <span class="op">=</span> <span class="dv">2</span><span class="op">;</span></span>
-<span id="cb5-49"><a href="#cb5-49"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (plums_value <span class="op">==</span> <span class="st">&quot;larvae&quot;</span>) <span class="op">{</span></span>
-<span id="cb5-50"><a href="#cb5-50"></a>    dbits <span class="op">=</span> <span class="dv">3</span><span class="op">;</span></span>
-<span id="cb5-51"><a href="#cb5-51"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb5-52"><a href="#cb5-52"></a>    <span class="va">console</span>.<span class="at">warn</span>(<span class="st">&quot;Invalid plums_value: &#39;&quot;</span> <span class="op">+</span> plums_value <span class="op">+</span> <span class="st">&quot;&#39;&quot;</span>)<span class="op">;</span></span>
-<span id="cb5-53"><a href="#cb5-53"></a>    dbits <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb5-54"><a href="#cb5-54"></a>  <span class="op">}</span></span>
-<span id="cb5-55"><a href="#cb5-55"></a>  <span class="cf">if</span> (ls <span class="op">&amp;</span> (<span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">1</span>)) <span class="op">{</span> <span class="co">// second bit is the graf1 decision</span></span>
-<span id="cb5-56"><a href="#cb5-56"></a>    <span class="co">// In this case the plums decision is the 3rd and 4th bits</span></span>
-<span id="cb5-57"><a href="#cb5-57"></a>    <span class="kw">let</span> before <span class="op">=</span> ls <span class="op">&amp;</span> <span class="dv">3</span><span class="op">;</span></span>
-<span id="cb5-58"><a href="#cb5-58"></a>    <span class="kw">let</span> after <span class="op">=</span> ls <span class="op">&amp;</span> ((<span class="op">~</span><span class="dv">3</span>) <span class="op">&gt;&gt;&gt;</span> <span class="dv">0</span>)<span class="op">;</span></span>
-<span id="cb5-59"><a href="#cb5-59"></a>    <span class="kw">let</span> result <span class="op">=</span> before <span class="op">|</span> (dbits <span class="op">&lt;&lt;</span> <span class="dv">2</span>) <span class="op">|</span> (after <span class="op">&lt;&lt;</span> <span class="dv">2</span>)</span>
-<span id="cb5-60"><a href="#cb5-60"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
-<span id="cb5-61"><a href="#cb5-61"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb5-62"><a href="#cb5-62"></a>    <span class="co">// In this case the plums decision is the 6th and 7th bits, because the</span></span>
-<span id="cb5-63"><a href="#cb5-63"></a>    <span class="co">// eaten decision needs 3 bits and comes before the plums decision.</span></span>
-<span id="cb5-64"><a href="#cb5-64"></a>    <span class="kw">let</span> mask <span class="op">=</span> ((<span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">5</span>) <span class="op">-</span> <span class="dv">1</span>)<span class="op">;</span></span>
-<span id="cb5-65"><a href="#cb5-65"></a>    <span class="kw">let</span> before <span class="op">=</span> ls <span class="op">&amp;</span> mask<span class="op">;</span></span>
-<span id="cb5-66"><a href="#cb5-66"></a>    <span class="kw">let</span> after <span class="op">=</span> ls <span class="op">&amp;</span> ((<span class="op">~</span>mask) <span class="op">&gt;&gt;&gt;</span> <span class="dv">0</span>)<span class="op">;</span></span>
-<span id="cb5-67"><a href="#cb5-67"></a>    <span class="kw">let</span> result <span class="op">=</span> before <span class="op">|</span> (dbits <span class="op">&lt;&lt;</span> <span class="dv">5</span>) <span class="op">|</span> (after <span class="op">&lt;&lt;</span> <span class="dv">2</span>)<span class="op">;</span></span>
-<span id="cb5-68"><a href="#cb5-68"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
-<span id="cb5-69"><a href="#cb5-69"></a>  <span class="op">}</span></span>
-<span id="cb5-70"><a href="#cb5-70"></a><span class="op">}</span></span>
-<span id="cb5-71"><a href="#cb5-71"></a></span>
-<span id="cb5-72"><a href="#cb5-72"></a><span class="co">// Generates a poem according to a particular seed</span></span>
-<span id="cb5-73"><a href="#cb5-73"></a><span class="kw">function</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> seed) <span class="op">{</span></span>
-<span id="cb5-74"><a href="#cb5-74"></a>  <span class="co">// start at the root (which is not a list; just a string)</span></span>
-<span id="cb5-75"><a href="#cb5-75"></a>  <span class="kw">let</span> sofar <span class="op">=</span> grammar[<span class="st">&quot;root&quot;</span>]<span class="op">;</span></span>
-<span id="cb5-76"><a href="#cb5-76"></a>  <span class="kw">let</span> bits_used <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="co">// track bits used to generate a warning if we need to</span></span>
-<span id="cb5-77"><a href="#cb5-77"></a></span>
-<span id="cb5-78"><a href="#cb5-78"></a>  <span class="co">// loop until there aren&#39;t any expansions</span></span>
-<span id="cb5-79"><a href="#cb5-79"></a>  <span class="cf">while</span> (<span class="va">sofar</span>.<span class="at">indexOf</span>(<span class="st">&quot;{&quot;</span>) <span class="op">&gt;=</span> <span class="dv">0</span>) <span class="op">{</span></span>
-<span id="cb5-80"><a href="#cb5-80"></a></span>
-<span id="cb5-81"><a href="#cb5-81"></a>    <span class="co">// Look for the first expansion (denoted by curly braces) and figure out</span></span>
-<span id="cb5-82"><a href="#cb5-82"></a>    <span class="co">// the before, after, and key:</span></span>
-<span id="cb5-83"><a href="#cb5-83"></a>    <span class="kw">let</span> start <span class="op">=</span> <span class="va">sofar</span>.<span class="at">indexOf</span>(<span class="st">&quot;{&quot;</span>)<span class="op">;</span></span>
-<span id="cb5-84"><a href="#cb5-84"></a>    <span class="kw">let</span> end <span class="op">=</span> <span class="va">sofar</span>.<span class="at">indexOf</span>(<span class="st">&quot;}&quot;</span>)<span class="op">;</span></span>
-<span id="cb5-85"><a href="#cb5-85"></a>    <span class="kw">let</span> before <span class="op">=</span> <span class="va">sofar</span>.<span class="at">substr</span>(<span class="dv">0</span><span class="op">,</span> start)<span class="op">;</span></span>
-<span id="cb5-86"><a href="#cb5-86"></a>    <span class="kw">let</span> after <span class="op">=</span> <span class="va">sofar</span>.<span class="at">substr</span>(end<span class="op">+</span><span class="dv">1</span>)<span class="op">;</span></span>
-<span id="cb5-87"><a href="#cb5-87"></a>    <span class="kw">let</span> key <span class="op">=</span> <span class="va">sofar</span>.<span class="at">substr</span>(start<span class="op">+</span><span class="dv">1</span><span class="op">,</span> end <span class="op">-</span> start <span class="op">-</span> <span class="dv">1</span>)<span class="op">;</span></span>
-<span id="cb5-88"><a href="#cb5-88"></a></span>
-<span id="cb5-89"><a href="#cb5-89"></a>    <span class="cf">if</span> (<span class="va">grammar</span>.<span class="at">hasOwnProperty</span>(key)) <span class="op">{</span></span>
-<span id="cb5-90"><a href="#cb5-90"></a>      <span class="co">// See what our options are and pick one, using up some bits of the seed.</span></span>
-<span id="cb5-91"><a href="#cb5-91"></a>      <span class="kw">let</span> options <span class="op">=</span> grammar[key]<span class="op">;</span></span>
-<span id="cb5-92"><a href="#cb5-92"></a>      <span class="kw">let</span> bits <span class="op">=</span> <span class="va">Math</span>.<span class="at">ceil</span>(<span class="va">Math</span>.<span class="at">log2</span>(<span class="va">options</span>.<span class="at">length</span>))<span class="op">;</span></span>
-<span id="cb5-93"><a href="#cb5-93"></a>      <span class="kw">let</span> sel <span class="op">=</span> seed <span class="op">%</span> <span class="va">options</span>.<span class="at">length</span><span class="op">;</span></span>
-<span id="cb5-94"><a href="#cb5-94"></a>      <span class="kw">let</span> selected <span class="op">=</span> options[sel]<span class="op">;</span></span>
-<span id="cb5-95"><a href="#cb5-95"></a>      seed <span class="op">=</span> seed <span class="op">&gt;&gt;</span> bits<span class="op">;</span> <span class="co">// throw away used-up bits (wastes extra half bits)</span></span>
-<span id="cb5-96"><a href="#cb5-96"></a>      bits_used <span class="op">+=</span> bits<span class="op">;</span></span>
-<span id="cb5-97"><a href="#cb5-97"></a>      sofar <span class="op">=</span> before <span class="op">+</span> selected <span class="op">+</span> after<span class="op">;</span> <span class="co">// Reassemble a new working result</span></span>
-<span id="cb5-98"><a href="#cb5-98"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb5-99"><a href="#cb5-99"></a>      <span class="co">// For missing keys, use the key as the value and issue a warning</span></span>
-<span id="cb5-100"><a href="#cb5-100"></a>      sofar <span class="op">=</span> before <span class="op">+</span> key <span class="op">+</span> after<span class="op">;</span></span>
-<span id="cb5-101"><a href="#cb5-101"></a>      <span class="va">console</span>.<span class="at">warn</span>(<span class="st">&quot;Missing grammar key: &#39;&quot;</span> <span class="op">+</span> key <span class="op">+</span> <span class="st">&quot;&#39;&quot;</span>)<span class="op">;</span></span>
-<span id="cb5-102"><a href="#cb5-102"></a>    <span class="op">}</span></span>
-<span id="cb5-103"><a href="#cb5-103"></a>    <span class="co">// Double-check that we haven&#39;t used too many bits</span></span>
-<span id="cb5-104"><a href="#cb5-104"></a>    <span class="cf">if</span> (bits_used <span class="op">&gt;</span> <span class="dv">32</span>) <span class="op">{</span></span>
-<span id="cb5-105"><a href="#cb5-105"></a>      <span class="va">console</span>.<span class="at">warn</span>(<span class="st">&quot;Used more than 32 bits: &quot;</span> <span class="op">+</span> bits_used)<span class="op">;</span></span>
-<span id="cb5-106"><a href="#cb5-106"></a>    <span class="op">}</span></span>
-<span id="cb5-107"><a href="#cb5-107"></a>  <span class="op">}</span></span>
-<span id="cb5-108"><a href="#cb5-108"></a>  <span class="cf">return</span> sofar<span class="op">;</span></span>
-<span id="cb5-109"><a href="#cb5-109"></a><span class="op">}</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">let</span> grammar <span class="op">=</span> <span class="op">{</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a>  <span class="st">&quot;root&quot;</span><span class="op">:</span> <span class="st">&quot;{title}&lt;br/&gt;&lt;br/&gt;{graf1}&lt;br/&gt;{graf2}&lt;br/&gt;{graf3}&quot;</span><span class="op">,</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a>  <span class="st">&quot;title&quot;</span><span class="op">:</span> [ <span class="st">&quot;This Is Just To Say&quot;</span><span class="op">,</span> <span class="st">&quot;Re: Your Inquiry&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a>  <span class="st">&quot;graf1&quot;</span><span class="op">:</span> [</span>
+<span id="cb7-5"><a href="#cb7-5"></a>    <span class="st">&quot;I have {eaten}&lt;br/&gt;the {plums}&lt;br/&gt;that were in&lt;br/&gt;the {container}&lt;br/&gt;&quot;</span><span class="op">,</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a>    <span class="st">&quot;Although you&lt;br/&gt;did not mention&lt;br/&gt;the {plums}&lt;br/&gt;that you had {collected}&lt;br/&gt;&quot;</span></span>
+<span id="cb7-7"><a href="#cb7-7"></a>  ]<span class="op">,</span></span>
+<span id="cb7-8"><a href="#cb7-8"></a>  <span class="st">&quot;graf2&quot;</span><span class="op">:</span> [</span>
+<span id="cb7-9"><a href="#cb7-9"></a>    <span class="st">&quot;and which&lt;br/&gt;you were probably&lt;br/&gt;{saving}&lt;br/&gt;for {breakfast}&lt;br/&gt;&quot;</span></span>
+<span id="cb7-10"><a href="#cb7-10"></a>  ]<span class="op">,</span></span>
+<span id="cb7-11"><a href="#cb7-11"></a>  <span class="st">&quot;graf3&quot;</span><span class="op">:</span> [</span>
+<span id="cb7-12"><a href="#cb7-12"></a>    <span class="st">&quot;{forgive} me&lt;br/&gt;they were {delicious}&lt;br/&gt;so {sweet}&lt;br/&gt; and so {cold}&quot;</span><span class="op">,</span></span>
+<span id="cb7-13"><a href="#cb7-13"></a>    <span class="st">&quot;considering your&lt;br/&gt;{outrageous} behavior&lt;br/&gt;I cannot&lt;br/&gt;{regret} my actions&quot;</span></span>
+<span id="cb7-14"><a href="#cb7-14"></a>  ]<span class="op">,</span></span>
+<span id="cb7-15"><a href="#cb7-15"></a>  <span class="st">&quot;eaten&quot;</span><span class="op">:</span> [ <span class="st">&quot;eaten&quot;</span><span class="op">,</span> <span class="st">&quot;consumed&quot;</span><span class="op">,</span> <span class="st">&quot;eliminated&quot;</span><span class="op">,</span> <span class="st">&quot;transformed&quot;</span><span class="op">,</span> <span class="st">&quot;crushed&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-16"><a href="#cb7-16"></a>  <span class="st">&quot;plums&quot;</span><span class="op">:</span> [ <span class="st">&quot;plums&quot;</span><span class="op">,</span> <span class="st">&quot;peaches&quot;</span><span class="op">,</span> <span class="st">&quot;apples&quot;</span><span class="op">,</span> <span class="st">&quot;larvae&quot;</span> ]<span class="op">,</span> <span class="co">// 6th and 7th bits?</span></span>
+<span id="cb7-17"><a href="#cb7-17"></a>  <span class="st">&quot;container&quot;</span><span class="op">:</span> [ <span class="st">&quot;icebox&quot;</span><span class="op">,</span> <span class="st">&quot;refridgerator&quot;</span><span class="op">,</span> <span class="st">&quot;paper bag&quot;</span><span class="op">,</span> <span class="st">&quot;kitchen&quot;</span><span class="op">,</span> <span class="st">&quot;underworld&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-18"><a href="#cb7-18"></a>  <span class="st">&quot;saving&quot;</span><span class="op">:</span> [ <span class="st">&quot;saving&quot;</span><span class="op">,</span> <span class="st">&quot;hoarding&quot;</span><span class="op">,</span> <span class="st">&quot;eyeing&quot;</span><span class="op">,</span> <span class="st">&quot;considering&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-19"><a href="#cb7-19"></a>  <span class="st">&quot;breakfast&quot;</span><span class="op">:</span> [ <span class="st">&quot;breakfast&quot;</span><span class="op">,</span> <span class="st">&quot;lunch&quot;</span><span class="op">,</span> <span class="st">&quot;dinner&quot;</span><span class="op">,</span> <span class="st">&quot;the ritual&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-20"><a href="#cb7-20"></a>  <span class="st">&quot;forgive&quot;</span><span class="op">:</span> [ <span class="st">&quot;forgive&quot;</span><span class="op">,</span> <span class="st">&quot;pardon&quot;</span><span class="op">,</span> <span class="st">&quot;excuse&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-21"><a href="#cb7-21"></a>  <span class="st">&quot;delicious&quot;</span><span class="op">:</span> [ <span class="st">&quot;delicious&quot;</span><span class="op">,</span> <span class="st">&quot;delectible&quot;</span><span class="op">,</span> <span class="st">&quot;tempting&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-22"><a href="#cb7-22"></a>  <span class="st">&quot;sweet&quot;</span><span class="op">:</span> [ <span class="st">&quot;sweet&quot;</span><span class="op">,</span> <span class="st">&quot;juicy&quot;</span><span class="op">,</span> <span class="st">&quot;purple&quot;</span><span class="op">,</span> <span class="st">&quot;soft&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-23"><a href="#cb7-23"></a>  <span class="st">&quot;cold&quot;</span><span class="op">:</span> [ <span class="st">&quot;cold&quot;</span><span class="op">,</span> <span class="st">&quot;round&quot;</span><span class="op">,</span> <span class="st">&quot;smooth&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-24"><a href="#cb7-24"></a>  <span class="st">&quot;collected&quot;</span><span class="op">:</span> [ <span class="st">&quot;acquired&quot;</span><span class="op">,</span> <span class="st">&quot;collected&quot;</span><span class="op">,</span> <span class="st">&quot;obtained&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-25"><a href="#cb7-25"></a>  <span class="st">&quot;outrageous&quot;</span><span class="op">:</span> [ <span class="st">&quot;outrageous&quot;</span><span class="op">,</span> <span class="st">&quot;past&quot;</span><span class="op">,</span> <span class="st">&quot;current&quot;</span><span class="op">,</span> <span class="st">&quot;uncouth&quot;</span><span class="op">,</span> <span class="st">&quot;magnanimous&quot;</span>]<span class="op">,</span></span>
+<span id="cb7-26"><a href="#cb7-26"></a>  <span class="st">&quot;regret&quot;</span><span class="op">:</span> [ <span class="st">&quot;regret&quot;</span><span class="op">,</span> <span class="st">&quot;excuse&quot;</span><span class="op">,</span> <span class="st">&quot;repudiate&quot;</span> ]<span class="op">,</span></span>
+<span id="cb7-27"><a href="#cb7-27"></a><span class="op">}</span></span>
+<span id="cb7-28"><a href="#cb7-28"></a></span>
+<span id="cb7-29"><a href="#cb7-29"></a><span class="kw">let</span> gr_combinations <span class="op">=</span> <span class="dv">1</span><span class="op">*</span><span class="dv">2</span><span class="op">*</span><span class="dv">2</span><span class="op">*</span><span class="dv">1</span><span class="op">*</span><span class="dv">2</span><span class="op">*</span><span class="dv">5</span><span class="op">*</span><span class="dv">4</span><span class="op">*</span><span class="dv">5</span><span class="op">*</span><span class="dv">4</span><span class="op">*</span><span class="dv">4</span><span class="op">*</span><span class="dv">3</span><span class="op">*</span><span class="dv">3</span><span class="op">*</span><span class="dv">4</span><span class="op">*</span><span class="dv">3</span><span class="op">*</span><span class="dv">3</span><span class="op">*</span><span class="dv">5</span><span class="op">*</span><span class="dv">3</span><span class="op">;</span> <span class="co">// ~ 19 bits</span></span>
+<span id="cb7-30"><a href="#cb7-30"></a><span class="kw">let</span> gr_bits <span class="op">=</span> <span class="dv">0</span><span class="op">+</span><span class="dv">1</span><span class="op">+</span><span class="dv">1</span><span class="op">+</span><span class="dv">0</span><span class="op">+</span><span class="dv">1</span><span class="op">+</span><span class="dv">3</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">3</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">2</span><span class="op">+</span><span class="dv">3</span><span class="op">+</span><span class="dv">2</span><span class="op">;</span> <span class="co">// bits actually used</span></span>
+<span id="cb7-31"><a href="#cb7-31"></a><span class="kw">let</span> gr_full <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> gr_bits<span class="op">;</span> <span class="co">// full # of bits used</span></span>
+<span id="cb7-32"><a href="#cb7-32"></a><span class="kw">let</span> lim_gr_bits <span class="op">=</span> gr_bits <span class="op">-</span> <span class="dv">2</span><span class="op">;</span> <span class="co">// minus the plums choice</span></span>
+<span id="cb7-33"><a href="#cb7-33"></a><span class="kw">let</span> lim_gr_full <span class="op">=</span> <span class="dv">1</span> <span class="op">&lt;&lt;</span> lim_gr_bits<span class="op">;</span> <span class="co">// full # of bits used while limited</span></span>
+<span id="cb7-34"><a href="#cb7-34"></a></span>
+<span id="cb7-35"><a href="#cb7-35"></a><span class="co">// Takes a seed in the range [0, lim_gr_full), which is the right number of</span></span>
+<span id="cb7-36"><a href="#cb7-36"></a><span class="co">// bits to specify every decision except the 2-bit decision for the grammar key</span></span>
+<span id="cb7-37"><a href="#cb7-37"></a><span class="co">// &quot;plums&quot;, and expands it into the range [0, gr_full) so that it includes the</span></span>
+<span id="cb7-38"><a href="#cb7-38"></a><span class="co">// bits necessary to specify the given value for the &quot;plums&quot; key. This is</span></span>
+<span id="cb7-39"><a href="#cb7-39"></a><span class="co">// complicated by the fact that the &quot;plums&quot; decision happens in a different</span></span>
+<span id="cb7-40"><a href="#cb7-40"></a><span class="co">// place depending on the decision for the expansion of graf1.</span></span>
+<span id="cb7-41"><a href="#cb7-41"></a><span class="kw">function</span> <span class="at">expand_limited_seed</span>(ls<span class="op">,</span> plums_value) <span class="op">{</span></span>
+<span id="cb7-42"><a href="#cb7-42"></a>  <span class="kw">let</span> dbits<span class="op">;</span></span>
+<span id="cb7-43"><a href="#cb7-43"></a>  <span class="cf">if</span> (plums_value <span class="op">==</span> <span class="st">&quot;plums&quot;</span>) <span class="op">{</span></span>
+<span id="cb7-44"><a href="#cb7-44"></a>    dbits <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb7-45"><a href="#cb7-45"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (plums_value <span class="op">==</span> <span class="st">&quot;peaches&quot;</span>) <span class="op">{</span></span>
+<span id="cb7-46"><a href="#cb7-46"></a>    dbits <span class="op">=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb7-47"><a href="#cb7-47"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (plums_value <span class="op">==</span> <span class="st">&quot;apples&quot;</span>) <span class="op">{</span></span>
+<span id="cb7-48"><a href="#cb7-48"></a>    dbits <span class="op">=</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb7-49"><a href="#cb7-49"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="cf">if</span> (plums_value <span class="op">==</span> <span class="st">&quot;larvae&quot;</span>) <span class="op">{</span></span>
+<span id="cb7-50"><a href="#cb7-50"></a>    dbits <span class="op">=</span> <span class="dv">3</span><span class="op">;</span></span>
+<span id="cb7-51"><a href="#cb7-51"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb7-52"><a href="#cb7-52"></a>    <span class="va">console</span>.<span class="at">warn</span>(<span class="st">&quot;Invalid plums_value: &#39;&quot;</span> <span class="op">+</span> plums_value <span class="op">+</span> <span class="st">&quot;&#39;&quot;</span>)<span class="op">;</span></span>
+<span id="cb7-53"><a href="#cb7-53"></a>    dbits <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb7-54"><a href="#cb7-54"></a>  <span class="op">}</span></span>
+<span id="cb7-55"><a href="#cb7-55"></a>  <span class="cf">if</span> (ls <span class="op">&amp;</span> (<span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">1</span>)) <span class="op">{</span> <span class="co">// second bit is the graf1 decision</span></span>
+<span id="cb7-56"><a href="#cb7-56"></a>    <span class="co">// In this case the plums decision is the 3rd and 4th bits</span></span>
+<span id="cb7-57"><a href="#cb7-57"></a>    <span class="kw">let</span> before <span class="op">=</span> ls <span class="op">&amp;</span> <span class="dv">3</span><span class="op">;</span></span>
+<span id="cb7-58"><a href="#cb7-58"></a>    <span class="kw">let</span> after <span class="op">=</span> ls <span class="op">&amp;</span> ((<span class="op">~</span><span class="dv">3</span>) <span class="op">&gt;&gt;&gt;</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb7-59"><a href="#cb7-59"></a>    <span class="kw">let</span> result <span class="op">=</span> before <span class="op">|</span> (dbits <span class="op">&lt;&lt;</span> <span class="dv">2</span>) <span class="op">|</span> (after <span class="op">&lt;&lt;</span> <span class="dv">2</span>)</span>
+<span id="cb7-60"><a href="#cb7-60"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb7-61"><a href="#cb7-61"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb7-62"><a href="#cb7-62"></a>    <span class="co">// In this case the plums decision is the 6th and 7th bits, because the</span></span>
+<span id="cb7-63"><a href="#cb7-63"></a>    <span class="co">// eaten decision needs 3 bits and comes before the plums decision.</span></span>
+<span id="cb7-64"><a href="#cb7-64"></a>    <span class="kw">let</span> mask <span class="op">=</span> ((<span class="dv">1</span> <span class="op">&lt;&lt;</span> <span class="dv">5</span>) <span class="op">-</span> <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb7-65"><a href="#cb7-65"></a>    <span class="kw">let</span> before <span class="op">=</span> ls <span class="op">&amp;</span> mask<span class="op">;</span></span>
+<span id="cb7-66"><a href="#cb7-66"></a>    <span class="kw">let</span> after <span class="op">=</span> ls <span class="op">&amp;</span> ((<span class="op">~</span>mask) <span class="op">&gt;&gt;&gt;</span> <span class="dv">0</span>)<span class="op">;</span></span>
+<span id="cb7-67"><a href="#cb7-67"></a>    <span class="kw">let</span> result <span class="op">=</span> before <span class="op">|</span> (dbits <span class="op">&lt;&lt;</span> <span class="dv">5</span>) <span class="op">|</span> (after <span class="op">&lt;&lt;</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb7-68"><a href="#cb7-68"></a>    <span class="cf">return</span> result<span class="op">;</span></span>
+<span id="cb7-69"><a href="#cb7-69"></a>  <span class="op">}</span></span>
+<span id="cb7-70"><a href="#cb7-70"></a><span class="op">}</span></span>
+<span id="cb7-71"><a href="#cb7-71"></a></span>
+<span id="cb7-72"><a href="#cb7-72"></a><span class="co">// Generates a poem according to a particular seed</span></span>
+<span id="cb7-73"><a href="#cb7-73"></a><span class="kw">function</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> seed) <span class="op">{</span></span>
+<span id="cb7-74"><a href="#cb7-74"></a>  <span class="co">// start at the root (which is not a list; just a string)</span></span>
+<span id="cb7-75"><a href="#cb7-75"></a>  <span class="kw">let</span> sofar <span class="op">=</span> grammar[<span class="st">&quot;root&quot;</span>]<span class="op">;</span></span>
+<span id="cb7-76"><a href="#cb7-76"></a>  <span class="kw">let</span> bits_used <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> <span class="co">// track bits used to generate a warning if we need to</span></span>
+<span id="cb7-77"><a href="#cb7-77"></a></span>
+<span id="cb7-78"><a href="#cb7-78"></a>  <span class="co">// loop until there aren&#39;t any expansions</span></span>
+<span id="cb7-79"><a href="#cb7-79"></a>  <span class="cf">while</span> (<span class="va">sofar</span>.<span class="at">indexOf</span>(<span class="st">&quot;{&quot;</span>) <span class="op">&gt;=</span> <span class="dv">0</span>) <span class="op">{</span></span>
+<span id="cb7-80"><a href="#cb7-80"></a></span>
+<span id="cb7-81"><a href="#cb7-81"></a>    <span class="co">// Look for the first expansion (denoted by curly braces) and figure out</span></span>
+<span id="cb7-82"><a href="#cb7-82"></a>    <span class="co">// the before, after, and key:</span></span>
+<span id="cb7-83"><a href="#cb7-83"></a>    <span class="kw">let</span> start <span class="op">=</span> <span class="va">sofar</span>.<span class="at">indexOf</span>(<span class="st">&quot;{&quot;</span>)<span class="op">;</span></span>
+<span id="cb7-84"><a href="#cb7-84"></a>    <span class="kw">let</span> end <span class="op">=</span> <span class="va">sofar</span>.<span class="at">indexOf</span>(<span class="st">&quot;}&quot;</span>)<span class="op">;</span></span>
+<span id="cb7-85"><a href="#cb7-85"></a>    <span class="kw">let</span> before <span class="op">=</span> <span class="va">sofar</span>.<span class="at">substr</span>(<span class="dv">0</span><span class="op">,</span> start)<span class="op">;</span></span>
+<span id="cb7-86"><a href="#cb7-86"></a>    <span class="kw">let</span> after <span class="op">=</span> <span class="va">sofar</span>.<span class="at">substr</span>(end<span class="op">+</span><span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb7-87"><a href="#cb7-87"></a>    <span class="kw">let</span> key <span class="op">=</span> <span class="va">sofar</span>.<span class="at">substr</span>(start<span class="op">+</span><span class="dv">1</span><span class="op">,</span> end <span class="op">-</span> start <span class="op">-</span> <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb7-88"><a href="#cb7-88"></a></span>
+<span id="cb7-89"><a href="#cb7-89"></a>    <span class="cf">if</span> (<span class="va">grammar</span>.<span class="at">hasOwnProperty</span>(key)) <span class="op">{</span></span>
+<span id="cb7-90"><a href="#cb7-90"></a>      <span class="co">// See what our options are and pick one, using up some bits of the seed.</span></span>
+<span id="cb7-91"><a href="#cb7-91"></a>      <span class="kw">let</span> options <span class="op">=</span> grammar[key]<span class="op">;</span></span>
+<span id="cb7-92"><a href="#cb7-92"></a>      <span class="kw">let</span> bits <span class="op">=</span> <span class="va">Math</span>.<span class="at">ceil</span>(<span class="va">Math</span>.<span class="at">log2</span>(<span class="va">options</span>.<span class="at">length</span>))<span class="op">;</span></span>
+<span id="cb7-93"><a href="#cb7-93"></a>      <span class="kw">let</span> sel <span class="op">=</span> seed <span class="op">%</span> <span class="va">options</span>.<span class="at">length</span><span class="op">;</span></span>
+<span id="cb7-94"><a href="#cb7-94"></a>      <span class="kw">let</span> selected <span class="op">=</span> options[sel]<span class="op">;</span></span>
+<span id="cb7-95"><a href="#cb7-95"></a>      seed <span class="op">=</span> seed <span class="op">&gt;&gt;</span> bits<span class="op">;</span> <span class="co">// throw away used-up bits (wastes extra half bits)</span></span>
+<span id="cb7-96"><a href="#cb7-96"></a>      bits_used <span class="op">+=</span> bits<span class="op">;</span></span>
+<span id="cb7-97"><a href="#cb7-97"></a>      sofar <span class="op">=</span> before <span class="op">+</span> selected <span class="op">+</span> after<span class="op">;</span> <span class="co">// Reassemble a new working result</span></span>
+<span id="cb7-98"><a href="#cb7-98"></a>    <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb7-99"><a href="#cb7-99"></a>      <span class="co">// For missing keys, use the key as the value and issue a warning</span></span>
+<span id="cb7-100"><a href="#cb7-100"></a>      sofar <span class="op">=</span> before <span class="op">+</span> key <span class="op">+</span> after<span class="op">;</span></span>
+<span id="cb7-101"><a href="#cb7-101"></a>      <span class="va">console</span>.<span class="at">warn</span>(<span class="st">&quot;Missing grammar key: &#39;&quot;</span> <span class="op">+</span> key <span class="op">+</span> <span class="st">&quot;&#39;&quot;</span>)<span class="op">;</span></span>
+<span id="cb7-102"><a href="#cb7-102"></a>    <span class="op">}</span></span>
+<span id="cb7-103"><a href="#cb7-103"></a>    <span class="co">// Double-check that we haven&#39;t used too many bits</span></span>
+<span id="cb7-104"><a href="#cb7-104"></a>    <span class="cf">if</span> (bits_used <span class="op">&gt;</span> <span class="dv">32</span>) <span class="op">{</span></span>
+<span id="cb7-105"><a href="#cb7-105"></a>      <span class="va">console</span>.<span class="at">warn</span>(<span class="st">&quot;Used more than 32 bits: &quot;</span> <span class="op">+</span> bits_used)<span class="op">;</span></span>
+<span id="cb7-106"><a href="#cb7-106"></a>    <span class="op">}</span></span>
+<span id="cb7-107"><a href="#cb7-107"></a>  <span class="op">}</span></span>
+<span id="cb7-108"><a href="#cb7-108"></a>  <span class="cf">return</span> sofar<span class="op">;</span></span>
+<span id="cb7-109"><a href="#cb7-109"></a><span class="op">}</span></span></code></pre></div>
 </details>
 <p>In this code block, you can see the code for managing the UI elements and actually calling the generator. We use <code>anarchy</code>’s shuffling capabilities for the bottom row, so that subsequent poems are quite distinct, in contrast with the top row even when filtering is involved.</p>
 <details>
 <p><summary>UI and Anarchy Code</summary></p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">// Get handles for each of our interface elements:</span></span>
-<span id="cb6-2"><a href="#cb6-2"></a><span class="kw">let</span> p_pr <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_previous&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-3"><a href="#cb6-3"></a><span class="kw">let</span> p_hr <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_here&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-4"><a href="#cb6-4"></a><span class="kw">let</span> p_nx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_next&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-5"><a href="#cb6-5"></a><span class="kw">let</span> p_fl <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_filter&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-6"><a href="#cb6-6"></a><span class="kw">let</span> p_sd <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_seed&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-7"><a href="#cb6-7"></a><span class="kw">let</span> p_sp <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_seed_prev&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-8"><a href="#cb6-8"></a><span class="kw">let</span> p_sn <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_seed_next&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-9"><a href="#cb6-9"></a></span>
-<span id="cb6-10"><a href="#cb6-10"></a><span class="kw">let</span> p_bucket <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-11"><a href="#cb6-11"></a></span>
-<span id="cb6-12"><a href="#cb6-12"></a><span class="co">// This function does the heavy lifting: it looks at interface elements to</span></span>
-<span id="cb6-13"><a href="#cb6-13"></a><span class="co">// determine the seed and where we are in the space, and overwrites nonsensical</span></span>
-<span id="cb6-14"><a href="#cb6-14"></a><span class="co">// values, then it calls generate_poem to create the required poems, puts them</span></span>
-<span id="cb6-15"><a href="#cb6-15"></a><span class="co">// in divs, labels them with their seeds, and uses them to replace the contents</span></span>
-<span id="cb6-16"><a href="#cb6-16"></a><span class="co">// of the demo div.</span></span>
-<span id="cb6-17"><a href="#cb6-17"></a><span class="kw">function</span> <span class="at">display_poems</span>() <span class="op">{</span></span>
-<span id="cb6-18"><a href="#cb6-18"></a>  <span class="co">// Grab parameters (seed and position) from the UI and overwrite bad values:</span></span>
-<span id="cb6-19"><a href="#cb6-19"></a>  <span class="kw">let</span> p_seed <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_sd</span>.<span class="at">value</span>) <span class="op">&gt;&gt;&gt;</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb6-20"><a href="#cb6-20"></a>  <span class="cf">if</span> (p_seed <span class="op">==</span> <span class="kw">undefined</span> <span class="op">||</span> <span class="at">isNaN</span>(p_seed)) <span class="op">{</span></span>
-<span id="cb6-21"><a href="#cb6-21"></a>    p_seed <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb6-22"><a href="#cb6-22"></a>    <span class="va">p_sd</span>.<span class="at">value</span> <span class="op">=</span> p_seed<span class="op">;</span></span>
-<span id="cb6-23"><a href="#cb6-23"></a>  <span class="op">}</span></span>
-<span id="cb6-24"><a href="#cb6-24"></a>  <span class="kw">let</span> first <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_hr</span>.<span class="at">value</span>)<span class="op">;</span></span>
-<span id="cb6-25"><a href="#cb6-25"></a>  <span class="cf">if</span> (first <span class="op">==</span> <span class="kw">undefined</span> <span class="op">||</span> first <span class="op">&lt;=</span> <span class="dv">0</span>) <span class="op">{</span></span>
-<span id="cb6-26"><a href="#cb6-26"></a>    first <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb6-27"><a href="#cb6-27"></a>    <span class="va">p_pr</span>.<span class="at">disabled</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
-<span id="cb6-28"><a href="#cb6-28"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb6-29"><a href="#cb6-29"></a>    <span class="va">p_pr</span>.<span class="at">disabled</span> <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb6-30"><a href="#cb6-30"></a>  <span class="op">}</span></span>
-<span id="cb6-31"><a href="#cb6-31"></a>  <span class="cf">if</span> (first <span class="op">&gt;=</span> gr_combinations <span class="op">-</span> <span class="dv">4</span>) <span class="op">{</span></span>
-<span id="cb6-32"><a href="#cb6-32"></a>    first <span class="op">=</span> gr_combinations <span class="op">-</span> <span class="dv">4</span><span class="op">;</span></span>
-<span id="cb6-33"><a href="#cb6-33"></a>    <span class="va">p_nx</span>.<span class="at">disabled</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
-<span id="cb6-34"><a href="#cb6-34"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb6-35"><a href="#cb6-35"></a>    <span class="va">p_nx</span>.<span class="at">disabled</span> <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
-<span id="cb6-36"><a href="#cb6-36"></a>  <span class="op">}</span></span>
-<span id="cb6-37"><a href="#cb6-37"></a>  <span class="va">p_hr</span>.<span class="at">value</span> <span class="op">=</span> first<span class="op">;</span></span>
-<span id="cb6-38"><a href="#cb6-38"></a></span>
-<span id="cb6-39"><a href="#cb6-39"></a>  <span class="co">// Figure out seeds for our non-shuffled poems:</span></span>
-<span id="cb6-40"><a href="#cb6-40"></a>  <span class="kw">let</span> s1<span class="op">,</span> s2<span class="op">,</span> s3<span class="op">,</span> s4<span class="op">;</span></span>
-<span id="cb6-41"><a href="#cb6-41"></a>  <span class="cf">if</span> (<span class="va">p_fl</span>.<span class="at">value</span> <span class="op">==</span> <span class="st">&quot;none&quot;</span>) <span class="op">{</span></span>
-<span id="cb6-42"><a href="#cb6-42"></a>    <span class="co">// If we&#39;re not filtering, we just base it on the position</span></span>
-<span id="cb6-43"><a href="#cb6-43"></a>    s1 <span class="op">=</span> first<span class="op">;</span></span>
-<span id="cb6-44"><a href="#cb6-44"></a>    s2 <span class="op">=</span> first <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb6-45"><a href="#cb6-45"></a>    s3 <span class="op">=</span> first <span class="op">+</span> <span class="dv">2</span><span class="op">;</span></span>
-<span id="cb6-46"><a href="#cb6-46"></a>    s4 <span class="op">=</span> first <span class="op">+</span> <span class="dv">3</span><span class="op">;</span></span>
-<span id="cb6-47"><a href="#cb6-47"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb6-48"><a href="#cb6-48"></a>    <span class="co">// Otherwise, we use the expand_limited_seed to figure out our seeds, still</span></span>
-<span id="cb6-49"><a href="#cb6-49"></a>    <span class="co">// based on position.</span></span>
-<span id="cb6-50"><a href="#cb6-50"></a>    <span class="kw">let</span> filter <span class="op">=</span> <span class="va">p_fl</span>.<span class="at">value</span><span class="op">;</span></span>
-<span id="cb6-51"><a href="#cb6-51"></a>    s1 <span class="op">=</span> <span class="at">expand_limited_seed</span>(first<span class="op">,</span> filter)<span class="op">;</span></span>
-<span id="cb6-52"><a href="#cb6-52"></a>    s2 <span class="op">=</span> <span class="at">expand_limited_seed</span>(first <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> filter)<span class="op">;</span></span>
-<span id="cb6-53"><a href="#cb6-53"></a>    s3 <span class="op">=</span> <span class="at">expand_limited_seed</span>(first <span class="op">+</span> <span class="dv">2</span><span class="op">,</span> filter)<span class="op">;</span></span>
-<span id="cb6-54"><a href="#cb6-54"></a>    s4 <span class="op">=</span> <span class="at">expand_limited_seed</span>(first <span class="op">+</span> <span class="dv">3</span><span class="op">,</span> filter)<span class="op">;</span></span>
-<span id="cb6-55"><a href="#cb6-55"></a>  <span class="op">}</span></span>
-<span id="cb6-56"><a href="#cb6-56"></a></span>
-<span id="cb6-57"><a href="#cb6-57"></a>  <span class="co">// Now we can generate our non-shuffled poems:</span></span>
-<span id="cb6-58"><a href="#cb6-58"></a>  <span class="kw">let</span> p1 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> s1)<span class="op">;</span></span>
-<span id="cb6-59"><a href="#cb6-59"></a>  <span class="kw">let</span> p2 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> s2)<span class="op">;</span></span>
-<span id="cb6-60"><a href="#cb6-60"></a>  <span class="kw">let</span> p3 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> s3)<span class="op">;</span></span>
-<span id="cb6-61"><a href="#cb6-61"></a>  <span class="kw">let</span> p4 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> s4)<span class="op">;</span></span>
-<span id="cb6-62"><a href="#cb6-62"></a></span>
-<span id="cb6-63"><a href="#cb6-63"></a>  <span class="co">// Here we figure out the seeds for our shuffled poems. Same code as above,</span></span>
-<span id="cb6-64"><a href="#cb6-64"></a>  <span class="co">// except we call anarchy.cohort_shuffle on the thing that would have been the</span></span>
-<span id="cb6-65"><a href="#cb6-65"></a>  <span class="co">// seed.</span></span>
-<span id="cb6-66"><a href="#cb6-66"></a>  <span class="kw">let</span> ss1<span class="op">,</span> ss2<span class="op">,</span> ss3<span class="op">,</span> ss4<span class="op">;</span></span>
-<span id="cb6-67"><a href="#cb6-67"></a>  <span class="cf">if</span> (<span class="va">p_fl</span>.<span class="at">value</span> <span class="op">==</span> <span class="st">&quot;none&quot;</span>) <span class="op">{</span></span>
-<span id="cb6-68"><a href="#cb6-68"></a>    ss1 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first<span class="op">,</span> gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
-<span id="cb6-69"><a href="#cb6-69"></a>    ss2 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
-<span id="cb6-70"><a href="#cb6-70"></a>    ss3 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">2</span><span class="op">,</span> gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
-<span id="cb6-71"><a href="#cb6-71"></a>    ss4 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">3</span><span class="op">,</span> gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
-<span id="cb6-72"><a href="#cb6-72"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
-<span id="cb6-73"><a href="#cb6-73"></a>    <span class="co">// Note that in this case, we need to know the size of the smaller</span></span>
-<span id="cb6-74"><a href="#cb6-74"></a>    <span class="co">// possibility space, and we apply expand_limited_seed after shuffling. If</span></span>
-<span id="cb6-75"><a href="#cb6-75"></a>    <span class="co">// we did it in the other order, we would have expanded seeds (a very</span></span>
-<span id="cb6-76"><a href="#cb6-76"></a>    <span class="co">// special subset of all seeds) being shuffled among all seeds, and the</span></span>
-<span id="cb6-77"><a href="#cb6-77"></a>    <span class="co">// filter would be broken.</span></span>
-<span id="cb6-78"><a href="#cb6-78"></a>    <span class="kw">let</span> filter <span class="op">=</span> <span class="va">p_fl</span>.<span class="at">value</span><span class="op">;</span></span>
-<span id="cb6-79"><a href="#cb6-79"></a>    <span class="kw">let</span> base_s1 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first<span class="op">,</span> lim_gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
-<span id="cb6-80"><a href="#cb6-80"></a>    ss1 <span class="op">=</span> <span class="at">expand_limited_seed</span>(base_s1<span class="op">,</span> filter)<span class="op">;</span></span>
-<span id="cb6-81"><a href="#cb6-81"></a>    <span class="kw">let</span> base_s2 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> lim_gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
-<span id="cb6-82"><a href="#cb6-82"></a>    ss2 <span class="op">=</span> <span class="at">expand_limited_seed</span>(base_s2<span class="op">,</span> filter)<span class="op">;</span></span>
-<span id="cb6-83"><a href="#cb6-83"></a>    <span class="kw">let</span> base_s3 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">2</span><span class="op">,</span> lim_gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
-<span id="cb6-84"><a href="#cb6-84"></a>    ss3 <span class="op">=</span> <span class="at">expand_limited_seed</span>(base_s3<span class="op">,</span> filter)<span class="op">;</span></span>
-<span id="cb6-85"><a href="#cb6-85"></a>    <span class="kw">let</span> base_s4 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">3</span><span class="op">,</span> lim_gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
-<span id="cb6-86"><a href="#cb6-86"></a>    ss4 <span class="op">=</span> <span class="at">expand_limited_seed</span>(base_s4<span class="op">,</span> filter)<span class="op">;</span></span>
-<span id="cb6-87"><a href="#cb6-87"></a>  <span class="op">}</span></span>
-<span id="cb6-88"><a href="#cb6-88"></a></span>
-<span id="cb6-89"><a href="#cb6-89"></a>  <span class="co">// Here we generate the shuffled poems</span></span>
-<span id="cb6-90"><a href="#cb6-90"></a>  <span class="kw">let</span> sp1 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> ss1)<span class="op">;</span></span>
-<span id="cb6-91"><a href="#cb6-91"></a>  <span class="kw">let</span> sp2 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> ss2)<span class="op">;</span></span>
-<span id="cb6-92"><a href="#cb6-92"></a>  <span class="kw">let</span> sp3 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> ss3)<span class="op">;</span></span>
-<span id="cb6-93"><a href="#cb6-93"></a>  <span class="kw">let</span> sp4 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> ss4)<span class="op">;</span></span>
-<span id="cb6-94"><a href="#cb6-94"></a></span>
-<span id="cb6-95"><a href="#cb6-95"></a>  <span class="co">// Here we get rid of the old content of the results div</span></span>
-<span id="cb6-96"><a href="#cb6-96"></a>  <span class="va">p_bucket</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></span>
-<span id="cb6-97"><a href="#cb6-97"></a></span>
-<span id="cb6-98"><a href="#cb6-98"></a>  <span class="co">// Now we create divs for each poem, put in the text, and give them classes</span></span>
-<span id="cb6-99"><a href="#cb6-99"></a>  <span class="co">// so that we can assign them to the top or bottom row with CSS (that style</span></span>
-<span id="cb6-100"><a href="#cb6-100"></a>  <span class="co">// code isn&#39;t shown, but you can look at the page source to see it; it&#39;s in a</span></span>
-<span id="cb6-101"><a href="#cb6-101"></a>  <span class="co">// style block nearby.).</span></span>
-<span id="cb6-102"><a href="#cb6-102"></a>  <span class="kw">let</span> d1 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-103"><a href="#cb6-103"></a>  <span class="va">d1</span>.<span class="at">innerHTML</span> <span class="op">=</span> p1<span class="op">;</span></span>
-<span id="cb6-104"><a href="#cb6-104"></a>  <span class="va">d1</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;default_poem&quot;</span>)</span>
-<span id="cb6-105"><a href="#cb6-105"></a>  <span class="kw">let</span> d2 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-106"><a href="#cb6-106"></a>  <span class="va">d2</span>.<span class="at">innerHTML</span> <span class="op">=</span> p2<span class="op">;</span></span>
-<span id="cb6-107"><a href="#cb6-107"></a>  <span class="va">d2</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;default_poem&quot;</span>)</span>
-<span id="cb6-108"><a href="#cb6-108"></a>  <span class="kw">let</span> d3 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-109"><a href="#cb6-109"></a>  <span class="va">d3</span>.<span class="at">innerHTML</span> <span class="op">=</span> p3<span class="op">;</span></span>
-<span id="cb6-110"><a href="#cb6-110"></a>  <span class="va">d3</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;default_poem&quot;</span>)</span>
-<span id="cb6-111"><a href="#cb6-111"></a>  <span class="kw">let</span> d4 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-112"><a href="#cb6-112"></a>  <span class="va">d4</span>.<span class="at">innerHTML</span> <span class="op">=</span> p4<span class="op">;</span></span>
-<span id="cb6-113"><a href="#cb6-113"></a>  <span class="va">d4</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;default_poem&quot;</span>)</span>
-<span id="cb6-114"><a href="#cb6-114"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(d1)<span class="op">;</span></span>
-<span id="cb6-115"><a href="#cb6-115"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(d2)<span class="op">;</span></span>
-<span id="cb6-116"><a href="#cb6-116"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(d3)<span class="op">;</span></span>
-<span id="cb6-117"><a href="#cb6-117"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(d4)<span class="op">;</span></span>
-<span id="cb6-118"><a href="#cb6-118"></a></span>
-<span id="cb6-119"><a href="#cb6-119"></a>  <span class="co">// Here are the divs for the shuffled poems:</span></span>
-<span id="cb6-120"><a href="#cb6-120"></a>  <span class="kw">let</span> sd1 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-121"><a href="#cb6-121"></a>  <span class="va">sd1</span>.<span class="at">innerHTML</span> <span class="op">=</span> sp1<span class="op">;</span></span>
-<span id="cb6-122"><a href="#cb6-122"></a>  <span class="va">sd1</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;shuffled_poem&quot;</span>)</span>
-<span id="cb6-123"><a href="#cb6-123"></a>  <span class="kw">let</span> sd2 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-124"><a href="#cb6-124"></a>  <span class="va">sd2</span>.<span class="at">innerHTML</span> <span class="op">=</span> sp2<span class="op">;</span></span>
-<span id="cb6-125"><a href="#cb6-125"></a>  <span class="va">sd2</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;shuffled_poem&quot;</span>)</span>
-<span id="cb6-126"><a href="#cb6-126"></a>  <span class="kw">let</span> sd3 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-127"><a href="#cb6-127"></a>  <span class="va">sd3</span>.<span class="at">innerHTML</span> <span class="op">=</span> sp3<span class="op">;</span></span>
-<span id="cb6-128"><a href="#cb6-128"></a>  <span class="va">sd3</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;shuffled_poem&quot;</span>)</span>
-<span id="cb6-129"><a href="#cb6-129"></a>  <span class="kw">let</span> sd4 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-130"><a href="#cb6-130"></a>  <span class="va">sd4</span>.<span class="at">innerHTML</span> <span class="op">=</span> sp4<span class="op">;</span></span>
-<span id="cb6-131"><a href="#cb6-131"></a>  <span class="va">sd4</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;shuffled_poem&quot;</span>)</span>
-<span id="cb6-132"><a href="#cb6-132"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(sd1)<span class="op">;</span></span>
-<span id="cb6-133"><a href="#cb6-133"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(sd2)<span class="op">;</span></span>
-<span id="cb6-134"><a href="#cb6-134"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(sd3)<span class="op">;</span></span>
-<span id="cb6-135"><a href="#cb6-135"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(sd4)<span class="op">;</span></span>
-<span id="cb6-136"><a href="#cb6-136"></a></span>
-<span id="cb6-137"><a href="#cb6-137"></a></span>
-<span id="cb6-138"><a href="#cb6-138"></a>  <span class="co">// These are the labels so that you can see which seed created which poem:</span></span>
-<span id="cb6-139"><a href="#cb6-139"></a>  <span class="kw">let</span> l1 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-140"><a href="#cb6-140"></a>  <span class="va">l1</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> s1<span class="op">;</span></span>
-<span id="cb6-141"><a href="#cb6-141"></a>  <span class="va">d1</span>.<span class="at">insertBefore</span>(l1<span class="op">,</span> <span class="va">d1</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
-<span id="cb6-142"><a href="#cb6-142"></a>  <span class="kw">let</span> l2 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-143"><a href="#cb6-143"></a>  <span class="va">l2</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> s2<span class="op">;</span></span>
-<span id="cb6-144"><a href="#cb6-144"></a>  <span class="va">d2</span>.<span class="at">insertBefore</span>(l2<span class="op">,</span> <span class="va">d2</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
-<span id="cb6-145"><a href="#cb6-145"></a>  <span class="kw">let</span> l3 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-146"><a href="#cb6-146"></a>  <span class="va">l3</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> s3<span class="op">;</span></span>
-<span id="cb6-147"><a href="#cb6-147"></a>  <span class="va">d3</span>.<span class="at">insertBefore</span>(l3<span class="op">,</span> <span class="va">d3</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
-<span id="cb6-148"><a href="#cb6-148"></a>  <span class="kw">let</span> l4 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-149"><a href="#cb6-149"></a>  <span class="va">l4</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> s4<span class="op">;</span></span>
-<span id="cb6-150"><a href="#cb6-150"></a>  <span class="va">d4</span>.<span class="at">insertBefore</span>(l4<span class="op">,</span> <span class="va">d4</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
-<span id="cb6-151"><a href="#cb6-151"></a></span>
-<span id="cb6-152"><a href="#cb6-152"></a>  <span class="co">// These are the labels for the shuffled poems:</span></span>
-<span id="cb6-153"><a href="#cb6-153"></a>  <span class="kw">let</span> sl1 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-154"><a href="#cb6-154"></a>  <span class="va">sl1</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> ss1<span class="op">;</span></span>
-<span id="cb6-155"><a href="#cb6-155"></a>  <span class="va">sd1</span>.<span class="at">insertBefore</span>(sl1<span class="op">,</span> <span class="va">sd1</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
-<span id="cb6-156"><a href="#cb6-156"></a>  <span class="kw">let</span> sl2 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-157"><a href="#cb6-157"></a>  <span class="va">sl2</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> ss2<span class="op">;</span></span>
-<span id="cb6-158"><a href="#cb6-158"></a>  <span class="va">sd2</span>.<span class="at">insertBefore</span>(sl2<span class="op">,</span> <span class="va">sd2</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
-<span id="cb6-159"><a href="#cb6-159"></a>  <span class="kw">let</span> sl3 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-160"><a href="#cb6-160"></a>  <span class="va">sl3</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> ss3<span class="op">;</span></span>
-<span id="cb6-161"><a href="#cb6-161"></a>  <span class="va">sd3</span>.<span class="at">insertBefore</span>(sl3<span class="op">,</span> <span class="va">sd3</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
-<span id="cb6-162"><a href="#cb6-162"></a>  <span class="kw">let</span> sl4 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
-<span id="cb6-163"><a href="#cb6-163"></a>  <span class="va">sl4</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> ss4<span class="op">;</span></span>
-<span id="cb6-164"><a href="#cb6-164"></a>  <span class="va">sd4</span>.<span class="at">insertBefore</span>(sl4<span class="op">,</span> <span class="va">sd4</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
-<span id="cb6-165"><a href="#cb6-165"></a><span class="op">}</span></span>
-<span id="cb6-166"><a href="#cb6-166"></a></span>
-<span id="cb6-167"><a href="#cb6-167"></a><span class="co">// Now we call our display function once to initialize things</span></span>
-<span id="cb6-168"><a href="#cb6-168"></a><span class="at">display_poems</span>()<span class="op">;</span></span>
-<span id="cb6-169"><a href="#cb6-169"></a></span>
-<span id="cb6-170"><a href="#cb6-170"></a><span class="co">// These functions respond to the buttons for incrementing/decrementing the</span></span>
-<span id="cb6-171"><a href="#cb6-171"></a><span class="co">// location and seed values. They all call display_poems to handle out-of-range</span></span>
-<span id="cb6-172"><a href="#cb6-172"></a><span class="co">// values and the like.</span></span>
-<span id="cb6-173"><a href="#cb6-173"></a><span class="kw">function</span> <span class="at">p_cycle_prev</span>() <span class="op">{</span></span>
-<span id="cb6-174"><a href="#cb6-174"></a>  <span class="va">p_hr</span>.<span class="at">value</span> <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_hr</span>.<span class="at">value</span>) <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb6-175"><a href="#cb6-175"></a>  <span class="at">display_poems</span>()<span class="op">;</span></span>
-<span id="cb6-176"><a href="#cb6-176"></a><span class="op">}</span></span>
-<span id="cb6-177"><a href="#cb6-177"></a></span>
-<span id="cb6-178"><a href="#cb6-178"></a><span class="kw">function</span> <span class="at">p_cycle_next</span>() <span class="op">{</span></span>
-<span id="cb6-179"><a href="#cb6-179"></a>  <span class="va">p_hr</span>.<span class="at">value</span> <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_hr</span>.<span class="at">value</span>) <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb6-180"><a href="#cb6-180"></a>  <span class="at">display_poems</span>()<span class="op">;</span></span>
-<span id="cb6-181"><a href="#cb6-181"></a><span class="op">}</span></span>
-<span id="cb6-182"><a href="#cb6-182"></a></span>
-<span id="cb6-183"><a href="#cb6-183"></a><span class="kw">function</span> <span class="at">p_cycle_pseed</span>() <span class="op">{</span></span>
-<span id="cb6-184"><a href="#cb6-184"></a>  <span class="va">p_sd</span>.<span class="at">value</span> <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_sd</span>.<span class="at">value</span>) <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb6-185"><a href="#cb6-185"></a>  <span class="at">display_poems</span>()<span class="op">;</span></span>
-<span id="cb6-186"><a href="#cb6-186"></a><span class="op">}</span></span>
-<span id="cb6-187"><a href="#cb6-187"></a></span>
-<span id="cb6-188"><a href="#cb6-188"></a><span class="kw">function</span> <span class="at">p_cycle_nseed</span>() <span class="op">{</span></span>
-<span id="cb6-189"><a href="#cb6-189"></a>  <span class="va">p_sd</span>.<span class="at">value</span> <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_sd</span>.<span class="at">value</span>) <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb6-190"><a href="#cb6-190"></a>  <span class="at">display_poems</span>()<span class="op">;</span></span>
-<span id="cb6-191"><a href="#cb6-191"></a><span class="op">}</span></span>
-<span id="cb6-192"><a href="#cb6-192"></a></span>
-<span id="cb6-193"><a href="#cb6-193"></a><span class="co">// Finally we just have to wire up our events so that the UI works:</span></span>
-<span id="cb6-194"><a href="#cb6-194"></a><span class="va">p_pr</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> p_cycle_prev)<span class="op">;</span></span>
-<span id="cb6-195"><a href="#cb6-195"></a><span class="va">p_nx</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> p_cycle_next)<span class="op">;</span></span>
-<span id="cb6-196"><a href="#cb6-196"></a><span class="va">p_hr</span>.<span class="at">addEventListener</span>(<span class="st">&quot;blur&quot;</span><span class="op">,</span> display_poems)<span class="op">;</span></span>
-<span id="cb6-197"><a href="#cb6-197"></a><span class="va">p_fl</span>.<span class="at">addEventListener</span>(<span class="st">&quot;change&quot;</span><span class="op">,</span> display_poems)<span class="op">;</span></span>
-<span id="cb6-198"><a href="#cb6-198"></a><span class="va">p_sd</span>.<span class="at">addEventListener</span>(<span class="st">&quot;blur&quot;</span><span class="op">,</span> display_poems)<span class="op">;</span></span>
-<span id="cb6-199"><a href="#cb6-199"></a><span class="va">p_sp</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> p_cycle_pseed)<span class="op">;</span></span>
-<span id="cb6-200"><a href="#cb6-200"></a><span class="va">p_sn</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> p_cycle_nseed)<span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb8-1"><a href="#cb8-1"></a><span class="co">// Get handles for each of our interface elements:</span></span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">let</span> p_pr <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_previous&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="kw">let</span> p_hr <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_here&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="kw">let</span> p_nx <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_next&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="kw">let</span> p_fl <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_filter&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="kw">let</span> p_sd <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_seed&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="kw">let</span> p_sp <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_seed_prev&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-8"><a href="#cb8-8"></a><span class="kw">let</span> p_sn <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo_seed_next&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-9"><a href="#cb8-9"></a></span>
+<span id="cb8-10"><a href="#cb8-10"></a><span class="kw">let</span> p_bucket <span class="op">=</span> <span class="va">document</span>.<span class="at">getElementById</span>(<span class="st">&quot;poetry_demo&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-11"><a href="#cb8-11"></a></span>
+<span id="cb8-12"><a href="#cb8-12"></a><span class="co">// This function does the heavy lifting: it looks at interface elements to</span></span>
+<span id="cb8-13"><a href="#cb8-13"></a><span class="co">// determine the seed and where we are in the space, and overwrites nonsensical</span></span>
+<span id="cb8-14"><a href="#cb8-14"></a><span class="co">// values, then it calls generate_poem to create the required poems, puts them</span></span>
+<span id="cb8-15"><a href="#cb8-15"></a><span class="co">// in divs, labels them with their seeds, and uses them to replace the contents</span></span>
+<span id="cb8-16"><a href="#cb8-16"></a><span class="co">// of the demo div.</span></span>
+<span id="cb8-17"><a href="#cb8-17"></a><span class="kw">function</span> <span class="at">display_poems</span>() <span class="op">{</span></span>
+<span id="cb8-18"><a href="#cb8-18"></a>  <span class="co">// Grab parameters (seed and position) from the UI and overwrite bad values:</span></span>
+<span id="cb8-19"><a href="#cb8-19"></a>  <span class="kw">let</span> p_seed <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_sd</span>.<span class="at">value</span>) <span class="op">&gt;&gt;&gt;</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb8-20"><a href="#cb8-20"></a>  <span class="cf">if</span> (p_seed <span class="op">==</span> <span class="kw">undefined</span> <span class="op">||</span> <span class="at">isNaN</span>(p_seed)) <span class="op">{</span></span>
+<span id="cb8-21"><a href="#cb8-21"></a>    p_seed <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb8-22"><a href="#cb8-22"></a>    <span class="va">p_sd</span>.<span class="at">value</span> <span class="op">=</span> p_seed<span class="op">;</span></span>
+<span id="cb8-23"><a href="#cb8-23"></a>  <span class="op">}</span></span>
+<span id="cb8-24"><a href="#cb8-24"></a>  <span class="kw">let</span> first <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_hr</span>.<span class="at">value</span>)<span class="op">;</span></span>
+<span id="cb8-25"><a href="#cb8-25"></a>  <span class="cf">if</span> (first <span class="op">==</span> <span class="kw">undefined</span> <span class="op">||</span> first <span class="op">&lt;=</span> <span class="dv">0</span>) <span class="op">{</span></span>
+<span id="cb8-26"><a href="#cb8-26"></a>    first <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb8-27"><a href="#cb8-27"></a>    <span class="va">p_pr</span>.<span class="at">disabled</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb8-28"><a href="#cb8-28"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb8-29"><a href="#cb8-29"></a>    <span class="va">p_pr</span>.<span class="at">disabled</span> <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb8-30"><a href="#cb8-30"></a>  <span class="op">}</span></span>
+<span id="cb8-31"><a href="#cb8-31"></a>  <span class="cf">if</span> (first <span class="op">&gt;=</span> gr_combinations <span class="op">-</span> <span class="dv">4</span>) <span class="op">{</span></span>
+<span id="cb8-32"><a href="#cb8-32"></a>    first <span class="op">=</span> gr_combinations <span class="op">-</span> <span class="dv">4</span><span class="op">;</span></span>
+<span id="cb8-33"><a href="#cb8-33"></a>    <span class="va">p_nx</span>.<span class="at">disabled</span> <span class="op">=</span> <span class="kw">true</span><span class="op">;</span></span>
+<span id="cb8-34"><a href="#cb8-34"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb8-35"><a href="#cb8-35"></a>    <span class="va">p_nx</span>.<span class="at">disabled</span> <span class="op">=</span> <span class="kw">false</span><span class="op">;</span></span>
+<span id="cb8-36"><a href="#cb8-36"></a>  <span class="op">}</span></span>
+<span id="cb8-37"><a href="#cb8-37"></a>  <span class="va">p_hr</span>.<span class="at">value</span> <span class="op">=</span> first<span class="op">;</span></span>
+<span id="cb8-38"><a href="#cb8-38"></a></span>
+<span id="cb8-39"><a href="#cb8-39"></a>  <span class="co">// Figure out seeds for our non-shuffled poems:</span></span>
+<span id="cb8-40"><a href="#cb8-40"></a>  <span class="kw">let</span> s1<span class="op">,</span> s2<span class="op">,</span> s3<span class="op">,</span> s4<span class="op">;</span></span>
+<span id="cb8-41"><a href="#cb8-41"></a>  <span class="cf">if</span> (<span class="va">p_fl</span>.<span class="at">value</span> <span class="op">==</span> <span class="st">&quot;none&quot;</span>) <span class="op">{</span></span>
+<span id="cb8-42"><a href="#cb8-42"></a>    <span class="co">// If we&#39;re not filtering, we just base it on the position</span></span>
+<span id="cb8-43"><a href="#cb8-43"></a>    s1 <span class="op">=</span> first<span class="op">;</span></span>
+<span id="cb8-44"><a href="#cb8-44"></a>    s2 <span class="op">=</span> first <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb8-45"><a href="#cb8-45"></a>    s3 <span class="op">=</span> first <span class="op">+</span> <span class="dv">2</span><span class="op">;</span></span>
+<span id="cb8-46"><a href="#cb8-46"></a>    s4 <span class="op">=</span> first <span class="op">+</span> <span class="dv">3</span><span class="op">;</span></span>
+<span id="cb8-47"><a href="#cb8-47"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb8-48"><a href="#cb8-48"></a>    <span class="co">// Otherwise, we use the expand_limited_seed to figure out our seeds, still</span></span>
+<span id="cb8-49"><a href="#cb8-49"></a>    <span class="co">// based on position.</span></span>
+<span id="cb8-50"><a href="#cb8-50"></a>    <span class="kw">let</span> filter <span class="op">=</span> <span class="va">p_fl</span>.<span class="at">value</span><span class="op">;</span></span>
+<span id="cb8-51"><a href="#cb8-51"></a>    s1 <span class="op">=</span> <span class="at">expand_limited_seed</span>(first<span class="op">,</span> filter)<span class="op">;</span></span>
+<span id="cb8-52"><a href="#cb8-52"></a>    s2 <span class="op">=</span> <span class="at">expand_limited_seed</span>(first <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> filter)<span class="op">;</span></span>
+<span id="cb8-53"><a href="#cb8-53"></a>    s3 <span class="op">=</span> <span class="at">expand_limited_seed</span>(first <span class="op">+</span> <span class="dv">2</span><span class="op">,</span> filter)<span class="op">;</span></span>
+<span id="cb8-54"><a href="#cb8-54"></a>    s4 <span class="op">=</span> <span class="at">expand_limited_seed</span>(first <span class="op">+</span> <span class="dv">3</span><span class="op">,</span> filter)<span class="op">;</span></span>
+<span id="cb8-55"><a href="#cb8-55"></a>  <span class="op">}</span></span>
+<span id="cb8-56"><a href="#cb8-56"></a></span>
+<span id="cb8-57"><a href="#cb8-57"></a>  <span class="co">// Now we can generate our non-shuffled poems:</span></span>
+<span id="cb8-58"><a href="#cb8-58"></a>  <span class="kw">let</span> p1 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> s1)<span class="op">;</span></span>
+<span id="cb8-59"><a href="#cb8-59"></a>  <span class="kw">let</span> p2 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> s2)<span class="op">;</span></span>
+<span id="cb8-60"><a href="#cb8-60"></a>  <span class="kw">let</span> p3 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> s3)<span class="op">;</span></span>
+<span id="cb8-61"><a href="#cb8-61"></a>  <span class="kw">let</span> p4 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> s4)<span class="op">;</span></span>
+<span id="cb8-62"><a href="#cb8-62"></a></span>
+<span id="cb8-63"><a href="#cb8-63"></a>  <span class="co">// Here we figure out the seeds for our shuffled poems. Same code as above,</span></span>
+<span id="cb8-64"><a href="#cb8-64"></a>  <span class="co">// except we call anarchy.cohort_shuffle on the thing that would have been the</span></span>
+<span id="cb8-65"><a href="#cb8-65"></a>  <span class="co">// seed.</span></span>
+<span id="cb8-66"><a href="#cb8-66"></a>  <span class="kw">let</span> ss1<span class="op">,</span> ss2<span class="op">,</span> ss3<span class="op">,</span> ss4<span class="op">;</span></span>
+<span id="cb8-67"><a href="#cb8-67"></a>  <span class="cf">if</span> (<span class="va">p_fl</span>.<span class="at">value</span> <span class="op">==</span> <span class="st">&quot;none&quot;</span>) <span class="op">{</span></span>
+<span id="cb8-68"><a href="#cb8-68"></a>    ss1 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first<span class="op">,</span> gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
+<span id="cb8-69"><a href="#cb8-69"></a>    ss2 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
+<span id="cb8-70"><a href="#cb8-70"></a>    ss3 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">2</span><span class="op">,</span> gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
+<span id="cb8-71"><a href="#cb8-71"></a>    ss4 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">3</span><span class="op">,</span> gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
+<span id="cb8-72"><a href="#cb8-72"></a>  <span class="op">}</span> <span class="cf">else</span> <span class="op">{</span></span>
+<span id="cb8-73"><a href="#cb8-73"></a>    <span class="co">// Note that in this case, we need to know the size of the smaller</span></span>
+<span id="cb8-74"><a href="#cb8-74"></a>    <span class="co">// possibility space, and we apply expand_limited_seed after shuffling. If</span></span>
+<span id="cb8-75"><a href="#cb8-75"></a>    <span class="co">// we did it in the other order, we would have expanded seeds (a very</span></span>
+<span id="cb8-76"><a href="#cb8-76"></a>    <span class="co">// special subset of all seeds) being shuffled among all seeds, and the</span></span>
+<span id="cb8-77"><a href="#cb8-77"></a>    <span class="co">// filter would be broken.</span></span>
+<span id="cb8-78"><a href="#cb8-78"></a>    <span class="kw">let</span> filter <span class="op">=</span> <span class="va">p_fl</span>.<span class="at">value</span><span class="op">;</span></span>
+<span id="cb8-79"><a href="#cb8-79"></a>    <span class="kw">let</span> base_s1 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first<span class="op">,</span> lim_gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
+<span id="cb8-80"><a href="#cb8-80"></a>    ss1 <span class="op">=</span> <span class="at">expand_limited_seed</span>(base_s1<span class="op">,</span> filter)<span class="op">;</span></span>
+<span id="cb8-81"><a href="#cb8-81"></a>    <span class="kw">let</span> base_s2 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> lim_gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
+<span id="cb8-82"><a href="#cb8-82"></a>    ss2 <span class="op">=</span> <span class="at">expand_limited_seed</span>(base_s2<span class="op">,</span> filter)<span class="op">;</span></span>
+<span id="cb8-83"><a href="#cb8-83"></a>    <span class="kw">let</span> base_s3 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">2</span><span class="op">,</span> lim_gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
+<span id="cb8-84"><a href="#cb8-84"></a>    ss3 <span class="op">=</span> <span class="at">expand_limited_seed</span>(base_s3<span class="op">,</span> filter)<span class="op">;</span></span>
+<span id="cb8-85"><a href="#cb8-85"></a>    <span class="kw">let</span> base_s4 <span class="op">=</span> <span class="va">anarchy</span>.<span class="at">cohort_shuffle</span>(first <span class="op">+</span> <span class="dv">3</span><span class="op">,</span> lim_gr_full<span class="op">,</span> p_seed)<span class="op">;</span></span>
+<span id="cb8-86"><a href="#cb8-86"></a>    ss4 <span class="op">=</span> <span class="at">expand_limited_seed</span>(base_s4<span class="op">,</span> filter)<span class="op">;</span></span>
+<span id="cb8-87"><a href="#cb8-87"></a>  <span class="op">}</span></span>
+<span id="cb8-88"><a href="#cb8-88"></a></span>
+<span id="cb8-89"><a href="#cb8-89"></a>  <span class="co">// Here we generate the shuffled poems</span></span>
+<span id="cb8-90"><a href="#cb8-90"></a>  <span class="kw">let</span> sp1 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> ss1)<span class="op">;</span></span>
+<span id="cb8-91"><a href="#cb8-91"></a>  <span class="kw">let</span> sp2 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> ss2)<span class="op">;</span></span>
+<span id="cb8-92"><a href="#cb8-92"></a>  <span class="kw">let</span> sp3 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> ss3)<span class="op">;</span></span>
+<span id="cb8-93"><a href="#cb8-93"></a>  <span class="kw">let</span> sp4 <span class="op">=</span> <span class="at">generate_poem</span>(grammar<span class="op">,</span> ss4)<span class="op">;</span></span>
+<span id="cb8-94"><a href="#cb8-94"></a></span>
+<span id="cb8-95"><a href="#cb8-95"></a>  <span class="co">// Here we get rid of the old content of the results div</span></span>
+<span id="cb8-96"><a href="#cb8-96"></a>  <span class="va">p_bucket</span>.<span class="at">innerHTML</span> <span class="op">=</span> <span class="st">&quot;&quot;</span><span class="op">;</span></span>
+<span id="cb8-97"><a href="#cb8-97"></a></span>
+<span id="cb8-98"><a href="#cb8-98"></a>  <span class="co">// Now we create divs for each poem, put in the text, and give them classes</span></span>
+<span id="cb8-99"><a href="#cb8-99"></a>  <span class="co">// so that we can assign them to the top or bottom row with CSS (that style</span></span>
+<span id="cb8-100"><a href="#cb8-100"></a>  <span class="co">// code isn&#39;t shown, but you can look at the page source to see it; it&#39;s in a</span></span>
+<span id="cb8-101"><a href="#cb8-101"></a>  <span class="co">// style block nearby.).</span></span>
+<span id="cb8-102"><a href="#cb8-102"></a>  <span class="kw">let</span> d1 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-103"><a href="#cb8-103"></a>  <span class="va">d1</span>.<span class="at">innerHTML</span> <span class="op">=</span> p1<span class="op">;</span></span>
+<span id="cb8-104"><a href="#cb8-104"></a>  <span class="va">d1</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;default_poem&quot;</span>)</span>
+<span id="cb8-105"><a href="#cb8-105"></a>  <span class="kw">let</span> d2 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-106"><a href="#cb8-106"></a>  <span class="va">d2</span>.<span class="at">innerHTML</span> <span class="op">=</span> p2<span class="op">;</span></span>
+<span id="cb8-107"><a href="#cb8-107"></a>  <span class="va">d2</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;default_poem&quot;</span>)</span>
+<span id="cb8-108"><a href="#cb8-108"></a>  <span class="kw">let</span> d3 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-109"><a href="#cb8-109"></a>  <span class="va">d3</span>.<span class="at">innerHTML</span> <span class="op">=</span> p3<span class="op">;</span></span>
+<span id="cb8-110"><a href="#cb8-110"></a>  <span class="va">d3</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;default_poem&quot;</span>)</span>
+<span id="cb8-111"><a href="#cb8-111"></a>  <span class="kw">let</span> d4 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-112"><a href="#cb8-112"></a>  <span class="va">d4</span>.<span class="at">innerHTML</span> <span class="op">=</span> p4<span class="op">;</span></span>
+<span id="cb8-113"><a href="#cb8-113"></a>  <span class="va">d4</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;default_poem&quot;</span>)</span>
+<span id="cb8-114"><a href="#cb8-114"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(d1)<span class="op">;</span></span>
+<span id="cb8-115"><a href="#cb8-115"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(d2)<span class="op">;</span></span>
+<span id="cb8-116"><a href="#cb8-116"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(d3)<span class="op">;</span></span>
+<span id="cb8-117"><a href="#cb8-117"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(d4)<span class="op">;</span></span>
+<span id="cb8-118"><a href="#cb8-118"></a></span>
+<span id="cb8-119"><a href="#cb8-119"></a>  <span class="co">// Here are the divs for the shuffled poems:</span></span>
+<span id="cb8-120"><a href="#cb8-120"></a>  <span class="kw">let</span> sd1 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-121"><a href="#cb8-121"></a>  <span class="va">sd1</span>.<span class="at">innerHTML</span> <span class="op">=</span> sp1<span class="op">;</span></span>
+<span id="cb8-122"><a href="#cb8-122"></a>  <span class="va">sd1</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;shuffled_poem&quot;</span>)</span>
+<span id="cb8-123"><a href="#cb8-123"></a>  <span class="kw">let</span> sd2 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-124"><a href="#cb8-124"></a>  <span class="va">sd2</span>.<span class="at">innerHTML</span> <span class="op">=</span> sp2<span class="op">;</span></span>
+<span id="cb8-125"><a href="#cb8-125"></a>  <span class="va">sd2</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;shuffled_poem&quot;</span>)</span>
+<span id="cb8-126"><a href="#cb8-126"></a>  <span class="kw">let</span> sd3 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-127"><a href="#cb8-127"></a>  <span class="va">sd3</span>.<span class="at">innerHTML</span> <span class="op">=</span> sp3<span class="op">;</span></span>
+<span id="cb8-128"><a href="#cb8-128"></a>  <span class="va">sd3</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;shuffled_poem&quot;</span>)</span>
+<span id="cb8-129"><a href="#cb8-129"></a>  <span class="kw">let</span> sd4 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-130"><a href="#cb8-130"></a>  <span class="va">sd4</span>.<span class="at">innerHTML</span> <span class="op">=</span> sp4<span class="op">;</span></span>
+<span id="cb8-131"><a href="#cb8-131"></a>  <span class="va">sd4</span>.<span class="va">classList</span>.<span class="at">add</span>(<span class="st">&quot;shuffled_poem&quot;</span>)</span>
+<span id="cb8-132"><a href="#cb8-132"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(sd1)<span class="op">;</span></span>
+<span id="cb8-133"><a href="#cb8-133"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(sd2)<span class="op">;</span></span>
+<span id="cb8-134"><a href="#cb8-134"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(sd3)<span class="op">;</span></span>
+<span id="cb8-135"><a href="#cb8-135"></a>  <span class="va">p_bucket</span>.<span class="at">appendChild</span>(sd4)<span class="op">;</span></span>
+<span id="cb8-136"><a href="#cb8-136"></a></span>
+<span id="cb8-137"><a href="#cb8-137"></a></span>
+<span id="cb8-138"><a href="#cb8-138"></a>  <span class="co">// These are the labels so that you can see which seed created which poem:</span></span>
+<span id="cb8-139"><a href="#cb8-139"></a>  <span class="kw">let</span> l1 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-140"><a href="#cb8-140"></a>  <span class="va">l1</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> s1<span class="op">;</span></span>
+<span id="cb8-141"><a href="#cb8-141"></a>  <span class="va">d1</span>.<span class="at">insertBefore</span>(l1<span class="op">,</span> <span class="va">d1</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
+<span id="cb8-142"><a href="#cb8-142"></a>  <span class="kw">let</span> l2 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-143"><a href="#cb8-143"></a>  <span class="va">l2</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> s2<span class="op">;</span></span>
+<span id="cb8-144"><a href="#cb8-144"></a>  <span class="va">d2</span>.<span class="at">insertBefore</span>(l2<span class="op">,</span> <span class="va">d2</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
+<span id="cb8-145"><a href="#cb8-145"></a>  <span class="kw">let</span> l3 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-146"><a href="#cb8-146"></a>  <span class="va">l3</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> s3<span class="op">;</span></span>
+<span id="cb8-147"><a href="#cb8-147"></a>  <span class="va">d3</span>.<span class="at">insertBefore</span>(l3<span class="op">,</span> <span class="va">d3</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
+<span id="cb8-148"><a href="#cb8-148"></a>  <span class="kw">let</span> l4 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-149"><a href="#cb8-149"></a>  <span class="va">l4</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> s4<span class="op">;</span></span>
+<span id="cb8-150"><a href="#cb8-150"></a>  <span class="va">d4</span>.<span class="at">insertBefore</span>(l4<span class="op">,</span> <span class="va">d4</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
+<span id="cb8-151"><a href="#cb8-151"></a></span>
+<span id="cb8-152"><a href="#cb8-152"></a>  <span class="co">// These are the labels for the shuffled poems:</span></span>
+<span id="cb8-153"><a href="#cb8-153"></a>  <span class="kw">let</span> sl1 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-154"><a href="#cb8-154"></a>  <span class="va">sl1</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> ss1<span class="op">;</span></span>
+<span id="cb8-155"><a href="#cb8-155"></a>  <span class="va">sd1</span>.<span class="at">insertBefore</span>(sl1<span class="op">,</span> <span class="va">sd1</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
+<span id="cb8-156"><a href="#cb8-156"></a>  <span class="kw">let</span> sl2 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-157"><a href="#cb8-157"></a>  <span class="va">sl2</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> ss2<span class="op">;</span></span>
+<span id="cb8-158"><a href="#cb8-158"></a>  <span class="va">sd2</span>.<span class="at">insertBefore</span>(sl2<span class="op">,</span> <span class="va">sd2</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
+<span id="cb8-159"><a href="#cb8-159"></a>  <span class="kw">let</span> sl3 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-160"><a href="#cb8-160"></a>  <span class="va">sl3</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> ss3<span class="op">;</span></span>
+<span id="cb8-161"><a href="#cb8-161"></a>  <span class="va">sd3</span>.<span class="at">insertBefore</span>(sl3<span class="op">,</span> <span class="va">sd3</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
+<span id="cb8-162"><a href="#cb8-162"></a>  <span class="kw">let</span> sl4 <span class="op">=</span> <span class="va">document</span>.<span class="at">createElement</span>(<span class="st">&quot;div&quot;</span>)<span class="op">;</span></span>
+<span id="cb8-163"><a href="#cb8-163"></a>  <span class="va">sl4</span>.<span class="at">innerText</span> <span class="op">=</span> <span class="st">&#39;#&#39;</span> <span class="op">+</span> ss4<span class="op">;</span></span>
+<span id="cb8-164"><a href="#cb8-164"></a>  <span class="va">sd4</span>.<span class="at">insertBefore</span>(sl4<span class="op">,</span> <span class="va">sd4</span>.<span class="at">firstChild</span>)<span class="op">;</span></span>
+<span id="cb8-165"><a href="#cb8-165"></a><span class="op">}</span></span>
+<span id="cb8-166"><a href="#cb8-166"></a></span>
+<span id="cb8-167"><a href="#cb8-167"></a><span class="co">// Now we call our display function once to initialize things</span></span>
+<span id="cb8-168"><a href="#cb8-168"></a><span class="at">display_poems</span>()<span class="op">;</span></span>
+<span id="cb8-169"><a href="#cb8-169"></a></span>
+<span id="cb8-170"><a href="#cb8-170"></a><span class="co">// These functions respond to the buttons for incrementing/decrementing the</span></span>
+<span id="cb8-171"><a href="#cb8-171"></a><span class="co">// location and seed values. They all call display_poems to handle out-of-range</span></span>
+<span id="cb8-172"><a href="#cb8-172"></a><span class="co">// values and the like.</span></span>
+<span id="cb8-173"><a href="#cb8-173"></a><span class="kw">function</span> <span class="at">p_cycle_prev</span>() <span class="op">{</span></span>
+<span id="cb8-174"><a href="#cb8-174"></a>  <span class="va">p_hr</span>.<span class="at">value</span> <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_hr</span>.<span class="at">value</span>) <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb8-175"><a href="#cb8-175"></a>  <span class="at">display_poems</span>()<span class="op">;</span></span>
+<span id="cb8-176"><a href="#cb8-176"></a><span class="op">}</span></span>
+<span id="cb8-177"><a href="#cb8-177"></a></span>
+<span id="cb8-178"><a href="#cb8-178"></a><span class="kw">function</span> <span class="at">p_cycle_next</span>() <span class="op">{</span></span>
+<span id="cb8-179"><a href="#cb8-179"></a>  <span class="va">p_hr</span>.<span class="at">value</span> <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_hr</span>.<span class="at">value</span>) <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb8-180"><a href="#cb8-180"></a>  <span class="at">display_poems</span>()<span class="op">;</span></span>
+<span id="cb8-181"><a href="#cb8-181"></a><span class="op">}</span></span>
+<span id="cb8-182"><a href="#cb8-182"></a></span>
+<span id="cb8-183"><a href="#cb8-183"></a><span class="kw">function</span> <span class="at">p_cycle_pseed</span>() <span class="op">{</span></span>
+<span id="cb8-184"><a href="#cb8-184"></a>  <span class="va">p_sd</span>.<span class="at">value</span> <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_sd</span>.<span class="at">value</span>) <span class="op">-</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb8-185"><a href="#cb8-185"></a>  <span class="at">display_poems</span>()<span class="op">;</span></span>
+<span id="cb8-186"><a href="#cb8-186"></a><span class="op">}</span></span>
+<span id="cb8-187"><a href="#cb8-187"></a></span>
+<span id="cb8-188"><a href="#cb8-188"></a><span class="kw">function</span> <span class="at">p_cycle_nseed</span>() <span class="op">{</span></span>
+<span id="cb8-189"><a href="#cb8-189"></a>  <span class="va">p_sd</span>.<span class="at">value</span> <span class="op">=</span> <span class="at">parseInt</span>(<span class="va">p_sd</span>.<span class="at">value</span>) <span class="op">+</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb8-190"><a href="#cb8-190"></a>  <span class="at">display_poems</span>()<span class="op">;</span></span>
+<span id="cb8-191"><a href="#cb8-191"></a><span class="op">}</span></span>
+<span id="cb8-192"><a href="#cb8-192"></a></span>
+<span id="cb8-193"><a href="#cb8-193"></a><span class="co">// Finally we just have to wire up our events so that the UI works:</span></span>
+<span id="cb8-194"><a href="#cb8-194"></a><span class="va">p_pr</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> p_cycle_prev)<span class="op">;</span></span>
+<span id="cb8-195"><a href="#cb8-195"></a><span class="va">p_nx</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> p_cycle_next)<span class="op">;</span></span>
+<span id="cb8-196"><a href="#cb8-196"></a><span class="va">p_hr</span>.<span class="at">addEventListener</span>(<span class="st">&quot;blur&quot;</span><span class="op">,</span> display_poems)<span class="op">;</span></span>
+<span id="cb8-197"><a href="#cb8-197"></a><span class="va">p_fl</span>.<span class="at">addEventListener</span>(<span class="st">&quot;change&quot;</span><span class="op">,</span> display_poems)<span class="op">;</span></span>
+<span id="cb8-198"><a href="#cb8-198"></a><span class="va">p_sd</span>.<span class="at">addEventListener</span>(<span class="st">&quot;blur&quot;</span><span class="op">,</span> display_poems)<span class="op">;</span></span>
+<span id="cb8-199"><a href="#cb8-199"></a><span class="va">p_sp</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> p_cycle_pseed)<span class="op">;</span></span>
+<span id="cb8-200"><a href="#cb8-200"></a><span class="va">p_sn</span>.<span class="at">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> p_cycle_nseed)<span class="op">;</span></span></code></pre></div>
 </details>
 <p>Here are the actual results. The top row shows un-shuffled poems, and the bottom row shows shuffled poems from the same space. Note that with traditional shuffling where results are stored in an array, we’d need to store an array of length <code>gr_full</code> (<span class="math inline">2<sup>30</sup></span> = 1073741824, which is about 1 GB, or 4 GB considering each entry would likely need 4 bytes). Additionally, we’d need at least one more array of length <code>lim_gr_full</code> ($2^{28} = 268435456; 1 GB) if we wanted to also handle the filter we’ve implemented, and additional arrays for other filters. Anarchy is happy to give us virtual shuffles without using any space, and only computing the parts that are actually requested, and it can also give us a new shuffle on demand if we just change the seed value, without any extra overhead of re-shuffling things.</p>
 <p><input type="button" value="<" id="poetry_demo_previous"> <input type="text" value="0" id="poetry_demo_here"> <input type="button" value=">" id="poetry_demo_next"> filter for: <select id="poetry_demo_filter"> <option value="none" selected>&lt;no filter&gt;</option> <option value="plums">plums</option> <option value="peaches">peaches</option> <option value="apples">apples</option> <option value="larvae">???</option> </select> seed: <input type="text" value="0" id="poetry_demo_seed"> <input type="button" value="-" id="poetry_demo_seed_prev"> <input type="button" value="+" id="poetry_demo_seed_next"></p>
