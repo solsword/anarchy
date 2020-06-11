@@ -14,7 +14,7 @@
 <h1>Creating a Random Path</h1>
 
 <p>
-This example uses the anarchy database to create a random path of length 10 through the grid. 
+This example uses the anarchy database to create a random path of length 10 through the grid. It only can go down or left, so if it is unable to go down or left anymore, then the path might be less than 10. 
 </p>
 
 <div id="compare_demo_controls">
@@ -48,10 +48,8 @@ function enable_compare_demo() {
   // repeatedly from the given RNG function. That function must return a number
   // that's a valid index into the colors array.
   function draw_result(where, rng, seed) {
-    let val = anarchy.prng(0, seed);
-    let u = anarchy.udist(val);
-    let prn = u.toFixed(2);
-    prn = prn * 100;
+    let prn = anarchy.prng(0, seed);
+    prn %= 100; 
     for (let i = 0; i < 100; ++i) {
       let r = 0;	    
       if (i == prn){
@@ -74,10 +72,8 @@ function enable_compare_demo() {
 
   function create_path_array(seed){
     // Create an array to hold each index in the grid (10x10)
-    let valArray = [];
-    for(let i = 0; i < valArray.length; i++){
-      valArray.push(0);
-    }
+    let valArray = new Array(100).fill(0);
+
     document.write("in create_path_array");
 
     // Randomly find the starting point of the path using the pseudorandom number
@@ -96,6 +92,7 @@ function enable_compare_demo() {
     //     10 blocks in the path in total)
 	  
     for(let i = 0; i < 10; i++){
+      // *** TODO: what happens if the "neighbor" is actually on the previous row?
       // document.write(" in for loop!");
       // Step 1: finding neighbors of first block
       let neighbor1 = blockNum + 10; // neighbor below
@@ -128,11 +125,21 @@ function enable_compare_demo() {
       // document.write(" flip_decision: " + decision);
       let nextBlock;
       if(i != 9){
-        if(decision){
-          nextBlock = neighbor1;
-        }
-        else{
-          nextBlock = neighbor2;
+	if(blockNum % 10 == 0){
+	  if(neighbor1 == 99){
+            nextBlock = -1;
+	  }
+	  else{
+	    nextBlock = neighbor1;
+	  }
+	}
+	else{
+          if(decision){
+            nextBlock = neighbor1;
+          }
+          else{
+            nextBlock = neighbor2;
+          }
         }
       }
       else{
