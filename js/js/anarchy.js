@@ -750,6 +750,8 @@ define([], function() {
     "lfsr": lfsr,
 
     "udist": udist,
+    "pgdist": pgdist,
+    "flip": flip,
     "idist": idist,
     "expdist": expdist,
 
