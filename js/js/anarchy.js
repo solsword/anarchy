@@ -167,6 +167,8 @@ define([], function() {
     // See: https://en.wikipedia.org/wiki/Linear-feedback_shift_register
     // Note that this is NOT reversible!
     // Note: Do not use this as an irreversible PRNG; it's a terrible one!
+    // Note: Zero is a fixed point of this function: do not use it as
+    // your seed!
     let lsb = x & 1;
     return (x >>> 1) ^ (0x80200003 * lsb); // 32, 22, 2, 1
   }
@@ -179,7 +181,7 @@ define([], function() {
   }
 
   function pgdist(seed) {
-    // Generates and averages three rando numbers between 0 and 1 to give a
+    // Generates and averages three random numbers between 0 and 1 to give a
     // pseudo-gaussian-distributed random number (still strictly on [0, 1) )
     let t = 0;
     for (let i = 0; i < 3; ++i) {

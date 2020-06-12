@@ -411,10 +411,196 @@ requirejs(
           });
         }
         return result;
+      },
+
+      "distribution_functions": function () {
+        let result = 0;
+        let messages = [];
+
+        let n_trials = 100000;
+        let n_buckets = 1000;
+
+        // Tests of udist
+        for (let seed of TEST_VALUES) {
+            let rng = seed;
+            let avg = 0;
+            let samples = [];
+            let buckets = [];
+
+            // compute average and count # in each bucket
+            for (let i = 0; i < n_trials; ++i) {
+                let x = anarchy.udist(rng);
+                samples.push(x);
+                avg += x;
+                let bi = Math.floor(x * n_buckets);
+                if (buckets[bi] != undefined) {
+                    buckets[bi] += 1;
+                } else {
+                    buckets[bi] = 1;
+                }
+                rng = anarchy.prng(rng, seed);
+            }
+            avg /= n_trials;
+
+            // compute stdev
+            let stdev = 0;
+            for (let i = 0; i < n_trials; ++i) {
+                stdev += Math.pow(samples[i] - avg, 2);
+            }
+            stdev /= (n_trials - 1);
+            stdev = Math.sqrt(stdev);
+
+            // compute average difference in bucket counts
+            let avg_count_diff = 0;
+            for (let i = 0; i < n_buckets; ++i) {
+                let diff = Math.abs(buckets[i] - (n_trials / n_buckets));
+                avg_count_diff += diff;
+            }
+            avg_count_diff /= n_buckets;
+
+            let tolerance = 1/(10 * (Math.log10(n_trials) - 3));
+            if (Math.abs(avg - 0.5) > tolerance) {
+                result += 1;
+                messages.push(
+                    "Distressingly large udist mean difference from 0.5"
+                  + " for seed " + seed + ": "
+                  + avg
+                );
+            }
+
+            if (Math.abs(stdev - Math.sqrt(1/12)) > tolerance) {
+                result += 1;
+                messages.push(
+                    "Distressingly large udist stdev difference from 1/√12 "
+                  + "(0.288675) for seed " + seed + ": "
+                  + stdev
+                );
+            }
+
+            if (avg_count_diff > (n_trials / n_buckets)/2) {
+                result += 1;
+                messages.push(
+                    "Distressingly large udist bucket difference average "
+                  + " for seed " + seed + ": "
+                  + avg_count_diff
+                );
+            }
+        }
+
+        // Tests of pgdist
+        for (let seed of TEST_VALUES) {
+            let rng = seed;
+            let avg = 0;
+            let samples = [];
+
+            // compute average and count # in each bucket
+            for (let i = 0; i < n_trials; ++i) {
+                let x = anarchy.pgdist(rng);
+                samples.push(x);
+                avg += x;
+                rng = anarchy.prng(rng, seed);
+            }
+            avg /= n_trials;
+
+            // compute stdev
+            let stdev = 0;
+            for (let i = 0; i < n_trials; ++i) {
+                stdev += Math.pow(samples[i] - avg, 2);
+            }
+            stdev /= (n_trials - 1);
+            stdev = Math.sqrt(stdev);
+
+            let tolerance = 1/(10 * (Math.log10(n_trials) - 3));
+            if (Math.abs(avg - 0.5) > tolerance) {
+                result += 1;
+                messages.push(
+                    "Distressingly large pgdist mean difference from 0.5"
+                  + " for seed " + seed + ": "
+                  + avg
+                );
+            }
+
+            // TODO: Derive a correct expected value here!
+            if (Math.abs(stdev - 0.1588) > tolerance) {
+                result += 1;
+                messages.push(
+                    "Distressingly large pgdist stdev difference from "
+                  + "(0.1588) for seed " + seed + ": "
+                  + stdev
+                );
+            }
+        }
+
+        // Tests of flip
+        for (let seed of TEST_VALUES) {
+            // Test with different probabilities for true
+            for (let p of [0.02, 0.2, 0.5, 0.9, 0.99]) {
+                let rng = seed;
+                let avg = 0;
+                let samples = [];
+                let exp_mean = p;
+                let exp_stdev = Math.sqrt(
+                    (
+                        ((1000 * p) * Math.pow(p, 2))
+                      + ((1000 * (1-p)) * Math.pow(1 - p, 2))
+                    ) / 999
+                );
+                // TODO: Correct values here
+
+                // compute average and count # in each bucket
+                for (let i = 0; i < n_trials; ++i) {
+                    let x = anarchy.flip(rng); // 0 or 1 instead of true/false
+                    if (typeof x != "boolean") {
+                        result += 1;
+                        messages.push(
+                            "non-boolean flip result for probability "
+                          + p + " with seed " + seed + ": " + x
+                        );
+                    }
+                    samples.push(+x);
+                    avg += +x;
+                    rng = anarchy.prng(rng, seed);
+                }
+                avg /= n_trials;
+
+                // compute stdev
+                let stdev = 0;
+                for (let i = 0; i < n_trials; ++i) {
+                    stdev += Math.pow(samples[i] - avg, 2);
+                }
+                stdev /= (n_trials - 1);
+                stdev = Math.sqrt(stdev);
+
+                let tolerance = 1/(10 * (Math.log10(n_trials) - 3));
+                if (Math.abs(avg - exp_mean) > tolerance) {
+                    result += 1;
+                    messages.push(
+                        "Distressingly large flip mean difference from "
+                      + exp_mean + " for seed " + seed + ": "
+                      + avg
+                    );
+                }
+
+                if (Math.abs(stdev - exp_stdev) > tolerance) {
+                    result += 1;
+                    messages.push(
+                        "Distressingly large flip stdev difference from "
+                      + "" + exp_stdev + " for seed " + seed + ": "
+                      + stdev
+                    );
+                }
+            }
+        }
+
+        if (result != 0) {
+          console.log("distribution_functions failures:")
+          messages.forEach(function (m) {
+            console.log('  ' + m);
+          });
+        }
+        return result;
       }
     }
-    
-    // TODO: Distribution function tests!
 
     function run_value_tests() {
       display_message("Starting value tests...");
