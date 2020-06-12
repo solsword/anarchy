@@ -27,8 +27,8 @@ This example uses the anarchy database to create a random path of length 10 thro
 
 <script defer type="text/javascript">
 
-  // EDIT HERE
-  // The code inside this "<script>" tag (from line 39 to line 174) is all
+// EDIT HERE
+// The code inside this "<script>" tag (from line 39 to line 174) is all
 // JavaScript code that you should edit to tweak this demo. You're free
 // to throw most of it out and start from the basics to draw whatever you
 // like on the canvas, or just tweak it a bit to draw something slightly
@@ -53,10 +53,10 @@ function enable_compare_demo() {
     /**for (let i = 0; i < 100; ++i) {
       let r = 0;	    
       if (i == prn){
-        r = 3;
+      r = 3;
       }
       else {
-        r = rng();
+      r = rng();
       }
       let x = i % 10;
       let y = Math.floor(i/10);
@@ -67,23 +67,23 @@ function enable_compare_demo() {
       ctx.strokeWidth = 0.5;
       ctx.strokeStyle = "black";
       ctx.strokeRect(cx, cy, rect_size, rect_size);
-    }
-	  */
-		let pathArray = create_path_array(seed);
-		// let path = find_path(pathArray);
-		for(let i = 0; i < 100; i++){
-			let x = i % 10;
+      }
+     */
+    let pathArray = create_path_array(seed);
+    // let path = find_path(pathArray);
+    for(let i = 0; i < 100; i++){
+      let x = i % 10;
       let y = Math.floor(i/10);
       let cx = where[0] + rect_size/2 + x * rect_size;
       let cy = where[1] + rect_size/2 + y * rect_size;
-			for(let j = 0; j < 10; j++){
-		 		ctx.fillStyle = colors[1];
-		 		ctx.fillRect(cx, cy, rect_size, rect_size);
-				ctx.strokeWidth = 0.5;
-				ctx.strokeStyle = "black";
-				ctx.strokeRect(cx, cy, rect_size, rect_size);
-			}
-		}
+      for(let j = 0; j < 10; j++){
+        ctx.fillStyle = colors[1];
+        ctx.fillRect(cx, cy, rect_size, rect_size);
+        ctx.strokeWidth = 0.5;
+        ctx.strokeStyle = "black";
+        ctx.strokeRect(cx, cy, rect_size, rect_size);
+      }
+    }
   }
 
   function create_path_array(seed){
@@ -94,8 +94,8 @@ function enable_compare_demo() {
     // Randomly find the starting point of the path using the pseudorandom number
     // generator.
     /** let blockNum = anarchy.prng(0, seed);
-    blockNum %= 100; 
-    console.log(" blockNum: " + blockNum);
+      blockNum %= 100; 
+      console.log(" blockNum: " + blockNum);
      */
 
     // Figure out the rest of the path:
@@ -108,7 +108,7 @@ function enable_compare_demo() {
     for(let i = 0; i < 100; i++){
       let r = Math.floor(i/10);
       let c = i % 10;
-      
+
       // Step 1: finding neighbors of every block
       let below = [r+1, c]; // neighbor below
       let left = [r, c-1]; // neighbor to the left
@@ -122,8 +122,8 @@ function enable_compare_demo() {
       }
 
       // Step 2: choose neighbor
-      let decision = flip_decision(seed);
-			console.log("decision: " + decision);
+      let decisionFunction = flip_decision(seed);
+      let decision = decisionFunction();
       let nextBlock;
       if(decision && below != undefined){
         nextBlock = below;
@@ -143,15 +143,23 @@ function enable_compare_demo() {
     for(let i = 0; i < valArray.length; i++){
       console.log(" i: " + i + ": " + valArray[i] + "\n");
     }
-		return valArray;
+    return valArray;
   }
 
   function flip_decision(seed){
-		// ***TODO: change the seed - but how? Ask Peter about importance of returning functions
-		// 					and see how that might play into mixing up the seed so we don't get the same
-		//					value every time
-    let prob = 0.5; // 50% probability of returning True
-    return anarchy.flip(prob, seed);
+    // let prob = 0.5; // 50% probability of returning True
+    // return anarchy.flip(prob, seed);
+    let val = 0;
+    return function(){
+      val = anarchy.prng(val, seed);
+      let u = anarchy.udist(val);
+      console.log(u);
+      if (u <= 0.5) {
+        return true;
+      } else {
+        return false;
+      }
+    }
   }
 
   // Creates RNG that spits out 0, 1, or 2 independently with 90%, 8%, and 2%
@@ -232,26 +240,26 @@ function enable_compare_demo() {
   // Show initial results:
   show_results(get_seed())
 
-  // Function for updating seed input
-  function set_seed(x) {
-    let seed_input = document.getElementById("compare_demo_seed");
-    seed_input.value = x;
-  }
+    // Function for updating seed input
+    function set_seed(x) {
+      let seed_input = document.getElementById("compare_demo_seed");
+      seed_input.value = x;
+    }
 
   // Set up shuffle button to use current seed:
   let cmp_update_button = document.getElementById("compare_demo_update")
-  cmp_update_button.addEventListener("click", function () {
-    show_results(get_seed());
-  });
+    cmp_update_button.addEventListener("click", function () {
+        show_results(get_seed());
+        });
 
   // Set up next button to increment and shuffle:
   let cmp_next_button = document.getElementById("compare_demo_next")
-  cmp_next_button.addEventListener("click", function () {
-    let seed = get_seed();
-    seed += 1;
-    set_seed(seed);
-    show_results(seed);
-  });
+    cmp_next_button.addEventListener("click", function () {
+        let seed = get_seed();
+        seed += 1;
+        set_seed(seed);
+        show_results(seed);
+        });
 }
 
 // Run all this stuff:
