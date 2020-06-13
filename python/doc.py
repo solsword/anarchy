@@ -38,9 +38,9 @@ built-in convenience functions like pseudo-gaussian and
 exponentially-distributed random numbers (these are not reversible).
 
 Note that this documentation applies most closely to the Python implementation,
-and it drawn from that code. Each different language implementation has its own
-idiosyncrasies, but the higher-level things, like number and meaning of
-parameters, are the same for these core functions.
+and it is drawn from that code. Each different language implementation
+has its own idiosyncrasies, but the higher-level things, like number and
+meaning of parameters, are the same for these core functions.
 
 ## Replacing `random()`
 
@@ -105,6 +105,7 @@ PRNG_FUNCTIONS = [
   anarchy.flip,
   anarchy.idist,
   anarchy.expdist,
+  anarchy.trexpdist,
 ]
 
 COHORT_FUNCTIONS = [

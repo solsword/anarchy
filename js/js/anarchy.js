@@ -175,7 +175,8 @@ define([], function() {
 
   function udist(seed) {
     // Generates a random number between 0 and 1 given a seed value.
-    let ux = lfsr(seed >>> 0);
+    let st = seed >>> 0;
+    let ux = prng(prng(prng(st, 53), st), 47);
     let sc = (ux ^ (ux << 16)) >>> 0;
     return (sc % 2147483659) / 2147483659; // prime near 2^31
   }
@@ -203,12 +204,27 @@ define([], function() {
     return Math.floor(udist(seed) * (end - start)) + start;
   }
 
-  function expdist(seed) {
-    // Generates a number from an exponential distribution with mean 0.5 given
-    // a seed. See:
+  function expdist(seed, lambda) {
+    // Generates a number from an exponential distribution on [0,∞) with mean
+    // 1/lambda given a seed. Higher values of lambda make the
+    // distribution more sharply exponential; values between 0.5 and 1.5
+    // exhibit reasonable variation. See:
     // https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
+    // and
+    // https://en.wikipedia.org/wiki/Exponential_distribution
     var u = udist(seed);
-    return -Math.log(1 - u)/0.5;
+    return -Math.log(u)/lambda;
+  }
+
+  function trexpdist(seed, lambda) {
+    // Generates a number from a truncated exponential distribution on
+    // [0, 1], given a particular seed. As with expdist, the lambda
+    // parameter controls the shape of the distribution, and a 0.5–1.5
+    // range is usually reasonable.
+    // For why this method works, see:
+    // https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
+    var e = expdist(seed, lambda);
+    return e - Math.floor(e);
   }
 
   function cohort(outer, cohort_size) {
@@ -756,6 +772,7 @@ define([], function() {
     "flip": flip,
     "idist": idist,
     "expdist": expdist,
+    "trexpdist": trexpdist,
 
     "cohort": cohort,
     "cohort_inner": cohort_inner,

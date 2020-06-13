@@ -15,9 +15,13 @@ The core API is available in C, Python, Javascript, and Unity/C#, and includes:
 - Reversible pseudo-random number generation:
     * `prng` and `rev_prng` the forward and reverse PRNG functions
     * `lfsr` as a simple non-reversible PRNG (Linear Feedback Shift Register)
-    * `udist`, `idist`, and `expdist` for floating-point, integer-range, and
-      floating-point exponential distributions (only in Python and Javascript
-      for now).
+- Distribution functions that turn PRNG outputs into more useful numbers
+  (only in Python and Javascript for now):
+    * `udist` for a uniform floating-point value between 0 and 1.
+    * `pgdist` for a pseudo-gaussian value between 0 and 1.
+    * `idist` for an integer between given min and max values.
+    * `expdist`, and `trexpdist` for floating-point exponential and
+      truncated exponential distributions
 - Incremental & reversible shuffling:
     * `cohort_shuffle` and `rev_cohort_shuffle` for finding shuffled/unshuffled
       indices one-at-a-time.

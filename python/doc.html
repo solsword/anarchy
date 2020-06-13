@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <meta name="author" content="Peter Mawhorter" />
+  <meta name="author" content="Peter Mawhorter (pmawhorter@gmail.com)" />
   <title>Anarchy Library Documentation</title>
   <style>
       code{white-space: pre-wrap;}
@@ -85,7 +85,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <body>
 <header id="title-block-header">
 <h1 class="title">Anarchy Library Documentation</h1>
-<p class="author">Peter Mawhorter</p>
+<p class="author">Peter Mawhorter (pmawhorter@gmail.com)</p>
 </header>
 <p><code>anarchy</code> is a library for generating random numbers in an incremental and reversible fashion. It also has routines for incremental shuffling and distribution of items. The goal is to give a high level of control to designers of PCG systems while maintaining incremental operation as is necessary in incrementally-generated open-world situations.</p>
 <p>However, it can also be used in simpler situations as it provides a variety of built-in convenience functions like pseudo-gaussian and exponentially-distributed random numbers (these are not reversible).</p>
@@ -127,11 +127,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <li><a href="#flip"><code>flip</code></a></li>
 <li><a href="#idist"><code>idist</code></a></li>
 <li><a href="#expdist"><code>expdist</code></a></li>
+<li><a href="#trexpdist"><code>trexpdist</code></a></li>
 </ul>
 <h3 id="prng"><code>prng</code></h3>
 <p>Parameters:</p>
 <ul>
-<li><code>x</code> (int): The current random number (the next one is returned).</li>
+<li><code>x</code> (int): The current random number (next one is returned).</li>
 <li><code>seed</code> (int): The seed; each seed will produce a distinct sequence of numbers.</li>
 </ul>
 <p>Returns (int): The next random number in the sequence for the given seed.</p>
@@ -139,7 +140,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h3 id="rev_prng"><code>rev_prng</code></h3>
 <p>Parameters:</p>
 <ul>
-<li><code>x</code> (int): the current random number (the previous one is returned).</li>
+<li><code>x</code> (int): the current random number (previous one is returned).</li>
 <li><code>seed</code> (int): The seed; each seed will produce a distinct sequence of numbers.</li>
 </ul>
 <p>Returns (int): The previous random number in the sequence for the given seed.</p>
@@ -172,10 +173,18 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Returns a number drawn evenly from the given integer range, including the lower end but excluding the higher end (even if the lower end is given second).</p>
 <p>Distribution bias is about one part in (range/2^63).</p>
 <h3 id="expdist"><code>expdist</code></h3>
-<p>Parameter (int): <code>seed</code>–The seed that determines the result.</p>
-<p>Returns (float): A number with an exponential distribution.</p>
-<p>Generates a number from an exponential distribution with mean 0.5 given a seed.</p>
-<p>See: <a href="https://math.stackexchange.com/questions/28004/random-exponential-like-distribution">StackExchange answer on exponential distribution</a></p>
+<p>Parameters:</p>
+<pre><code>- `seed` (int)--The seed that determines the result.
+- `shape` (float):--The lambda shape parameter for the exponential
+  distribution. Values between 0.5 and 1.5 are typical, with higher
+  values biasing the distribution more towards smaller results.</code></pre>
+<p>Returns (float): A number with an exponential distribution on [0,∞).</p>
+<p>Generates a number from an exponential distribution with the given lambda shape parameter.</p>
+<p>See: <a href="https://math.stackexchange.com/questions/28004/random-exponential-like-distribution">this StackExchange answer on exponential distribution</a> and <a href="https://en.wikipedia.org/wiki/Exponential_distribution">the Wikipedia page for the exponential distribution</a></p>
+<h3 id="trexpdist"><code>trexpdist</code></h3>
+<p>Parameters: - <code>seed</code> (int)–The seed that determines the result. - <code>shape</code> (float)–The lambda shape parameter for the exponential distribution. Values between 0.5 and 1.5 are typical, with higher values biasing the distribution more towards smaller results.</p>
+<p>Returns (float) A number with a truncated exponential distribution on [0, 1].</p>
+<p>Generates a number from a truncated exponential distribution on [0, 1] with the given lambda shape parameter. See reference material for <code>expdist</code>.</p>
 <h3 id="cohort-functions">Cohort Functions</h3>
 <p>Deal similarly with numbers from a range.</p>
 <ul>
@@ -234,9 +243,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </ul>
 <p>Returns (int): A new within-cohort index for the given item.</p>
 <p>Works just like <code>cohort_shuffle</code>, but applies the same operations in the opposite order, so that:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1"></a>seed <span class="op">=</span> <span class="dv">478273827</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>y <span class="op">=</span> cohort_shuffle(x, <span class="dv">100</span>, seed)</span>
-<span id="cb4-3"><a href="#cb4-3"></a>x <span class="op">==</span> rev_cohort_shuffle(y, <span class="dv">100</span>, seed)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1"></a>seed <span class="op">=</span> <span class="dv">478273827</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a>y <span class="op">=</span> cohort_shuffle(x, <span class="dv">100</span>, seed)</span>
+<span id="cb5-3"><a href="#cb5-3"></a>x <span class="op">==</span> rev_cohort_shuffle(y, <span class="dv">100</span>, seed)</span></code></pre></div>
 <h3 id="distribution_portion"><code>distribution_portion</code></h3>
 <p>Parameters:</p>
 <ul>

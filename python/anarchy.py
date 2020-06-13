@@ -311,19 +311,45 @@ def idist(seed, start, end):
   return math.floor(udist(seed) * (end - start)) + start
 
 
-def expdist(seed):
+def expdist(seed, shape):
   """
-  Parameter (int): `seed`--The seed that determines the result.
+  Parameters:
 
-  Returns (float): A number with an exponential distribution.
+      - `seed` (int)--The seed that determines the result.
+      - `shape` (float):--The lambda shape parameter for the exponential
+        distribution. Values between 0.5 and 1.5 are typical, with higher
+        values biasing the distribution more towards smaller results.
 
-  Generates a number from an exponential distribution with mean 0.5
-  given a seed.
+  Returns (float): A number with an exponential distribution on [0,∞).
 
-  See: [StackExchange answer on exponential distribution](https://math.stackexchange.com/questions/28004/random-exponential-like-distribution)
+  Generates a number from an exponential distribution with the given
+  lambda shape parameter.
+
+  See: [this StackExchange answer on exponential
+  distribution](https://math.stackexchange.com/questions/28004/random-exponential-like-distribution)
+  and [the Wikipedia page for the exponential
+  distribution](https://en.wikipedia.org/wiki/Exponential_distribution)
   """
   u = udist(seed)
-  return -math.log(1 - u)/0.5
+  return -math.log(u)/shape
+
+def trexpdist(seed, shape):
+  """
+  Parameters:
+    - `seed` (int)--The seed that determines the result.
+    - `shape` (float)--The lambda shape parameter for the exponential
+      distribution. Values between 0.5 and 1.5 are typical, with higher
+      values biasing the distribution more towards smaller results.
+
+  Returns (float) A number with a truncated exponential distribution on
+    [0, 1].
+
+  Generates a number from a truncated exponential distribution on [0, 1]
+  with the given lambda shape parameter. See reference material for
+  `expdist`.
+  """
+  e = expdist(seed, shape);
+  return e - math.floor(e);
 
 # Cohort functions
 #-----------------

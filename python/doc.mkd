@@ -1,6 +1,6 @@
 ---
 title: Anarchy Library Documentation
-author: Peter Mawhorter
+author: Peter Mawhorter (pmawhorter@gmail.com)
 ...
 
 `anarchy` is a library for generating random numbers in an incremental and
@@ -82,21 +82,24 @@ Deal with individual random numbers.
 - [`flip`](#flip)
 - [`idist`](#idist)
 - [`expdist`](#expdist)
+- [`trexpdist`](#trexpdist)
 
 ### `prng`
 
 
 Parameters:
 
-  - `x` (int): The current random number (the next one is returned).
-  - `seed` (int): The seed; each seed will produce a distinct sequence of
-      numbers.
+  - `x` (int): The current random number (next one is returned).
+  - `seed` (int): The seed; each seed will produce a distinct
+    sequence of numbers.
 
-Returns (int): The next random number in the sequence for the given seed.
+Returns (int): The next random number in the sequence for the given
+seed.
 
-A reversible pseudo-random number generator. Uses low-level reversible
-functions to scramble a number and produce an hard-to-predict result. The
-`rev_prng` function is the inverse of this function.
+A reversible pseudo-random number generator. Uses low-level
+reversible functions to scramble a number and produce an
+hard-to-predict result. The `rev_prng` function is the inverse of
+this function.
 
 
 
@@ -105,11 +108,12 @@ functions to scramble a number and produce an hard-to-predict result. The
 
 Parameters:
 
-  - `x` (int): the current random number (the previous one is returned).
-  - `seed` (int): The seed; each seed will produce a distinct sequence of
-      numbers.
+  - `x` (int): the current random number (previous one is returned).
+  - `seed` (int): The seed; each seed will produce a distinct
+    sequence of numbers.
 
-Returns (int): The previous random number in the sequence for the given seed.
+Returns (int): The previous random number in the sequence for the
+given seed.
 
 The inverse of `prng` (see above). Returns the previous number in a
 pseudo-random sequence, so that:
@@ -124,11 +128,11 @@ rev_prng(prng(n, seed), seed) == n
 ### `udist`
 
 
-Parameter (int): `seed`--The seed that determines the result (could be a
-result from `prng` or `lfsr`)
+Parameter (int): `seed`--The seed that determines the result (could
+  be a result from `prng` or `lfsr`)
 
 Returns (float): A pseudo-random number between 0 (inclusive) and 1
-(exclusive).
+  (exclusive).
 
 
 
@@ -138,10 +142,10 @@ Returns (float): A pseudo-random number between 0 (inclusive) and 1
 Parameter (int): `seed`--The seed that determines the result.
 
 Returns (float): A pseudo-random number between 0 (inclusive) and 1
-(exclusive).
+  (exclusive).
 
-The result is created by averaging three results from `udist`, and its
-distribution has a Gaussian-like shape centered at 0.5.
+The result is created by averaging three results from `udist`, and
+its distribution has a Gaussian-like shape centered at 0.5.
 
 
 
@@ -155,9 +159,9 @@ Parameters:
 
 Returns (True or False): a decision value.
 
-Flips a biased coin with probability `p` of being true. Using the same seed
-always gives the same result, but over many seeds the given probability is
-adhered to.
+Flips a biased coin with probability `p` of being true. Using the
+same seed always gives the same result, but over many seeds the given
+probability is adhered to.
 
 
 
@@ -170,12 +174,12 @@ Parameters:
   - `start` (int): The minimum possible output value.
   - `end` (int): One more than the maximum possible output value.
 
-Returns (int): a pseudo-random integer between the start (inclusive) and the
-end (exclusive).
+Returns (int): a pseudo-random integer between the start (inclusive)
+and the end (exclusive).
 
-Returns a number drawn evenly from the given integer range, including the
-lower end but excluding the higher end (even if the lower end is given
-second).
+Returns a number drawn evenly from the given integer range, including
+the lower end but excluding the higher end (even if the lower end is
+given second).
 
 Distribution bias is about one part in (range/2^63).
 
@@ -184,14 +188,40 @@ Distribution bias is about one part in (range/2^63).
 ### `expdist`
 
 
-Parameter (int): `seed`--The seed that determines the result.
+Parameters:
 
-Returns (float): A number with an exponential distribution.
+    - `seed` (int)--The seed that determines the result.
+    - `shape` (float):--The lambda shape parameter for the exponential
+      distribution. Values between 0.5 and 1.5 are typical, with higher
+      values biasing the distribution more towards smaller results.
 
-Generates a number from an exponential distribution with mean 0.5 given
-a seed.
+Returns (float): A number with an exponential distribution on [0,∞).
 
-See: [StackExchange answer on exponential distribution](https://math.stackexchange.com/questions/28004/random-exponential-like-distribution)
+Generates a number from an exponential distribution with the given
+lambda shape parameter.
+
+See: [this StackExchange answer on exponential
+distribution](https://math.stackexchange.com/questions/28004/random-exponential-like-distribution)
+and [the Wikipedia page for the exponential
+distribution](https://en.wikipedia.org/wiki/Exponential_distribution)
+
+
+
+### `trexpdist`
+
+
+Parameters:
+  - `seed` (int)--The seed that determines the result.
+  - `shape` (float)--The lambda shape parameter for the exponential
+    distribution. Values between 0.5 and 1.5 are typical, with higher
+    values biasing the distribution more towards smaller results.
+
+Returns (float) A number with a truncated exponential distribution on
+  [0, 1].
+
+Generates a number from a truncated exponential distribution on [0, 1]
+with the given lambda shape parameter. See reference material for
+`expdist`.
 
 
 ### Cohort Functions
@@ -217,9 +247,9 @@ Parameters:
 
 Returns (int): Which cohort the given outer item is assigned to.
 
-Simply returns the outer index divided by the cohort size, rounded down. Note
-that for extremely large integers, they will be truncated to fit within 64
-bits.
+Simply returns the outer index divided by the cohort size, rounded
+down. Note that for extremely large integers, they will be truncated
+to fit within 64 bits.
 
 
 
@@ -248,11 +278,11 @@ Parameters:
   - `inner` (int): The index of the item in that cohort.
   - `cohort_size` (int): The size of each cohort.
 
-Returns (int): The outer index that would be mapped to this within-cohort
-index.
+Returns (int): The outer index that would be mapped to this
+  within-cohort index.
 
-This is the Inverse of `cohort_and_inner`: it computes the outer index from a
-cohort number and inner index.
+This is the Inverse of `cohort_and_inner`: it computes the outer
+index from a cohort number and inner index.
 
 
 
@@ -268,23 +298,24 @@ Parameters:
 Returns (int): A new within-cohort index for the given item.
 
 Implements an incremental shuffle, such that if you were to call
-`cohort_shuffle` on each index in a cohort of a given size, each of the
-items would end up in a different new spot within that cohort. The
-shuffle is reversible using the `rev_cohort_shuffle` function.
+`cohort_shuffle` on each index in a cohort of a given size, each of
+the items would end up in a different new spot within that cohort.
+The shuffle is reversible using the `rev_cohort_shuffle` function.
 
 It works by composing several of the simpler reversible/indexable
 functions to produce a sufficiently complex operation that humans
 generally won't be able to see the pattern it uses.
 
 Note that this should *not* be used for cryptography or statistics:
-when the cohort size is even moderately large (say 100), the number of
-possible shuffles (constrained by the seed, which is 64 bits, so 2^64)
-will be much smaller than the number of possible orderings of the
-items, so not all possible orderings will be able to be produced.
+when the cohort size is even moderately large (say 100), the number
+of possible shuffles (constrained by the seed, which is 64 bits, so
+2^64) will be much smaller than the number of possible orderings of
+the items, so not all possible orderings will be able to be produced.
 
-Both the seed and the cohort size are used to determine the particular
-ordering of items, so the same seed with a different cohort size won't
-necessarily produce a similar ordering to another run.
+Both the seed and the cohort size are used to determine the
+particular ordering of items, so the same seed with a different
+cohort size won't necessarily produce a similar ordering to another
+run.
 
 
 
@@ -315,25 +346,26 @@ x == rev_cohort_shuffle(y, 100, seed)
 
 Parameters:
 
-  - `segment` (int): Which segment of a distribution we are interested
-  in.
+  - `segment` (int): Which segment of a distribution we are
+    interested in.
   - `total` (int): The total number of items being distributed.
   - `n_segments` (int): The number of segments to distribute items
-      among.
+    among.
   - `segment_capacity` (int): The capacity of each segment.
-  - `roughness` (float in [0,1]): How rough the distribution should be.
+  - `roughness` (float in [0,1]): How rough the distribution should
+    be.
   - `seed` (int): The seed that determines a specific distribution.
 
 Returns (int): the number of items from a distribution that end up in
 the given segment.
 
-Given that `total` items are to be distributed evenly among `n_segment`
-segments each with at most `segment_capacity` items and we're in
-segment `segment` of those, computes how many items are in this
-segment. The `roughness` argument must be a number between 0 and 1
-indicating how even the distribution is: 0 indicates a perfectly even
-distribution, while 1 indicates a perfectly random distribution. Does
-work proportional to the log of the number of segments.
+Given that `total` items are to be distributed evenly among
+`n_segment` segments each with at most `segment_capacity` items and
+we're in segment `segment` of those, computes how many items are in
+this segment. The `roughness` argument must be a number between 0 and
+1 indicating how even the distribution is: 0 indicates a perfectly
+even distribution, while 1 indicates a perfectly random distribution.
+Does work proportional to the log of the number of segments.
 
 Note that segment_capacity * n_segments should be > total.
 
@@ -344,17 +376,18 @@ Note that segment_capacity * n_segments should be > total.
 
 Parameters:
 
-  - `segment` (int): Which segment of a distribution we are interested
-  in.
+  - `segment` (int): Which segment of a distribution we are
+    interested in.
   - `total` (int): The total number of items being distributed.
   - `n_segments` (int): The number of segments to distribute items
-      among.
+    among.
   - `segment_capacity` (int): The capacity of each segment.
-  - `roughness` (float in [0,1]): How rough the distribution should be.
+  - `roughness` (float in [0,1]): How rough the distribution should
+    be.
   - `seed` (int): The seed that determines a specific distribution.
 
-Returns (int): the cumulative number of items from a distribution that
-are distributed before the given segment.
+Returns (int): the cumulative number of items from a distribution
+that are distributed before the given segment.
 
 Does similar math to the `distribution_portion` function above, but
 instead of returning the number of items in the given segment, it
@@ -371,18 +404,19 @@ Parameters:
   - `index` (int): Which item are we asking about.
   - `total` (int): The total number of items being distributed.
   - `n_segments` (int): The number of segments to distribute items
-      among.
+    among.
   - `segment_capacity` (int): The capacity of each segment.
-  - `roughness` (float in [0,1]): How rough the distribution should be.
+  - `roughness` (float in [0,1]): How rough the distribution should
+    be.
   - `seed` (int): The seed that determines a specific distribution.
 
 Returns (int): the index of the segment that the item of interest is
-distributed into.
+  distributed into.
 
-Computes the segment number in which a certain item appears (one of the
-`total` items distributed between segments; see `distribution_portion`
-above). Requires work proportional to the log of the number of
-segments.
+Computes the segment number in which a certain item appears (one of
+the `total` items distributed between segments; see
+`distribution_portion` above). Requires work proportional to the log
+of the number of segments.
 
 Note that the index should be between 0 and `total - 1`.
 

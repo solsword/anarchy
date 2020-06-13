@@ -4,6 +4,7 @@ Testing module for anarchy reversible RNG library.
 """
 
 import anarchy
+import math
 
 VALUE_TESTS = {
   "posmod": [
@@ -80,10 +81,12 @@ VALUE_TESTS = {
   ],
   "prng": [
     # TODO: Verify these!
-    [ anarchy.prng(489348, 373891), 18107188676709054266 ],
-    [ anarchy.rev_prng(1766311112, 373891), 14566213110237565854 ],
-    [ anarchy.prng(0, 0), 15132939213242511212 ],
-    [ anarchy.rev_prng(15132939213242511212, 0), 0 ],
+    [ anarchy.prng(489348, 373891), 66921786932613679 ],
+    [ anarchy.prng(66921786932613679, 373891), 489348 ],
+    [ anarchy.rev_prng(1766311112, 373891), 16200907511548622497 ],
+    [ anarchy.prng(0, 0), 5721605643300318230 ],
+    [ anarchy.rev_prng(5721605643300318230, 0), 0 ],
+    [ anarchy.rev_prng(15132939213242511212, 0), 7729542220442899671 ],
     [ anarchy.prng(anarchy.rev_prng(1782, 39823), 39823), 1782 ],
     [ anarchy.rev_prng(anarchy.prng(1782, 39823), 39823), 1782 ],
   ],
@@ -94,22 +97,22 @@ VALUE_TESTS = {
   ],
   "udist": [
     # TODO: Verify and/or fix these!
-    [ anarchy.udist(0), 0.39901845521416135 ],
-    [ anarchy.udist(8329801), 0.9082340390686318 ],
-    [ anarchy.udist(58923), 0.11871384160294333 ],
+    [ anarchy.udist(0), 0.5583496101003873 ],
+    [ anarchy.udist(8329801), 0.9038035173656868 ],
+    [ anarchy.udist(58923), 0.34254123960895916 ],
   ],
   "idist": [
     # TODO: Verify and/or fix these!
     [ anarchy.idist(0, 0, 1), 0 ],
-    [ anarchy.idist(0, 3, 25), 11 ],
-    [ anarchy.idist(58923, 3, 25), 5 ],
+    [ anarchy.idist(0, 3, 25), 15 ],
+    [ anarchy.idist(58923, 3, 25), 10 ],
     [ anarchy.idist(58923, -2, -4), -3 ],
   ],
   "expdist": [
     # TODO: Verify and/or fix these!
-    [ anarchy.expdist(0), 1.018382104858997 ],
-    [ anarchy.expdist(8329801), 4.77702769214421 ],
-    [ anarchy.expdist(58923), 0.2527457897844567 ],
+    [ anarchy.expdist(0, 0.5), 1.1655399427947986 ],
+    [ anarchy.expdist(8329801, 0.5), 0.2022865805205541 ],
+    [ anarchy.expdist(58923, 1.5), 0.7142421472739157 ],
   ],
   "cohorts": [
     [ anarchy.cohort(17, 3), 5 ],
@@ -171,6 +174,9 @@ TEST_VALUES = [
   1 << 31
 ]
 
+N_SAMPLES = 10000
+N_CDF_BUCKETS = 100
+
 EXEC_TESTS = {}
 
 def test(fn):
@@ -230,6 +236,355 @@ def unit_ops():
       print(m)
 
   return result
+
+def tolerance(n_samples):
+  """
+  Computes a tolerance value based on a number of samples for testing
+  pseudo-random functions.
+  """
+  return 1 / (10 ** (math.log10(n_samples) - 3))
+
+def moments_test(samples, exp_mean, exp_stdev, label, messages):
+  """
+  Tests the given list of samples to make sure it has close to the given
+  expected mean and standard deviation. Will append to the given messages
+  list (with messages including the given label) upon failure, and
+  returns the number of failures (0, 1, or 2). The exp_stdev can be given
+  as None to skip that test.
+  """
+  result = 0
+  tol = tolerance(len(samples))
+  mean = sum(samples) / len(samples)
+
+  if exp_mean == 0:
+    pct = abs(mean) # not a percentage
+  else:
+    pct = abs(1 - mean / exp_mean) # a percentage
+
+  if pct > tol:
+    result += 1
+    messages.append(
+      f"Distressingly large difference from expected mean ({exp_mean})"
+    + f" for {label}: {mean}"
+    )
+
+  if exp_stdev != None:
+    stdev = 0
+    for s in samples:
+      stdev += (s - mean)**2
+
+    stdev /= len(samples) - 1
+    stdev = stdev ** 0.5
+
+    if exp_stdev == 0:
+      pct = stdev # not a percentage
+    else:
+      pct = abs(1 - stdev / exp_stdev) # actually a percentage
+
+    if pct > tol:
+      result += 1
+      messages.append(
+        f"Distressingly large difference from expected stdev ({exp_stdev})"
+      + f" for {label}: {stdev}"
+      )
+
+  return result
+
+def trapezoid_area(height, top, bottom):
+  """
+  Computes the area of a trapezoid with the given height and top/bottom
+  lengths.
+  """
+  return (
+      # triangle based on longer - shorter of the top/bottom
+      0.5 * abs(top - bottom) * height
+      # plus parallelogram based on shorter edge
+    + min(top, bottom) * height
+  )
+
+def cdf_points(low, high):
+  """
+  Returns a list of N_CDF_BUCKETS + 1 evenly-distributed test points
+  starting at low and ending at high.
+  """
+  return list(
+    map(
+      lambda x: low + (x/N_CDF_BUCKETS) * (high - low),
+      range(N_CDF_BUCKETS))
+  ) + [high]
+
+def cdf_test(samples, cdf, test_points, label, messages):
+  """
+  Tests that the cumulative distribution function of the given
+  samples roughly matches the given expected cumulative distribution
+  function (should be a function which accepts a number x and
+  returns a probability of the result being smaller than x). This
+  estimates the total area of the differences between the actual and
+  expected CDFs sampling at each of the given test points, and then
+  requires that the percentage that this represents of the area
+  under the true CDF is below a certain threshold based on the
+  number of samples. This function returns the number of failed
+  tests (0 or 1) and if the test fails, it pushes a message (which
+  includes the given label) onto the given messages array.
+  """
+  result = 0;
+  ns = len(samples)
+  tol = tolerance(len(test_points))
+
+  ordered = sorted(samples)
+  exp_precount = cdf(test_points[0]) * ns;
+  obs_precount = 0;
+  while obs_precount < ns and samples[obs_precount] < test_points[0]:
+      obs_precount += 1
+
+  prev_exp_pc = exp_precount
+  prev_obs_pc = obs_precount
+  prev_overshoot = obs_precount - exp_precount
+  discrepancy_area = 0
+  correct_area = 0
+  for i, tp in enumerate(test_points[1:]):
+      exp_precount = cdf(tp) * ns;
+      while obs_precount < ns and samples[obs_precount] < tp:
+          obs_precount += 1
+
+      # Compute overshoot at this test point
+      overshoot = obs_precount - exp_precount;
+      # compute top and bottom of (possibly twisted) trapezoid
+      width = tp - test_points[i-1];
+      if prev_overshoot > 0 == overshoot > 0:
+          # it's a trapezoid; both sides either over- or under-shot.
+          discrepancy_area += trapezoid_area(
+              width,
+              prev_overshoot,
+              overshoot
+          )
+      else:
+          # it's two triangles; one side did the opposite of the other.
+          ratio = abs(prev_overshoot / overshoot)
+          inflection = width * ratio / (1 + ratio)
+          discrepancy_area += (
+              # triangle from prev test point to inflection point
+              0.5 * abs(prev_overshoot) * inflection
+              # triangle from inflection point to current test point
+            + 0.5 * abs(overshoot) * (width - inflection)
+          )
+
+      # update correct area
+      correct_area += trapezoid_area(width, prev_exp_pc, exp_precount)
+
+      # Update previous variables for our next step
+      prev_exp_pc = exp_precount
+      prev_obs_pc = obs_precount
+      prev_overshoot = overshoot
+
+  discrepancy = abs(1 - discrepancy_area / correct_area);
+  if discrepancy > tol:
+      messages.push(
+        f"Distressingly large differences from expected CDF area"
+      + f" ({correct_area}) for {label}: {discrepancy_area}"
+      );
+      result += 1;
+
+  return result;
+
+@test
+def distribution_functions():
+  result = 0
+  messages = []
+
+  # udist tests
+  for seed in TEST_VALUES:
+    rng = seed
+    samples = []
+    for i in range(N_SAMPLES):
+      samples.append(anarchy.udist(rng))
+      rng = anarchy.prng(rng, seed)
+
+    result += moments_test(
+      samples,
+      0.5,
+      1/12**0.5,
+      f"udist(:{seed}:)",
+      messages
+    )
+
+    result += cdf_test(
+      samples,
+      lambda x: x,
+      cdf_points(0, 1),
+      f"udist(:{seed}:)",
+      messages
+    )
+
+  # pgdist tests
+  for seed in TEST_VALUES:
+    rng = seed
+    samples = []
+    for i in range(N_SAMPLES):
+      samples.append(anarchy.pgdist(rng))
+      rng = anarchy.prng(rng, seed)
+
+    result += moments_test(
+      samples,
+      0.5,
+      1/6, # see js/anarchy_tests.js for derivation
+      f"pgdist(:{seed}:)",
+      messages
+    )
+
+    # TODO: CDF test here?
+
+  # flip tests
+  for p in [0.02, 0.2, 0.5, 0.9, 0.99]:
+    for seed in TEST_VALUES:
+      rng = seed
+      samples = []
+      for i in range(N_SAMPLES):
+        samples.append(anarchy.flip(p, rng))
+        rng = anarchy.prng(rng, seed)
+
+        # Simple approximation for correct standard deviation:
+        exp_stdev = (
+          (
+            ((1000 * p) * Math.pow(1 - p, 2))
+            + ((1000 * (1-p)) * Math.pow(p, 2))
+          ) / 999
+        ) ** 0.5
+
+      result += moments_test(
+        samples,
+        p,
+        exp_stdev,
+        f"flip(p, :{seed}:)",
+        messages
+      )
+
+      result += cdf_test(
+        samples,
+        lambda x: 0 if x == 0 else ((1-p) if x < 1 else 1),
+        [0.5, 1],
+        f"flip(p, :{seed}:)",
+        messages
+      )
+
+  # idist tests
+  for low in [0, -31, 1289, -7294712]:
+    for high in [0, -30, 1289482, -7298392]:
+      for seed in TEST_VALUES:
+        rng = seed
+        samples = []
+        for i in range(N_SAMPLES):
+          samples.append(anarchy.idist(rng, low, high))
+          rng = anarchy.prng(rng, seed)
+
+        if low == high:
+          # No need for mean/stdev/cdf tests here
+          if any(s != low for s in samples):
+            result += 1
+            messages.append(
+              f"Non-fixed sample(s) for idist(:{seed}:, {low}, {high}):"
+            + f" {[s for s in samples if s != low]}"
+            )
+        else:
+          span = high - 1 - low
+          exp_mean = low + span/2
+          exp_stdev = (1/12**0.5)*abs(span)
+
+          result += moments_test(
+            samples,
+            exp_mean,
+            exp_stdev,
+            f"idist(:{seed}:, {low}, {high})",
+            messages
+          )
+
+          result += cdf_test(
+            samples,
+            lambda x: (
+              ((x-low) / (high-low) )
+              if high > low + 1
+              else (1 if x > low else 0)
+            ), 
+            [low, high+1] if high <= low+1 else cdf_points(low, high),
+            f"idist(:{seed}:, {low}, {high})",
+            messages
+          )
+
+  # expdist tests
+  for shape in [0.05, 0.5, 1, 1.5, 5]:
+    # Test with different shape (lambda) values
+    for seed in TEST_VALUES:
+      rng = seed
+      samples = []
+
+      exp_mean = 1/shape
+      # expected stdev is the same as the expected mean for an
+      # exponential distribution
+      exp_stdev = exp_mean
+
+      # compute samples
+      for i in range(N_SAMPLES):
+        samples.append(anarchy.expdist(rng, shape))
+        rng = anarchy.prng(rng, seed)
+
+      result += moments_test(
+        samples,
+        exp_mean,
+        exp_stdev,
+        f"expdist(:{seed}:, {shape})",
+        messages
+      )
+
+      result += cdf_test(
+        samples,
+        lambda x: 1 - math.exp(-shape * x),
+        cdf_points(0, 2) + cdf_points(2.5, 30),
+        f"expdist(:{seed}:, {shape})",
+        messages
+      )
+
+  # trexpdist tests
+  for shape in [0.05, 0.5, 1, 1.5, 5]:
+    # Test with different shape (lambda) values
+    for seed in TEST_VALUES:
+      rng = seed
+      samples = []
+
+      exp_mean = 1/shape - 1/(Math.exp(shape) - 1)
+      # TODO: What's the expected stdev here?
+      exp_stdev = None
+
+      # compute samples
+      for i in range(N_SAMPLES):
+        samples.append(anarchy.trexpdist(rng, shape))
+        rng = anarchy.prng(rng, seed)
+
+      result += moments_test(
+        samples,
+        exp_mean,
+        exp_stdev,
+        f"trexpdist(:{seed}:, {shape})",
+        messages
+      )
+
+      # Note: js/anarchy_tests.js contains a derivation of the truncated
+      # CDF formula we're using here
+      result += cdf_test(
+        samples,
+        lambda x: (1 - math.exp(-shape * x)) / (1 - math.exp(-shape)),
+        cdf_points(0, 1),
+        f"trexpdist(:{seed}:, {shape})",
+        messages
+      )
+
+  # Final message
+  if result != 0:
+    print("distribution_functions failures:")
+    for m in messages:
+      print(m)
+
+  return result
+# TODO: Distribution function tests!
 
 @test
 def cohort_ops():
@@ -409,8 +764,6 @@ def cohort_ops():
       print('  ' + m)
 
   return result
-
-# TODO: Distribution function tests!
 
 def run_value_tests():
   print("Starting value tests...")
