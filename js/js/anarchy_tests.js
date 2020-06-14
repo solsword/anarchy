@@ -102,28 +102,28 @@ requirejs(
       ],
       "udist": [
         // TODO: Verify and/or fix these!
-        [ anarchy.udist(0), 0.43703760401931885 ],
-        [ anarchy.udist(8329801), 0.7272377507762913 ],
-        [ anarchy.udist(58923), 0.1342030542547658 ],
+        [ anarchy.udist(0), 0.4741466253923192 ],
+        [ anarchy.udist(8329801), 0.911844237693452 ],
+        [ anarchy.udist(58923), 0.03562796004493369 ],
       ],
       "idist": [
         // TODO: Verify and/or fix these!
         [ anarchy.idist(0, 0, 1), 0 ],
-        [ anarchy.idist(0, 3, 25), 12 ],
-        [ anarchy.idist(58923, 3, 25), 5 ],
+        [ anarchy.idist(0, 3, 25), 13 ],
+        [ anarchy.idist(58923, 3, 25), 3 ],
         [ anarchy.idist(58923, -2, -4), -3 ],
       ],
       "expdist": [
         // TODO: Verify and/or fix these!
-        [ anarchy.expdist(0, 0.5), 1.6554720744024236 ],
-        [ anarchy.expdist(8329801, 0.5), 0.6370036499152485 ],
-        [ anarchy.expdist(58923, 1.5), 1.3389341971507644 ],
+        [ anarchy.expdist(0, 0.5), 1.4924773377018894 ],
+        [ anarchy.expdist(8329801, 0.5), 0.18457219099442898 ],
+        [ anarchy.expdist(58923, 1.5), 2.2230830365762837 ],
       ],
       "trexpdist": [
         // TODO: Verify and/or fix these!
-        [ anarchy.trexpdist(0, 0.5), 0.6554720744024236 ],
-        [ anarchy.trexpdist(8329801, 0.5), 0.6370036499152485 ],
-        [ anarchy.trexpdist(58923, 1.5), 0.33893419715076445 ],
+        [ anarchy.trexpdist(0, 0.5), 0.4924773377018894 ],
+        [ anarchy.trexpdist(8329801, 0.5), 0.18457219099442898 ],
+        [ anarchy.trexpdist(58923, 1.5), 0.2230830365762837 ],
       ],
       "cohorts": [
         [ anarchy.cohort(17, 3), 5 ],
@@ -163,7 +163,7 @@ requirejs(
 
     // Default tolerance in % of expected value
     function tolerance(n_samples) {
-        return 1/Math.pow(10, Math.log10(n_samples) - 3);
+        return 1.2/Math.pow(10, Math.log10(n_samples) - 3);
     }
 
     function obtain_samples(rng) {
@@ -192,8 +192,10 @@ requirejs(
         }
         if (pct > tol) {
             messages.push(
-                "Distressingly large difference from expected mean ("
-              + exp_mean + ") for " + label + ": " + mean
+                "Suspicious difference from expected mean ("
+              + exp_mean.toFixed(4) + ") for " + label + ": "
+              + mean.toFixed(4) + " -> " + (100*pct).toFixed(2) + "% > "
+              + (100*tol).toFixed(2) + "%"
             );
             result += 1;
         }
@@ -210,8 +212,10 @@ requirejs(
             }
             if (pct > tol) {
                 messages.push(
-                    "Distressingly large difference from expected stdev ("
-                  + exp_stdev + ") for " + label + ": " + stdev
+                    "Suspicious difference expected stdev ("
+                  + exp_stdev.toFixed(4) + ") for " + label + ": "
+                  + stdev.toFixed(4) + " -> " + (100*pct).toFixed(2) + "% > "
+                  + (100*tol).toFixed(2) + "%"
                 );
                 result += 1;
             }
@@ -258,8 +262,8 @@ requirejs(
     function cdf_test(samples, cdf, test_points, label, messages) {
         let result = 0;
         let ns = samples.length;
-        let tol = tolerance(test_points.length);
-        samples.sort();
+        let tol = tolerance(samples.length);
+        samples.sort((a, b) => a - b);
         let exp_precount = cdf(test_points[0]) * ns;
         let obs_precount = 0;
         while (obs_precount < ns && samples[obs_precount] < test_points[0]) {
@@ -288,24 +292,38 @@ requirejs(
                 // under-shot.
                 discrepancy_area += trapezoid_area(
                     width,
-                    prev_overshoot,
-                    overshoot
+                    Math.abs(prev_overshoot),
+                    Math.abs(overshoot)
                 );
+                if (discrepancy_area < 0) {
+                    console.warn("D<0 t ", width, prev_overshoot, overshoot);
+                }
             } else {
                 // it's two triangles; one side did the opposite of the
                 // other.
-                let ratio = Math.abs(prev_overshoot / overshoot)
-                let inflection = width * ratio / (1 + ratio)
+                let inflection;
+                if (overshoot != 0) {
+                    let ratio = Math.abs(prev_overshoot / overshoot);
+                    inflection = width * ratio / (1 + ratio);
+                } else {
+                    inflection = width;
+                }
                 discrepancy_area += (
                     // triangle from prev test point to inflection point
                     0.5 * Math.abs(prev_overshoot) * inflection
                     // triangle from inflection point to current test point
                   + 0.5 * Math.abs(overshoot) * (width - inflection)
                 );
+                if (discrepancy_area < 0) {
+                    console.warn("D<0 x ", prev_overshoot, overshoot, inflection);
+                }
             }
 
             // update correct area
             correct_area += trapezoid_area(width, prev_exp_pc, exp_precount);
+            if (correct_area < 0) {
+                console.warn("CA<0", width, prev_exp_pc, exp_precount);
+            }
 
             // Update previous variables for our next step
             prev_exp_pc = exp_precount;
@@ -313,11 +331,14 @@ requirejs(
             prev_overshoot = overshoot;
         }
 
-        let discrepancy = Math.abs(1 - discrepancy_area / correct_area);
+        let discrepancy = Math.abs(discrepancy_area / correct_area);
         if (discrepancy > tol) {
             messages.push(
-                "Distressingly large differences from expected CDF area ("
-              + correct_area + ") for " + label + ": " + discrepancy_area
+                "Suspicious CDF area difference from "
+              + correct_area.toFixed(2) + " for " + label + ": "
+              + discrepancy_area.toFixed(2) + " -> "
+              + (100 * discrepancy).toFixed(2) + "% > "
+              + (100 * tol).toFixed(2) + "%"
             );
             result += 1;
         }
@@ -711,15 +732,6 @@ requirejs(
                     "flip(" + p + ", :" + seed + ":)", 
                     messages
                 );
-
-                result += cdf_test(
-                    samples,
-                    x => x < 1 ? (1 - p) : 1, // note: true CDF should 0 => 0
-                    [0.5, 1], // we don't use 0 as a test point
-                    "flip(" + p + ", :" + seed + ":)",
-                    messages
-                );
-
             }
         }
 
@@ -757,21 +769,17 @@ requirejs(
                         messages
                     );
 
-                    result += cdf_test(
-                        samples,
-                        function (x) {
-                            if (high > low + 1) {
-                                return (x - low) / (high - low);
-                            } else {
-                                return x > high ? 1 : 0;
-                            }
-                        },
-                        high != low
-                          ? even_cdf_test_points(low, high)
-                          : [high, high+1],
-                        "idist(:" + seed + ":, " + low + ", " + high + ")", 
-                        messages
-                    );
+                    real_low = Math.min(low, high);
+                    real_high = Math.max(low, high);
+                    if (real_high > real_low + 1) {
+                        result += cdf_test(
+                            samples,
+                            x => (x - real_low) / (real_high - real_low),
+                            even_cdf_test_points(real_low, real_high),
+                            "idist(:" + seed + ":, " + low + ", " + high + ")", 
+                            messages
+                        );
+                    }
                 }
             }
         }

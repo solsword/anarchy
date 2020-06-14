@@ -176,9 +176,9 @@ define([], function() {
   function udist(seed) {
     // Generates a random number between 0 and 1 given a seed value.
     let st = seed >>> 0;
-    let ux = prng(prng(prng(st, 53), st), 47);
-    let sc = (ux ^ (ux << 16)) >>> 0;
-    return (sc % 2147483659) / 2147483659; // prime near 2^31
+    let sc = (st ^ (st << 16)) >>> 0;
+    let ux = prng(prng(prng(sc, 53), sc), st);
+    return (ux % 2147483659) / 2147483659; // prime near 2^31
   }
 
   function pgdist(seed) {

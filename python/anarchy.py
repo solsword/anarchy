@@ -123,7 +123,7 @@ def scramble(x):
   """
   trigger = x & 0x80200003
   r = swirl(x, 1)
-  r ^= 0x03040610 * trigger # pseudo-if
+  r ^= 0x03040610 * (not not trigger) # pseudo-if
 
   return r & ID_MASK
 
@@ -256,9 +256,10 @@ def udist(seed):
   Returns (float): A pseudo-random number between 0 (inclusive) and 1
     (exclusive).
   """
+  # Note: without this extra scrambling, udist on sequential seeds is
+  # *terrible* for seeds below ~1000000.
   sc = scramble_seed(seed)
-  sc = lfsr(sc)
-  sc = lfsr(sc)
+  sc = prng(prng(sc, sc), seed)
   return (sc % 9223372036854775783) / 9223372036854775783 # prime near 2^63
 
 def pgdist(seed):
@@ -289,7 +290,7 @@ def flip(p, seed):
   same seed always gives the same result, but over many seeds the given
   probability is adhered to.
   """
-  return udist(seed) < p
+  return udist(prng(seed, seed)) < p
 
 def idist(seed, start, end):
   """
@@ -331,7 +332,11 @@ def expdist(seed, shape):
   distribution](https://en.wikipedia.org/wiki/Exponential_distribution)
   """
   u = udist(seed)
-  return -math.log(u)/shape
+  # Note: mathematically since u is on [0, 1) and not (0, 1], we can't
+  # skip the 1- step, since when u = 0, that would be asking for the log
+  # of 0. With 1-, the log of 0 would happen when u=1, but our domain is
+  # [0, 1) which excludes 1.
+  return -math.log(1-u)/shape
 
 def trexpdist(seed, shape):
   """
