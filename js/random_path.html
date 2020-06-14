@@ -14,7 +14,7 @@
 <h1>Creating a Random Path</h1>
 
 <p>
-This example uses the anarchy database to create a random path of length 10 through the grid. It only can go down or left, so if it is unable to go down or left anymore, then the path might be less than 10. 
+This example uses the anarchy database to create a random path through a grid. 
 </p>
 
 <div id="compare_demo_controls">
@@ -69,7 +69,7 @@ function enable_compare_demo() {
       ctx.strokeRect(cx, cy, rect_size, rect_size);
       }
      */
-    let pathArray = create_path_array(seed);
+    // let pathArray = create_path_array(seed);
     // let path = find_path(pathArray);
     for(let i = 0; i < 100; i++){
       let x = i % 10;
@@ -86,7 +86,37 @@ function enable_compare_demo() {
     }
   }
 
-  function create_path_array(seed){
+  function rec_draw_path(where, count, length, startIdx, pathArray, r, g, b){
+    // either treat whole grid as one big "snake" and use recursion that way or...
+    // only do recursion for the actual length of the snake. 
+    // for now, I will do recursion for the whole entire grid, so the if/else structure
+    // might look a bit different than it otherwise would
+    if(count == 0){
+      draw_square(where, startIdx, r, g, b);
+    }
+    else if(count < (100 - length)){
+      draw_square(where, startIdx, r, g, b);
+      rec_draw_path(where, count-1, length, pathArray[startIdx], pathArray, 255, 255, 255); 
+    }
+    else{
+      draw_square(where, startIdx, r, g, b);
+      rec_draw_path(where, count-1 , length, pathArray[startIdx], pathArray, r-10, g-10, b-10);
+    }
+  }
+
+  function draw_square(where, startIdx, r, g, b){
+    let x = startIdx % 10;
+    let y = Math.floor(startIdx/10);
+    let cx = where[0] + rect_size/2 + x * rect_size;
+    let cy = where[1] + rect_size/2 + y * rect_size;
+    ctx.fillStyle = "rgb(" + r + ", " + g + ", " + b + ")";
+    ctx.fillRect(cx, cy, rect_size, rect_size);
+    ctx.strokeWidth = 0.5;
+    ctx.strokeStyle = "black";
+    ctx.strokeRect(cx, cy, rect_size, rect_size);
+  }
+
+  function create_path_array(seed, decFunction){
     // Create an array to hold each index in the grid (10x10)
     let valArray = [];
     console.log("in create_path_array");
@@ -122,8 +152,7 @@ function enable_compare_demo() {
       }
 
       // Step 2: choose neighbor
-      let decisionFunction = flip_decision(seed);
-      let decision = decisionFunction();
+      let decision = decFunction();
       let nextBlock;
       if(decision && below != undefined){
         nextBlock = below;
@@ -151,7 +180,9 @@ function enable_compare_demo() {
     // return anarchy.flip(prob, seed);
     let val = 0;
     return function(){
+      // console.log("before: " + val);
       val = anarchy.prng(val, seed);
+      // console.log("after: " + val);
       let u = anarchy.udist(val);
       console.log(u);
       if (u <= 0.5) {
@@ -162,11 +193,10 @@ function enable_compare_demo() {
     }
   }
 
-  // Creates RNG that spits out 0, 1, or 2 independently with 90%, 8%, and 2%
+/**  // Creates RNG that spits out 0, 1, or 2 independently with 90%, 8%, and 2%
   // probabilities.
   function make_independent_rng(seed) {
-    let val = 0; // question for Peter: why define val = 0 here? why not just define
-    // it in the function to be returned?
+    let val = 0; 
     return function () {
       val = anarchy.prng(val, seed);
       let u = anarchy.udist(val);
@@ -198,7 +228,7 @@ function enable_compare_demo() {
       }
     }
   }
-
+*/
 
   // Shows results for the given seed by drawing four sampled results on the
   // left and four shuffled results on the right.
@@ -209,21 +239,32 @@ function enable_compare_demo() {
     for (let i = 0; i < 4; ++i) {
       let xo = (i % 2) * (100 + pad);
       let yo = Math.floor(i / 2) * (100 + pad);
-      let irng = make_independent_rng(base_seed + i);
-      let srng = make_shuffle_rng(base_seed + i);
+ //     let irng = make_independent_rng(base_seed + i);
+ //     let srng = make_shuffle_rng(base_seed + i);
 
-      draw_result([pad + xo, pad + yo], irng, seed);
-      draw_result([200 + 4*pad + xo, pad + yo], srng, seed);
+ //     draw_result([pad + xo, pad + yo], irng, seed);
+ //     draw_result([200 + 4*pad + xo, pad + yo], srng, seed);
     }
-    create_path_array(seed);
+    let decFunction = flip_decision(base_seed);
+    let pathArray = create_path_array(seed, decFunction);
+    let where = [pad, pad];
+    let count = 100;
+    let length = 10; 
+    let startIdx = anarchy.prng(0, seed);
+    startIdx %= 100;
+    let r = 0;
+    let g = 0;
+    let b = 100;
+    rec_draw_path(where, count, length, startIdx, pathArray, r, g, b)
 
-    // add dividing line
-    ctx.strokeWidth = 2;
-    ctx.strokeStyle = "black";
-    ctx.beginPath();
-    ctx.moveTo(300, 0);
-    ctx.lineTo(300, 600);
-    ctx.stroke();
+      /**    // add dividing line
+        ctx.strokeWidth = 2;
+        ctx.strokeStyle = "black";
+        ctx.beginPath();
+        ctx.moveTo(300, 0);
+        ctx.lineTo(300, 600);
+        ctx.stroke();
+       */
   }
 
   // Function for picking up seed from input
