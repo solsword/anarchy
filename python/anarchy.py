@@ -123,7 +123,7 @@ def scramble(x):
   """
   trigger = x & 0x80200003
   r = swirl(x, 1)
-  r ^= 0x03040610 * trigger # pseudo-if
+  r ^= 0x03040610 * (not not trigger) # pseudo-if
 
   return r & ID_MASK
 
@@ -256,9 +256,10 @@ def udist(seed):
   Returns (float): A pseudo-random number between 0 (inclusive) and 1
     (exclusive).
   """
+  # Note: without this extra scrambling, udist on sequential seeds is
+  # *terrible* for seeds below ~1000000.
   sc = scramble_seed(seed)
-  sc = lfsr(sc)
-  sc = lfsr(sc)
+  sc = prng(prng(sc, sc), seed)
   return (sc % 9223372036854775783) / 9223372036854775783 # prime near 2^63
 
 def pgdist(seed):
@@ -289,7 +290,7 @@ def flip(p, seed):
   same seed always gives the same result, but over many seeds the given
   probability is adhered to.
   """
-  return udist(seed) < p
+  return udist(prng(seed, seed)) < p
 
 def idist(seed, start, end):
   """
@@ -311,19 +312,49 @@ def idist(seed, start, end):
   return math.floor(udist(seed) * (end - start)) + start
 
 
-def expdist(seed):
+def expdist(seed, shape):
   """
-  Parameter (int): `seed`--The seed that determines the result.
+  Parameters:
 
-  Returns (float): A number with an exponential distribution.
+      - `seed` (int)--The seed that determines the result.
+      - `shape` (float):--The lambda shape parameter for the exponential
+        distribution. Values between 0.5 and 1.5 are typical, with higher
+        values biasing the distribution more towards smaller results.
 
-  Generates a number from an exponential distribution with mean 0.5
-  given a seed.
+  Returns (float): A number with an exponential distribution on [0,∞).
 
-  See: [StackExchange answer on exponential distribution](https://math.stackexchange.com/questions/28004/random-exponential-like-distribution)
+  Generates a number from an exponential distribution with the given
+  lambda shape parameter.
+
+  See: [this StackExchange answer on exponential
+  distribution](https://math.stackexchange.com/questions/28004/random-exponential-like-distribution)
+  and [the Wikipedia page for the exponential
+  distribution](https://en.wikipedia.org/wiki/Exponential_distribution)
   """
   u = udist(seed)
-  return -math.log(1 - u)/0.5
+  # Note: mathematically since u is on [0, 1) and not (0, 1], we can't
+  # skip the 1- step, since when u = 0, that would be asking for the log
+  # of 0. With 1-, the log of 0 would happen when u=1, but our domain is
+  # [0, 1) which excludes 1.
+  return -math.log(1-u)/shape
+
+def trexpdist(seed, shape):
+  """
+  Parameters:
+    - `seed` (int)--The seed that determines the result.
+    - `shape` (float)--The lambda shape parameter for the exponential
+      distribution. Values between 0.5 and 1.5 are typical, with higher
+      values biasing the distribution more towards smaller results.
+
+  Returns (float) A number with a truncated exponential distribution on
+    [0, 1].
+
+  Generates a number from a truncated exponential distribution on [0, 1]
+  with the given lambda shape parameter. See reference material for
+  `expdist`.
+  """
+  e = expdist(seed, shape);
+  return e - math.floor(e);
 
 # Cohort functions
 #-----------------

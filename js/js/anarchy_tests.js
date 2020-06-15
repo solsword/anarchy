@@ -102,22 +102,28 @@ requirejs(
       ],
       "udist": [
         // TODO: Verify and/or fix these!
-        [ anarchy.udist(0), 0 ],
-        [ anarchy.udist(8329801), 0.10328831051654581 ],
-        [ anarchy.udist(58923), 0.9000991587987678 ],
+        [ anarchy.udist(0), 0.4741466253923192 ],
+        [ anarchy.udist(8329801), 0.911844237693452 ],
+        [ anarchy.udist(58923), 0.03562796004493369 ],
       ],
       "idist": [
         // TODO: Verify and/or fix these!
         [ anarchy.idist(0, 0, 1), 0 ],
-        [ anarchy.idist(0, 3, 25), 3 ],
-        [ anarchy.idist(58923, 3, 25), 22 ],
-        [ anarchy.idist(58923, -2, -4), -4 ],
+        [ anarchy.idist(0, 3, 25), 13 ],
+        [ anarchy.idist(58923, 3, 25), 3 ],
+        [ anarchy.idist(58923, -2, -4), -3 ],
       ],
       "expdist": [
         // TODO: Verify and/or fix these!
-        [ anarchy.expdist(0), 0 ], // TODO: Um...?
-        [ anarchy.expdist(8329801), 0.2180417699901415 ],
-        [ anarchy.expdist(58923), 4.607154345860652 ],
+        [ anarchy.expdist(0, 0.5), 1.4924773377018894 ],
+        [ anarchy.expdist(8329801, 0.5), 0.18457219099442898 ],
+        [ anarchy.expdist(58923, 1.5), 2.2230830365762837 ],
+      ],
+      "trexpdist": [
+        // TODO: Verify and/or fix these!
+        [ anarchy.trexpdist(0, 0.5), 0.4924773377018894 ],
+        [ anarchy.trexpdist(8329801, 0.5), 0.18457219099442898 ],
+        [ anarchy.trexpdist(58923, 1.5), 0.2230830365762837 ],
       ],
       "cohorts": [
         [ anarchy.cohort(17, 3), 5 ],
@@ -138,7 +144,7 @@ requirejs(
       ]
     }
 
-    TEST_VALUES = [
+    var TEST_VALUES = [
       0,
       1,
       3,
@@ -150,6 +156,194 @@ requirejs(
       1928301928,
       1 << 31
     ];
+
+    // Testing helpers
+    var N_SAMPLES = 10000;
+    var N_CDF_BUCKETS = 100;
+
+    // Default tolerance in % of expected value
+    function tolerance(n_samples) {
+        return 1.2/Math.pow(10, Math.log10(n_samples) - 3);
+    }
+
+    function obtain_samples(rng) {
+        let result = [];
+        for (let i = 0; i < N_SAMPLES; ++i) {
+            result.push(rng);
+        }
+        return result;
+    }
+
+    // Tests whether the mean and standard deviation of some samples is
+    // within tolerance of the given expected mean and standard
+    // deviation, and returns the number of checks that failed (0-2). For
+    // each failed check, a message (which will include the given label)
+    // will also be pushed onto the given messages array. Pass undefined
+    // for exp_stdev to skip that check.
+    function moments_test(samples, exp_mean, exp_stdev, label, messages) {
+        let result = 0;
+        let tol = tolerance(samples.length);
+        let mean = samples.reduce((x, y) => x + y) / samples.length;
+        let pct;
+        if (exp_mean == 0) {
+            pct = Math.abs(mean - exp_mean); // not a real percentage
+        } else {
+            pct = Math.abs(1 - (mean / exp_mean)) // a percentage
+        }
+        if (pct > tol) {
+            messages.push(
+                "Suspicious difference from expected mean ("
+              + exp_mean.toFixed(4) + ") for " + label + ": "
+              + mean.toFixed(4) + " -> " + (100*pct).toFixed(2) + "% > "
+              + (100*tol).toFixed(2) + "%"
+            );
+            result += 1;
+        }
+        if (exp_stdev != undefined) {
+            let stdev = Math.sqrt(
+                samples.map(x => Math.pow(x - mean, 2)).reduce((x, y) => x + y)
+              / (samples.length - 1)
+            );
+            let pct;
+            if (exp_stdev == 0) {
+                pct = Math.abs(stdev - exp_stdev); // not a real percentage
+            } else {
+                pct = Math.abs(1 - (stdev / exp_stdev)) // a percentage
+            }
+            if (pct > tol) {
+                messages.push(
+                    "Suspicious difference expected stdev ("
+                  + exp_stdev.toFixed(4) + ") for " + label + ": "
+                  + stdev.toFixed(4) + " -> " + (100*pct).toFixed(2) + "% > "
+                  + (100*tol).toFixed(2) + "%"
+                );
+                result += 1;
+            }
+        }
+        return result;
+    }
+
+    // Generates an array of even test points for cdf_test between the
+    // given lower and upper bounds.
+    function even_cdf_test_points(lower, upper) {
+        let result = [];
+        for (let i = 0; i < N_CDF_BUCKETS; ++i) {
+            result.push(lower + (i/N_CDF_BUCKETS) * (upper - lower))
+        }
+        result.push(upper);
+        return result;
+    }
+
+    // Computes the area of a trapezoid with the given height, bottom
+    // length, and top length.
+    function trapezoid_area(height, top, bottom) {
+        return (
+            // triangle based on longer - shorter of the top/bottom
+            0.5 * Math.abs(top - bottom) * height
+            // plus parallelogram based on shorter edge
+          + Math.min(top, bottom) * height
+        );
+    }
+
+    // Tests that the cumulative distribution function of the given
+    // samples roughly matches the given expected cumulative distribution
+    // function (should be a function which accepts a number x and
+    // returns a probability of the result being smaller than x). This
+    // estimates the total area of the differences between the actual and
+    // expected CDFs sampling at each of the given test points, and then
+    // requires that the percentage that this represents of the area
+    // under the true CDF is below a certain threshold based on the
+    // number of samples. This function returns the number of failed
+    // tests (0 or 1) and if the test fails, it pushes a message (which
+    // includes the given label) onto the given messages array.
+    //
+    // Note: as a side-effect, this function sorts the samples given to
+    // it.
+    function cdf_test(samples, cdf, test_points, label, messages) {
+        let result = 0;
+        let ns = samples.length;
+        let tol = tolerance(samples.length);
+        samples.sort((a, b) => a - b);
+        let exp_precount = cdf(test_points[0]) * ns;
+        let obs_precount = 0;
+        while (obs_precount < ns && samples[obs_precount] < test_points[0]) {
+            obs_precount += 1;
+        }
+        let prev_exp_pc = exp_precount;
+        let prev_obs_pc = obs_precount;
+        let prev_overshoot = obs_precount - exp_precount;
+        let overshoot;
+        let discrepancy_area = 0;
+        let correct_area = 0;
+        for (let i = 1; i < test_points.length; ++i) {
+            exp_precount = cdf(test_points[i]) * ns;
+            while (
+                obs_precount < ns
+             && samples[obs_precount] < test_points[i]
+            ) {
+                obs_precount += 1;
+            }
+            // Compute overshoot at this test point
+            overshoot = obs_precount - exp_precount;
+            // compute top and bottom of (possibly twisted) trapezoid
+            let width = test_points[i] - test_points[i-1];
+            if (prev_overshoot > 0 == overshoot > 0) {
+                // it's a trapezoid; both sides either over- or
+                // under-shot.
+                discrepancy_area += trapezoid_area(
+                    width,
+                    Math.abs(prev_overshoot),
+                    Math.abs(overshoot)
+                );
+                if (discrepancy_area < 0) {
+                    console.warn("D<0 t ", width, prev_overshoot, overshoot);
+                }
+            } else {
+                // it's two triangles; one side did the opposite of the
+                // other.
+                let inflection;
+                if (overshoot != 0) {
+                    let ratio = Math.abs(prev_overshoot / overshoot);
+                    inflection = width * ratio / (1 + ratio);
+                } else {
+                    inflection = width;
+                }
+                discrepancy_area += (
+                    // triangle from prev test point to inflection point
+                    0.5 * Math.abs(prev_overshoot) * inflection
+                    // triangle from inflection point to current test point
+                  + 0.5 * Math.abs(overshoot) * (width - inflection)
+                );
+                if (discrepancy_area < 0) {
+                    console.warn("D<0 x ", prev_overshoot, overshoot, inflection);
+                }
+            }
+
+            // update correct area
+            correct_area += trapezoid_area(width, prev_exp_pc, exp_precount);
+            if (correct_area < 0) {
+                console.warn("CA<0", width, prev_exp_pc, exp_precount);
+            }
+
+            // Update previous variables for our next step
+            prev_exp_pc = exp_precount;
+            prev_obs_pc = obs_precount;
+            prev_overshoot = overshoot;
+        }
+
+        let discrepancy = Math.abs(discrepancy_area / correct_area);
+        if (discrepancy > tol) {
+            messages.push(
+                "Suspicious CDF area difference from "
+              + correct_area.toFixed(2) + " for " + label + ": "
+              + discrepancy_area.toFixed(2) + " -> "
+              + (100 * discrepancy).toFixed(2) + "% > "
+              + (100 * tol).toFixed(2) + "%"
+            );
+            result += 1;
+        }
+        return result;
+    }
 
     EXEC_TESTS = {
       "unit_ops": function () {
@@ -411,10 +605,309 @@ requirejs(
           });
         }
         return result;
+      },
+
+      "distribution_functions": function () {
+        let result = 0;
+        let messages = [];
+
+        // Tests of udist
+        for (let seed of TEST_VALUES) {
+            let rng = seed;
+            let samples = [];
+
+            // create samples
+            for (let i = 0; i < N_SAMPLES; ++i) {
+                samples.push(anarchy.udist(rng));
+                rng = anarchy.prng(rng, seed);
+            }
+
+            // test mean and standard deviation
+            result += moments_test(
+                samples,
+                0.5,
+                1/Math.sqrt(12),
+                "udist(:" + seed + ":)", 
+                messages
+            );
+
+            // test CDF
+            result += cdf_test(
+                samples,
+                x => x,
+                even_cdf_test_points(0, 1),
+                "udist(:" + seed + ":)", 
+                messages
+            );
+        }
+
+        // Tests of pgdist
+        for (let seed of TEST_VALUES) {
+            let rng = seed;
+            let samples = [];
+
+            let exp_mean = 0.5;
+            // The expected standard deviation for the average of three
+            // uniformly distributed variables (we know pgdist uses 3
+            // samples) is computed as follows:
+            //
+            // 1. The variance of the sum of several independent
+            //    variables is the sum of their variances; we know the
+            //    variance of the uniform distribution is 1/12, so this
+            //    is 3/12, or 1/4 for the sum of the three samples.
+            // 2. The variance of a distribution multiplied by a constant
+            //    is the variance of the original distribution multiplied
+            //    by the square of that constant. So when we divide by 3
+            //    to compute the average of the three samples, we're
+            //    multiplying by 1/3 and so the variance needs to be
+            //    multiplied by 1/9. This gives us 1/36 as the variance
+            //    of the average.
+            // 3. The standard deviation is the square root of the
+            //    variance, so we get 1/6 as the expected standard
+            //    deviation of the average of three uniformly distributed
+            //    variables on [0, 1).
+            let exp_stdev = 1/6
+
+            // compute samples
+            for (let i = 0; i < N_SAMPLES; ++i) {
+                samples.push(anarchy.pgdist(rng));
+                rng = anarchy.prng(rng, seed);
+            }
+
+            // test mean and standard deviation
+            result += moments_test(
+                samples,
+                exp_mean,
+                exp_stdev,
+                "pgdist(:" + seed + ":)", 
+                messages
+            );
+
+            // test CDF
+            // TODO: Test the CDF?
+            /*
+            result += cdf_test(
+                samples,
+                ???,
+                even_cdf_test_points(0, 1),
+                "pgdist(" + seed + ")", 
+                messages
+            );
+            */
+        }
+
+        // Tests of flip
+        for (let seed of TEST_VALUES) {
+            // Test with different probabilities for true
+            for (let p of [0.02, 0.2, 0.5, 0.9, 0.99]) {
+                let rng = seed;
+                let samples = [];
+                let exp_mean = p;
+                let exp_stdev = Math.sqrt(
+                    (
+                        ((1000 * p) * Math.pow(1 - p, 2))
+                      + ((1000 * (1-p)) * Math.pow(p, 2))
+                    ) / 999
+                );
+
+                // compute samples
+                for (let i = 0; i < N_SAMPLES; ++i) {
+                    let x = anarchy.flip(p, rng);
+                    if (typeof x != "boolean") {
+                        result += 1;
+                        messages.push(
+                            "non-boolean flip result for probability "
+                          + p + " with seed " + seed + ": " + x
+                        );
+                    }
+                    samples.push(+x);
+                    rng = anarchy.prng(rng, seed);
+                }
+
+                // Test moments
+                result += moments_test(
+                    samples,
+                    exp_mean,
+                    exp_stdev,
+                    "flip(" + p + ", :" + seed + ":)", 
+                    messages
+                );
+            }
+        }
+
+        // Tests of idist
+        for (let seed of TEST_VALUES) {
+            // Test with different min/max values
+            for (let low of [0, -31, 1289482, -7298392]) {
+                for (let high of [0, -31, 1289482, -7298392]) {
+                    let rng = seed;
+                    let samples = [];
+
+                    // compute samples
+                    for (let i = 0; i < N_SAMPLES; ++i) {
+                        samples.push(anarchy.idist(rng, low, high));
+                        rng = anarchy.prng(rng, seed);
+                    }
+
+                    // expected average and stdev
+                    let exp_mean = (low + (high-1))/2;
+                    let range = high - 1 - low;
+                    // scaled from uniform distribution stdev:
+                    let exp_stdev = Math.sqrt(1/12) * Math.abs(range);
+
+                    // Special case for constant results
+                    if (Math.abs(high - low) <= 1) {
+                        exp_mean = low;
+                        exp_stdev = 0;
+                    }
+
+                    result += moments_test(
+                        samples,
+                        exp_mean,
+                        exp_stdev,
+                        "idist(:" + seed + ":, " + low + ", " + high + ")",
+                        messages
+                    );
+
+                    real_low = Math.min(low, high);
+                    real_high = Math.max(low, high);
+                    if (real_high > real_low + 1) {
+                        result += cdf_test(
+                            samples,
+                            x => (x - real_low) / (real_high - real_low),
+                            even_cdf_test_points(real_low, real_high),
+                            "idist(:" + seed + ":, " + low + ", " + high + ")", 
+                            messages
+                        );
+                    }
+                }
+            }
+        }
+
+        // Tests of expdist
+        for (let seed of TEST_VALUES) {
+            for (let lambda of [0.05, 0.5, 1, 1.5, 5]) {
+                // Test with different lambda values
+                let rng = seed;
+                let samples = [];
+
+                let exp_mean = 1/lambda;
+                // expected stdev (same as expected mean for an exponential
+                // distribution, according to Wikipedia)
+                let exp_stdev = exp_mean;
+
+                // compute samples
+                for (let i = 0; i < N_SAMPLES; ++i) {
+                    samples.push(anarchy.expdist(rng, lambda));
+                    rng = anarchy.prng(rng, seed);
+                }
+
+                result += moments_test(
+                    samples,
+                    exp_mean,
+                    exp_stdev,
+                    "expdist(:" + seed + ":, " + lambda + ")", 
+                    messages
+                );
+
+                result += cdf_test(
+                    samples,
+                    x => 1 - Math.exp(-lambda * x),
+                    Array.prototype.concat(
+                        even_cdf_test_points(0, 2),
+                        even_cdf_test_points(2.5, 30),
+                    ),
+                    "expdist(:" + seed + ":, " + lambda + ")", 
+                    messages
+                );
+            }
+        }
+
+        // Tests of trexpdist
+        for (let seed of TEST_VALUES) {
+            for (let lambda of [0.05, 0.5, 1, 1.5, 5]) {
+                // Test with different lambda values
+                let rng = seed;
+                let samples = [];
+
+                // See http://docsdrive.com/pdfs/sciencepublications/jmssp/2008/284-288.pdf
+                let exp_mean = 1/lambda - 1/(Math.exp(lambda) - 1);
+                // TODO: What's the expected stdev here?
+                let exp_stdev = undefined;
+
+                // compute samples
+                for (let i = 0; i < N_SAMPLES; ++i) {
+                    samples.push(anarchy.trexpdist(rng, lambda));
+                    rng = anarchy.prng(rng, seed);
+                }
+
+                result += moments_test(
+                    samples,
+                    exp_mean,
+                    exp_stdev,
+                    "trexpdist(:" + seed + ":, " + lambda + ")", 
+                    messages
+                );
+
+                // Per https://en.wikipedia.org/wiki/Truncated_distribution:
+                // truncated PDF is derived from original PDF and CDF using
+                //   f(x) = g(x) / (F(b) - F(a))
+                //
+                // For our truncated exponential distribution, a is 0 and
+                // b is 1, so F(b) - F(a) is 
+                //
+                //  divisor = 1 - e^(-lambda)
+                //
+                //  (which is just the CDF of the exponential
+                //  distribution at x=1)
+                //
+                // The truncated CDF is the integral of the truncated
+                // PDF:
+                //
+                //   F(x) = \int_0^x{g(x) / divisor
+                //
+                // Since g(x) is the original PDF on the range of that
+                // integral, we can use
+                //
+                //   g(x) = lambda * e^(-lambda*x)
+                //
+                // The indefinite integral of g(x) is
+                //
+                //   -e^(-lambda*x)
+                //
+                // So we can use -e^(-lambda*x) + e^(-lambda*0) as the
+                // definite integral from 0 to 1, which simplifies to:
+                //
+                //   numerator = 1 - e^(-lambda*x)
+                //
+                // Essentially, we're just scaling up the old CDF
+                // slightly by a constant factor so that it reaches 1
+                // when x=1 instead of reaching 1 at infinity.
+                function truncated_cdf(x) {
+                    let divisor = 1 - Math.exp(-lambda);
+                    let numerator = 1 - Math.exp(-lambda * x);
+                    return numerator / divisor;
+                }
+
+                result += cdf_test(
+                    samples,
+                    truncated_cdf,
+                    even_cdf_test_points(0, 1),
+                    "trexpdist(:" + seed + ":, " + lambda + ")", 
+                    messages
+                );
+            }
+        }
+
+        if (result != 0) {
+          console.log("distribution_functions failures:")
+          messages.forEach(function (m) {
+            console.log('  ' + m);
+          });
+        }
+        return result;
       }
     }
-    
-    // TODO: Distribution function tests!
 
     function run_value_tests() {
       display_message("Starting value tests...");
