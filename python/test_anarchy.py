@@ -4,6 +4,7 @@ Testing module for anarchy reversible RNG library.
 """
 
 import anarchy
+import math
 
 VALUE_TESTS = {
   "posmod": [
@@ -79,8 +80,8 @@ VALUE_TESTS = {
     [ anarchy.scramble(anarchy.rev_scramble(8493489)), 8493489 ],
   ],
   "prng": [
-    # TODO: Verify these!
     [ anarchy.prng(489348, 373891), 18107188676709054266 ],
+    [ anarchy.rev_prng(18107188676709054266, 373891), 489348 ],
     [ anarchy.rev_prng(1766311112, 373891), 14566213110237565854 ],
     [ anarchy.prng(0, 0), 15132939213242511212 ],
     [ anarchy.rev_prng(15132939213242511212, 0), 0 ],
@@ -93,23 +94,30 @@ VALUE_TESTS = {
     [ anarchy.lfsr(1766932808), 883466404 ],
   ],
   "udist": [
-    # TODO: Verify and/or fix these!
-    [ anarchy.udist(0), 0.39901845521416135 ],
-    [ anarchy.udist(8329801), 0.9082340390686318 ],
-    [ anarchy.udist(58923), 0.11871384160294333 ],
+    [ anarchy.udist(0), 0.842373086655968 ],
+    [ anarchy.udist(8329801), 0.5186867891411134 ],
+    [ anarchy.udist(58923), 0.9716616308000062 ],
+  ],
+  "pgdist": [
+    [ anarchy.pgdist(0), 0.6184944203669203 ],
+    [ anarchy.pgdist(8329801), 0.4333781836142186 ],
+    [ anarchy.pgdist(58923), 0.6939341836590818 ],
   ],
   "idist": [
-    # TODO: Verify and/or fix these!
     [ anarchy.idist(0, 0, 1), 0 ],
-    [ anarchy.idist(0, 3, 25), 11 ],
-    [ anarchy.idist(58923, 3, 25), 5 ],
-    [ anarchy.idist(58923, -2, -4), -3 ],
+    [ anarchy.idist(0, 3, 25), 21 ],
+    [ anarchy.idist(58923, 3, 25), 24 ],
+    [ anarchy.idist(58923, -2, -4), -4 ],
   ],
   "expdist": [
-    # TODO: Verify and/or fix these!
-    [ anarchy.expdist(0), 1.018382104858997 ],
-    [ anarchy.expdist(8329801), 4.77702769214421 ],
-    [ anarchy.expdist(58923), 0.2527457897844567 ],
+    [ anarchy.expdist(0, 0.5), 3.6950486923768895 ],
+    [ anarchy.expdist(8329801, 0.5), 1.4624741095323832 ],
+    [ anarchy.expdist(58923, 1.5), 2.375692393655211 ],
+  ],
+  "trexpdist": [
+    [ anarchy.trexpdist(0, 0.5), 0.6950486923768895 ],
+    [ anarchy.trexpdist(8329801, 1.5), 0.4874913698441277 ],
+    [ anarchy.trexpdist(58923, 2.5), 0.4254154361931266 ],
   ],
   "cohorts": [
     [ anarchy.cohort(17, 3), 5 ],
@@ -171,6 +179,11 @@ TEST_VALUES = [
   1 << 31
 ]
 
+SEQ_SEEDS = list(range(10000))
+
+N_SAMPLES = 10000
+N_CDF_BUCKETS = 100
+
 EXEC_TESTS = {}
 
 def test(fn):
@@ -186,7 +199,7 @@ def unit_ops():
     print("\nOffset:", o)
     for i in range(1 << 12):
       if i % (1 << 8) == (1 << 8) - 1:
-        print(i/(1 << 12), end='\r')
+        print("{:0.0f}% done".format(100 * i/(1 << 12)), end='\r')
       x = (i << o)
       if (x != anarchy.flop(anarchy.flop(x))):
         messages.append("flop @ {}".format(x))
@@ -224,8 +237,687 @@ def unit_ops():
 
         p = anarchy.prng(p, seed)
 
+    print("100% done")
+
   if result != 0:
     print("unit_ops failures:")
+    for m in messages:
+      print(m)
+
+  return result
+
+def tolerance(n_samples):
+  """
+  Computes a tolerance value based on a number of samples for testing
+  pseudo-random functions.
+  """
+  return 1.2 / (10 ** (math.log10(n_samples) - 3))
+
+def moments_test(
+  samples,
+  exp_mean,
+  exp_stdev,
+  label,
+  messages,
+  tol=None
+):
+  """
+  Tests the given list of samples to make sure it has close to the given
+  expected mean and standard deviation. Will append to the given messages
+  list (with messages including the given label) upon failure, and
+  returns the number of failures (0, 1, or 2). The exp_stdev can be given
+  as None to skip that test. If no tolerance value is given, a tolerance
+  will be computed automatically using the tolerance function.
+  """
+  result = 0
+  if tol == None:
+    tol = tolerance(len(samples))
+  mean = sum(samples) / len(samples)
+
+  if exp_mean == 0:
+    pct = abs(mean) # not a percentage
+  else:
+    pct = abs(1 - mean / exp_mean) # a percentage
+
+  if pct > tol:
+    result += 1
+    messages.append(
+      f"Suspicious mean discrepancy from ({exp_mean:.4f}) for {label}:"
+    + f" {mean:.4f} -> {100 * pct:.2f}%"
+    )
+
+  if exp_stdev != None:
+    stdev = 0
+    for s in samples:
+      stdev += (s - mean)**2
+
+    stdev /= len(samples) - 1
+    stdev = stdev ** 0.5
+
+    if exp_stdev == 0:
+      pct = stdev # not a percentage
+    else:
+      pct = abs(1 - stdev / exp_stdev) # actually a percentage
+
+    if pct > tol:
+      result += 1
+      messages.append(
+        f"Suspicious stdev discrepancy from ({exp_stdev:.4f}) for"
+      + f" {label}: {stdev:.4f} -> {100 * pct:.2f}%"
+      )
+
+  return result
+
+def trapezoid_area(height, top, bottom):
+  """
+  Computes the area of a trapezoid with the given height and top/bottom
+  lengths.
+  """
+  return (
+      # triangle based on longer - shorter of the top/bottom
+      0.5 * abs(top - bottom) * height
+      # plus parallelogram based on shorter edge
+    + min(top, bottom) * height
+  )
+
+def cdf_points(low, high):
+  """
+  Returns a list of N_CDF_BUCKETS + 1 evenly-distributed test points
+  starting at low and ending at high.
+  """
+  return list(
+    map(
+      lambda x: low + (x/N_CDF_BUCKETS) * (high - low),
+      range(N_CDF_BUCKETS))
+  ) + [high]
+
+def cdf_test(samples, cdf, test_points, label, messages, tol=None):
+  """
+  Tests that the cumulative distribution function of the given
+  samples roughly matches the given expected cumulative distribution
+  function (should be a function which accepts a number x and
+  returns a probability of the result being smaller than x). This
+  estimates the total area of the differences between the actual and
+  expected CDFs sampling at each of the given test points, and then
+  requires that the percentage that this represents of the area
+  under the true CDF is below a certain threshold based on the
+  number of samples. This function returns the number of failed
+  tests (0 or 1) and if the test fails, it pushes a message (which
+  includes the given label) onto the given messages array.
+
+  If no tolerance values is given, an automatic tolerance will be
+  computed based on the number of test_points.
+  """
+  result = 0;
+  ns = len(samples)
+  if tol == None:
+    tol = tolerance(len(samples))
+
+  ordered = sorted(samples)
+
+  discrepancy_area = 0
+  correct_area = 0
+  obs_precount = 0
+  for i, tp in enumerate(test_points):
+      exp_precount = cdf(tp) * ns;
+      while obs_precount < ns and ordered[obs_precount] < tp:
+          obs_precount += 1
+
+      # Compute overshoot at this test point
+      overshoot = obs_precount - exp_precount;
+
+      # Only for the 2nd+ test points...
+      if i > 0:
+        # compute top and bottom of (possibly twisted) trapezoid
+        width = tp - test_points[i-1];
+
+        # update correct area
+        correct_area += trapezoid_area(width, prev_exp_pc, exp_precount)
+
+        # update discrepancy area...
+        if prev_overshoot > 0 == overshoot > 0:
+            # it's a trapezoid; both sides either over- or under-shot.
+            discrepancy_area += trapezoid_area(
+                width,
+                abs(prev_overshoot),
+                abs(overshoot)
+            )
+        else:
+            # it's two triangles; one side did the opposite of the other.
+            if overshoot != 0:
+                ratio = abs(prev_overshoot / overshoot)
+                inflection = width * ratio / (1 + ratio)
+            else:
+                inflection = width
+            discrepancy_area += (
+                # triangle from prev test point to inflection point
+                0.5 * abs(prev_overshoot) * inflection
+                # triangle from inflection point to current test point
+              + 0.5 * abs(overshoot) * (width - inflection)
+            )
+
+      # Update previous variables for our next step
+      prev_exp_pc = exp_precount
+      prev_obs_pc = obs_precount
+      prev_overshoot = overshoot
+
+  discrepancy = abs(discrepancy_area / correct_area);
+  if discrepancy > tol:
+      messages.append(
+        f"Suspicious CDF area discrepancy from ({correct_area:.2f}) for"
+      + f" {label}: {discrepancy_area:.2f} -> {100*discrepancy:.2f}%"
+      );
+      result += 1;
+
+  return result;
+
+PRG_COUNTER = 0
+PRG_TOTAL = None
+PRG_NOTIFY = None
+
+def reset_progress(total):
+  """
+  Sets up to report progress out of the given total number of progress
+  calls. Progress will be reported every 5% completion.
+  """
+  global PRG_COUNTER, PRG_TOTAL, PRG_NOTIFY
+  PRG_COUNTER = 0
+  PRG_TOTAL = total
+  PRG_NOTIFY = total // 20
+
+def progress():
+  """
+  Records 1 unit of progress towards the total specified when
+  reset_progress was called, and if we just broke a new 5% completion
+  milestone, a message is printed (with a carriage return at the end so
+  that the next message will overwrite it).
+  """
+  global PRG_COUNTER, PRG_TOTAL, PRG_NOTIFY
+  PRG_COUNTER += 1
+  if PRG_COUNTER % PRG_NOTIFY == 0:
+    pct = int(100 * PRG_COUNTER/PRG_TOTAL)
+    print(f"{pct:.0f}% done", end='\r')
+
+def finished():
+  """
+  Records the end of progress by printing '100% done' and moving the
+  cursor onto the next line.
+  """
+  print("100% done")
+
+@test
+def report_tolerance():
+  """
+  Not a real test, just reports the tolerance that's going to be used for
+  the distribution tests.
+  """
+  print(
+    f"Using {N_SAMPLES} samples, the default tolerance will be"
+  + f" {100*tolerance(N_SAMPLES):0.2f}%."
+  )
+  return 0
+
+@test
+def udist_distribution():
+  """
+  Tests the mean, standard deviation, and CDF for udist results using
+  N_SAMPLES samples starting from each of a few different seeds.
+  """
+  result = 0
+  messages = []
+
+  # udist tests
+  print("udist...")
+  reset_progress(len(TEST_VALUES) * N_SAMPLES)
+  for seed in TEST_VALUES:
+    rng = seed
+    samples = []
+    for i in range(N_SAMPLES):
+      progress()
+      samples.append(anarchy.udist(rng))
+      rng = anarchy.prng(rng, seed)
+
+    result += moments_test(
+      samples,
+      0.5,
+      1/12**0.5,
+      f"udist(:{seed}:)",
+      messages
+    )
+
+    result += cdf_test(
+      samples,
+      lambda x: x,
+      cdf_points(0, 1),
+      f"udist(:{seed}:)",
+      messages
+    )
+  finished()
+
+  print("udist sequential...")
+  reset_progress(len(SEQ_SEEDS))
+  samples = []
+  for seed in SEQ_SEEDS:
+    progress()
+    samples.append(anarchy.udist(seed))
+
+  result += moments_test(
+    samples,
+    0.5,
+    1/12**0.5,
+    f"udist(:sequential:)",
+    messages
+  )
+
+  result += cdf_test(
+    samples,
+    lambda x: x,
+    cdf_points(0, 1),
+    f"udist(:sequential:)",
+    messages
+  )
+
+  finished()
+
+  # Final message
+  if result != 0:
+    print("udist failures:")
+    for m in messages:
+      print(m)
+
+  return result
+
+@test
+def pgdist_distribution():
+  """
+  Like udist_distribution, but tests pgdist. Does not test the CDF.
+  (TODO: That?)
+  """
+  result = 0
+  messages = []
+
+  # pgdist tests
+  print("Testing pgdist distribution...")
+  reset_progress(len(TEST_VALUES) * N_SAMPLES)
+  for seed in TEST_VALUES:
+    rng = seed
+    samples = []
+    for i in range(N_SAMPLES):
+      progress()
+      samples.append(anarchy.pgdist(rng))
+      rng = anarchy.prng(rng, seed)
+
+    result += moments_test(
+      samples,
+      0.5,
+      1/6, # see js/anarchy_tests.js for derivation
+      f"pgdist(:{seed}:)",
+      messages
+    )
+
+    # TODO: CDF test here?
+  finished()
+
+  print("pgdist sequential...")
+  reset_progress(len(SEQ_SEEDS))
+  samples = []
+  for seed in SEQ_SEEDS:
+    progress()
+    samples.append(anarchy.pgdist(seed))
+
+  result += moments_test(
+    samples,
+    0.5,
+    1/6,
+    f"pgdist(:sequential:)",
+    messages
+  )
+
+  finished()
+
+  # Final message
+  if result != 0:
+    print("pgdist failures:")
+    for m in messages:
+      print(m)
+
+  return result
+
+
+@test
+def flip_distribution():
+  """
+  Tests the mean and standard deviation for the flip function using a few
+  different probabilities and a few different seeds at each probability.
+  """
+  result = 0
+  messages = []
+
+  # flip tests
+  print("Testing flip distribution...")
+  test_with = [0.005, 0.2, 0.5, 0.9, 0.99]
+  reset_progress(
+    (len(test_with) - 1) * len(TEST_VALUES) * N_SAMPLES
+  + len(TEST_VALUES) * N_SAMPLES * 5 # the 0.005 gets more samples
+  )
+  for p in test_with:
+    for seed in TEST_VALUES:
+      rng = seed
+      samples = []
+      for i in range(N_SAMPLES if p != 0.005 else N_SAMPLES*5):
+        progress()
+        samples.append(anarchy.flip(p, rng))
+        rng = anarchy.prng(rng, seed)
+
+        # Simple approximation for correct standard deviation:
+        exp_stdev = (
+          (
+            ((1000 * p) * math.pow(1 - p, 2))
+            + ((1000 * (1-p)) * math.pow(p, 2))
+          ) / 999
+        ) ** 0.5
+
+      result += moments_test(
+        samples,
+        p,
+        exp_stdev,
+        f"flip({p}, :{seed}:)",
+        messages,
+        None if p != 0.005 else tolerance(N_SAMPLES)
+        # we allow 5x tolerance for the low-p flip...
+      )
+
+  finished()
+
+  print("flip sequential...")
+  reset_progress(len(SEQ_SEEDS))
+  samples = []
+  for seed in SEQ_SEEDS:
+    progress()
+    samples.append(anarchy.flip(0.5, seed))
+
+  result += moments_test(
+    samples,
+    0.5,
+    0.5,
+    f"flip(0.5, :sequential:)",
+    messages
+  )
+
+  finished()
+
+  # Final message
+  if result != 0:
+    print("flip failures:")
+    for m in messages:
+      print(m)
+
+  return result
+
+@test
+def idist_distribution():
+  """
+  Tests the mean, stdev, and CDF for idist using various low/high values,
+  including inverted pairs.
+  """
+  result = 0
+  messages = []
+
+  print("Testing idist distribution...")
+  lows = [0, -31, 1289, -7294712]
+  highs = [0, -30, 1289482, -7298392]
+  reset_progress(len(lows) * len(highs) * len(TEST_VALUES) * N_SAMPLES)
+  for low in lows:
+    for high in highs:
+      for seed in TEST_VALUES:
+        rng = seed
+        samples = []
+        for i in range(N_SAMPLES):
+          progress()
+          samples.append(anarchy.idist(rng, low, high))
+          rng = anarchy.prng(rng, seed)
+
+        if low == high:
+          # No need for mean/stdev/cdf tests here
+          if any(s != low for s in samples):
+            result += 1
+            messages.append(
+              f"Non-fixed sample(s) for idist(:{seed}:, {low}, {high}):"
+            + f" {[s for s in samples if s != low]}"
+            )
+        else:
+          span = high - 1 - low
+          exp_mean = low + span/2
+          exp_stdev = (1/12**0.5)*abs(span)
+
+          result += moments_test(
+            samples,
+            exp_mean,
+            exp_stdev,
+            f"idist(:{seed}:, {low}, {high})",
+            messages
+          )
+
+          real_low = min(low, high)
+          real_high = max(low, high)
+
+          result += cdf_test(
+            samples,
+            lambda x: (
+              min(1, ((x-real_low) / (real_high-real_low) ))
+              if real_high > real_low + 1
+              else (1 if x > real_low else 0)
+            ), 
+            [real_low, real_high+1]
+              if high <= low+1
+              else cdf_points(real_low, real_high),
+            f"idist(:{seed}:, {low}, {high})",
+            messages
+          )
+
+  finished()
+
+  print("idist sequential...")
+  reset_progress(len(SEQ_SEEDS))
+  samples = []
+  low = -12
+  high = 10472
+  span = high - 1 - low
+  exp_mean = low + span/2
+  exp_stdev = (1/12**0.5)*abs(span)
+  for seed in SEQ_SEEDS:
+    progress()
+    samples.append(anarchy.idist(seed, low, high))
+
+  result += moments_test(
+    samples,
+    exp_mean,
+    exp_stdev,
+    f"idist(:sequential:, {low}, {high})",
+    messages
+  )
+
+  result += cdf_test(
+    samples,
+    lambda x: min(1, ((x-low) / (high-low) )), 
+    cdf_points(low, high),
+    f"idist(:{seed}:, {low}, {high})",
+    messages
+  )
+
+  finished()
+
+  # Final message
+  if result != 0:
+    print("idist failures:")
+    for m in messages:
+      print(m)
+
+  return result
+
+@test
+def expdist_distribution():
+  """
+  Tests the distribution of expdist means, stdevs, and CDFs for several
+  different seeds at each of several different shape values.
+  """
+  result = 0
+  messages = []
+
+  # expdist tests
+  print("Testing expdist distribution...")
+  shapes = [0.05, 0.5, 1, 1.5, 5]
+  reset_progress(len(shapes) * len(TEST_VALUES) * N_SAMPLES)
+  for shape in shapes:
+    # Test with different shape (lambda) values
+    for seed in TEST_VALUES:
+      rng = seed
+      samples = []
+
+      exp_mean = 1/shape
+      # expected stdev is the same as the expected mean for an
+      # exponential distribution
+      exp_stdev = exp_mean
+
+      # compute samples
+      for i in range(N_SAMPLES):
+        progress()
+        samples.append(anarchy.expdist(rng, shape))
+        rng = anarchy.prng(rng, seed)
+
+      result += moments_test(
+        samples,
+        exp_mean,
+        exp_stdev,
+        f"expdist(:{seed}:, {shape})",
+        messages
+      )
+
+      result += cdf_test(
+        samples,
+        lambda x: 1 - math.exp(-shape * x),
+        cdf_points(0, 2) + cdf_points(2.5, 30),
+        f"expdist(:{seed}:, {shape})",
+        messages
+      )
+
+  finished()
+
+  print("expdist sequential...")
+  reset_progress(len(SEQ_SEEDS))
+  samples = []
+  shape = 0.75
+  exp_mean = 1/shape
+  exp_stdev = exp_mean
+  for seed in SEQ_SEEDS:
+    progress()
+    samples.append(anarchy.expdist(seed, shape))
+
+  result += moments_test(
+    samples,
+    exp_mean,
+    exp_stdev,
+    f"expdist(:sequential:, {shape})",
+    messages
+  )
+
+  result += cdf_test(
+    samples,
+    lambda x: 1 - math.exp(-shape * x),
+    cdf_points(0, 2) + cdf_points(2.5, 30),
+    f"expdist(:sequential:, {shape})",
+    messages
+  )
+
+  finished()
+
+  # Final message
+  if result != 0:
+    print("expdist failures:")
+    for m in messages:
+      print(m)
+
+  return result
+
+@test
+def trexpdist_distribution():
+  """
+  Tests trexpdist results at several different shape values. Tests means
+  and CDFS but not stdevs (TODO: that?).
+  """
+  result = 0
+  messages = []
+
+  shapes = [0.05, 0.5, 1, 1.5, 5]
+  reset_progress(len(shapes) * len(TEST_VALUES) * N_SAMPLES)
+  print("Testing trexpdist distribution...")
+  for shape in shapes:
+    # Test with different shape (lambda) values
+    for seed in TEST_VALUES:
+      rng = seed
+      samples = []
+
+      exp_mean = 1/shape - 1/(math.exp(shape) - 1)
+      # TODO: What's the expected stdev here?
+      exp_stdev = None
+
+      # compute samples
+      for i in range(N_SAMPLES):
+        progress()
+        samples.append(anarchy.trexpdist(rng, shape))
+        rng = anarchy.prng(rng, seed)
+
+      result += moments_test(
+        samples,
+        exp_mean,
+        exp_stdev,
+        f"trexpdist(:{seed}:, {shape})",
+        messages
+      )
+
+      # Note: js/anarchy_tests.js contains a derivation of the truncated
+      # CDF formula we're using here
+      result += cdf_test(
+        samples,
+        lambda x: (1 - math.exp(-shape * x)) / (1 - math.exp(-shape)),
+        cdf_points(0, 1),
+        f"trexpdist(:{seed}:, {shape})",
+        messages
+      )
+
+  finished()
+
+  print("trexpdist sequential...")
+  reset_progress(len(SEQ_SEEDS))
+  samples = []
+  shape = 0.75
+  exp_mean = 1/shape - 1/(math.exp(shape) - 1)
+  exp_stdev = None # TODO
+  for seed in SEQ_SEEDS:
+    progress()
+    samples.append(anarchy.trexpdist(seed, shape))
+
+  result += moments_test(
+    samples,
+    exp_mean,
+    exp_stdev,
+    f"trexpdist(:sequential:, {shape})",
+    messages
+  )
+
+  result += cdf_test(
+    samples,
+    lambda x: (1 - math.exp(-shape * x)) / (1 - math.exp(-shape)),
+    cdf_points(0, 1),
+    f"trexpdist(:sequential:, {shape})",
+    messages
+  )
+
+  finished()
+
+  # Final message
+  if result != 0:
+    print("trexpdist failures:")
     for m in messages:
       print(m)
 
@@ -409,8 +1101,6 @@ def cohort_ops():
       print('  ' + m)
 
   return result
-
-# TODO: Distribution function tests!
 
 def run_value_tests():
   print("Starting value tests...")
