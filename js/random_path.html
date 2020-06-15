@@ -66,6 +66,9 @@ function enable_compare_demo() {
     // only do recursion for the actual length of the snake. 
     // for now, I will do recursion for the whole entire grid, so the if/else structure
     // might look a bit different than it otherwise would
+    if(startIdx == undefined){
+      return 
+    }
     if(length == 1){
       draw_square(where, startIdx, r, g, b);
     }
@@ -110,30 +113,29 @@ function enable_compare_demo() {
       // Step 1: finding neighbors of every block
       let below = [r+1, c]; // neighbor below
       let left = [r, c-1]; // neighbor to the left
+      let above = [r-1, c];
+      let right = [r, c+1];
 
       // check to make sure that neighbors are within range
-      if(below[0] > 9){
-        below = undefined;
+      let options = [];
+
+      if(below[0] <= 9){
+        options.push(below);
       }
-      if(left[1] < 0){
-        left = undefined;
+      if(left[1] >= 0){
+        options.push(left);
+      }
+      if(above[0] >= 0){
+        options.push(above);
+      }
+      if(right[1] <= 9){
+        options.push(right);
       }
 
       // Step 2: choose neighbor
-      let decision = decFunction();
-      let nextBlock;
-      if(decision && below != undefined){
-        nextBlock = below;
-      }
-      else if(left != undefined){
-        nextBlock = left;
-      }
-      else{
-        nextBlock = below;
-      }
-
-      // Step 3: change array to link blocks in path
-      if(nextBlock != undefined){
+      if(options.length != 0){
+        let decision = decFunction(options.length);
+        let nextBlock = options[decision];
         valArray[i] = nextBlock[0] * 10  + nextBlock[1];
       }
     }
@@ -141,6 +143,17 @@ function enable_compare_demo() {
       console.log(" i: " + i + ": " + valArray[i] + "\n");
     }
     return valArray;
+  }
+
+  function create_decider(seed){
+    // let prob = 0.5; // 50% probability of returning True
+    // return anarchy.flip(prob, seed);
+    let val = 0;
+    return function(numOptions){
+      val = anarchy.prng(val, seed);
+      let u = anarchy.idist(val, 0, numOptions);
+      return u;
+    }
   }
 
   function flip_decision(seed){
@@ -179,17 +192,19 @@ function enable_compare_demo() {
       ctx.strokeRect(cx, cy, rect_size, rect_size);
     }
 
-    let decFunction = flip_decision(base_seed);
+    let decFunction = create_decider(base_seed);
     let pathArray = create_path_array(seed, decFunction);
     let where = [pad, pad];
     let count = 100;
     let length = userLength; 
-    let startIdx = anarchy.prng(0, seed);
-    startIdx %= 100;
-    let r = userR;
-    let g = userG;
-    let b = userB;
-    rec_draw_path(where, count, length, startIdx, pathArray, r, g, b)
+    for(let i = 0; i < 5; i++){
+      let startIdx = anarchy.cohort_shuffle(i, 100, seed);
+    //  let startIdx = anarchy.cohort_shuffle(seed, 100, seed);
+      let r = userR;
+      let g = userG;
+      let b = userB;
+      rec_draw_path(where, count, length, startIdx, pathArray, r, g, b)
+    }
   }
 
   // Function for getting length of path from input
