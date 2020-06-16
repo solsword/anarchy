@@ -8,6 +8,11 @@
         function define(reqs, module) { anarchy = module(reqs); }
     </script>
     <script type="text/javascript" src="js/anarchy.js"></script>
+    <style>
+      body {
+        font-family: "Trebuchet MS", Helvetica, sans-serif;
+      }
+    </style>
 </head>
 <body>
 
@@ -18,17 +23,22 @@ This example uses the anarchy database to create a random path through a grid.
 </p>
 
 <div id="compare_demo_controls">
+    <!-- update seed -->
     <p>seed: </p>
     <input id="compare_demo_seed" type="text" value="0"/>
     <input id="compare_demo_update" type="button" value="update"/>
     <input id="compare_demo_next" type="button" value="next"/>
     </br>
+
+    <!-- update length of the path(s) -->
     <p>length: </p>
     <input id="compare_demo_length" type="text" value="10"/>
     <input id="compare_demo_updateLen" type="button" value="update"/>
     <input id="compare_demo_increase" type="button" value="increase"/>
     <input id="compare_demo_decrease" type="button" value="decrease"/>
     </br>
+    
+    <!-- update the color of the path(s) -->
     <p>color (r, g, b): </p>
     <input id="compare_demo_color_r" type="text" value="255"/>
     <input id="compare_demo_color_g" type="text" value="0"/>
@@ -40,18 +50,19 @@ This example uses the anarchy database to create a random path through a grid.
     <input id="compare_demo_green" type="button" value="green" style="background-color: green"/>
     <input id="compare_demo_blue" type="button" value="blue" style="background-color: blue"/>
     <input id="compare_demo_purple" type="button" value="purple" style="background-color: purple"/>
+
+    <!-- update the number of paths -->
+    <p>number of paths: </p>
+    <input id="compare_demo_numPaths" type="text" value="1"/>
+    <input id="compare_demo_updatePaths" type="button" value="update"/>
+    <input id="compare_demo_incPaths" type="button" value="increase"/>
+    <input id="compare_demo_decPaths" type="button" value="decrease"/>
+
 </div>
 
 <canvas id="compare_demo" width=800 height=300></canvas>
 
 <script defer type="text/javascript">
-
-// EDIT HERE
-// The code inside this "<script>" tag (from line 39 to line 174) is all
-// JavaScript code that you should edit to tweak this demo. You're free
-// to throw most of it out and start from the basics to draw whatever you
-// like on the canvas, or just tweak it a bit to draw something slightly
-// different.
 
 function enable_compare_demo() {
   // Grab the div that we want to work with
@@ -59,34 +70,48 @@ function enable_compare_demo() {
 
   let ctx = canvas.getContext("2d");
 
-  let rect_size = 10;
+  let rect_size = 20;
 
-  function rec_draw_path(where, count, length, startIdx, pathArray, r, g, b){
-    // either treat whole grid as one big "snake" and use recursion that way or...
-    // only do recursion for the actual length of the snake. 
-    // for now, I will do recursion for the whole entire grid, so the if/else structure
-    // might look a bit different than it otherwise would
+  /** function to draw the path - uses recursion
+  *   parameters:
+  *     where: the top left corner of the grid
+  *     length: the length of the path
+  *     startIdx: the starting index of the path
+  *     pathArray: the array containing each index's next neighbor
+  *     r, g, b: the color values of the path
+  */
+  function rec_draw_path(where, length, startIdx, pathArray, r, g, b){
+    // will return an undefined value if the starting index is undefined
     if(startIdx == undefined){
       return 
     }
+    // stops recursion once the length is 1
     if(length == 1){
       draw_square(where, startIdx, r, g, b);
     }
-    /** else if(count < (100 - length)){
-      draw_square(where, startIdx, r, g, b);
-      rec_draw_path(where, count-1, length, pathArray[startIdx], pathArray, 255, 255, 255); 
-      } */
     else{
       draw_square(where, startIdx, r, g, b);
-      rec_draw_path(where, count-1 , length-1, pathArray[startIdx], pathArray, r-15, g-15, b-15);
+      rec_draw_path(where, length-1, pathArray[startIdx], pathArray, r-15, g-15, b-15);
     }
   }
 
+  /**
+  * function to draw an individual square in the grid
+  * parameters:
+  *   where: the top left corner of the grid
+  *   startIdx: the index of the square to draw in the path array
+  *   r, g, b: the color of the square
+  */
   function draw_square(where, startIdx, r, g, b){
+    // figure out the x and y coordinates of the top left corner of the square
     let x = startIdx % 10;
     let y = Math.floor(startIdx/10);
+
+    // find the coordinates with respect to the actual x and y coordinates of the canvas
     let cx = where[0] + rect_size/2 + x * rect_size;
     let cy = where[1] + rect_size/2 + y * rect_size;
+
+    // fill in the square and put a black border around it
     ctx.fillStyle = "rgb(" + r + ", " + g + ", " + b + ")";
     ctx.fillRect(cx, cy, rect_size, rect_size);
     ctx.strokeWidth = 0.5;
@@ -94,29 +119,36 @@ function enable_compare_demo() {
     ctx.strokeRect(cx, cy, rect_size, rect_size);
   }
 
+  /**
+  * function to create the path array - each index in the array corresponds to the 
+  * next random neighbor it will call in the path
+  * parameters:
+  *   seed: the seed used for creating randomness
+  *   decFunction: a function that will be used to make a random decision
+  * returns the path array of length 100
+  */
   function create_path_array(seed, decFunction){
     // Create an array to hold each index in the grid (10x10)
     let valArray = [];
-    console.log("in create_path_array");
 
     // Figure out the rest of the path:
     //  1. Find neighbors of a block
     //  2. Randomly choose either the neighbor left of or beneath the block to
     //     continue the path
-    //  3. Change the value of the index in the array corresponding with the block 
-    //     to the index of the chosen neighbor
 
     for(let i = 0; i < 100; i++){
+      // put the array in terms of rows and columns
       let r = Math.floor(i/10);
       let c = i % 10;
 
       // Step 1: finding neighbors of every block
       let below = [r+1, c]; // neighbor below
       let left = [r, c-1]; // neighbor to the left
-      let above = [r-1, c];
-      let right = [r, c+1];
+      let above = [r-1, c]; // neighbor above
+      let right = [r, c+1]; // neighbor to the right
 
-      // check to make sure that neighbors are within range
+      // check to make sure that neighbors are within range and add them to the
+      // available options of where the next part of the path can go
       let options = [];
 
       if(below[0] <= 9){
@@ -132,64 +164,47 @@ function enable_compare_demo() {
         options.push(right);
       }
 
-      // Step 2: choose neighbor
+      // Step 2: choose neighbor and add to array
       if(options.length != 0){
         let decision = decFunction(options.length);
         let nextBlock = options[decision];
         valArray[i] = nextBlock[0] * 10  + nextBlock[1];
       }
     }
-    for(let i = 0; i < valArray.length; i++){
-      console.log(" i: " + i + ": " + valArray[i] + "\n");
-    }
     return valArray;
   }
 
+  /**
+  * returns a function that will randomly return a value in a specific interval
+  * parameters:
+  *   seed: corresponds to which random set of numbers the function will use
+  * returns a function with a parameter "numOptions" which is the bounds of the 
+  *   interval the function will choose from and return
+  */
   function create_decider(seed){
-    // let prob = 0.5; // 50% probability of returning True
-    // return anarchy.flip(prob, seed);
     let val = 0;
     return function(numOptions){
+      // randomly determines a value to return
       val = anarchy.prng(val, seed);
       let u = anarchy.idist(val, 0, numOptions);
       return u;
     }
   }
 
-  function flip_decision(seed){
-    // let prob = 0.5; // 50% probability of returning True
-    // return anarchy.flip(prob, seed);
-    let val = 0;
-    return function(){
-      // console.log("before: " + val);
-      val = anarchy.prng(val, seed);
-      // console.log("after: " + val);
-      let u = anarchy.udist(val);
-      console.log(u);
-      if (u <= 0.5) {
-        return true;
-      } else {
-        return false;
-      }
-    }
-  }
-
-  // Shows results for the given seed by drawing four sampled results on the
-  // left and four shuffled results on the right.
-  function show_results(seed, userLength, userR, userG, userB) {
-    let base_seed = seed * 4; // ask Peter why this is done
+  /**
+  * draws the grid and calls other functions to draw the path
+  * parameters:
+  *   seed: corresponds to which random set of numbers the function will use
+  *   userLength: the user input of the length of the path
+  *   numPaths: the user input of the number of paths that will be drawn
+  *   userR, userG, userB: the r, g, b of the path
+  */
+  function show_results(seed, userLength, numPaths, userR, userG, userB) {
+    let base_seed = seed * 4; 
 
     let pad = 100/3;
     for (let i = 0; i < 100; ++i) {
-      let x = i % 10;
-      let y = Math.floor(i/10);
-      let cx = pad + rect_size/2 + x * rect_size;
-      let cy = pad + rect_size/2 + y * rect_size;
-      ctx.fillStyle = "rgb(255, 255, 255)";
-      ctx.fillRect(cx, cy, rect_size, rect_size);
-      ctx.strokeWidth = 0.5;
-      ctx.strokeStyle = "black";
-      ctx.strokeRect(cx, cy, rect_size, rect_size);
+      draw_square([pad, pad], i, 255, 255, 255);
     }
 
     let decFunction = create_decider(base_seed);
@@ -197,13 +212,12 @@ function enable_compare_demo() {
     let where = [pad, pad];
     let count = 100;
     let length = userLength; 
-    for(let i = 0; i < 5; i++){
+    for(let i = 0; i < numPaths; i++){
       let startIdx = anarchy.cohort_shuffle(i, 100, seed);
-    //  let startIdx = anarchy.cohort_shuffle(seed, 100, seed);
       let r = userR;
       let g = userG;
       let b = userB;
-      rec_draw_path(where, count, length, startIdx, pathArray, r, g, b)
+      rec_draw_path(where, length, startIdx, pathArray, r, g, b)
     }
   }
 
@@ -211,8 +225,8 @@ function enable_compare_demo() {
   function get_length(){
     let length_input = document.getElementById("compare_demo_length");
     let l = parseInt(length_input.value);
-    if(l == undefined){
-      l = 0;
+    if(l == undefined || l < 1 || l > 100){
+      l = 1;
       length_input.value = l;
     }
     return l;
@@ -227,6 +241,16 @@ function enable_compare_demo() {
       seed_input.value = s;
     }
     return s;
+  }
+
+  function get_num_paths(){
+    let paths_input = document.getElementById("compare_demo_numPaths");
+    let n = parseInt(paths_input.value);
+    if(n == undefined || n < 1 || n > 100){
+      n = 1;
+      paths_input.value = n;
+    }
+    return n;
   }
 
   function get_color_r(){
@@ -260,7 +284,7 @@ function enable_compare_demo() {
   }
 
   // Show initial results:
-  show_results(get_seed(), get_length(), get_color_r(), get_color_g(), get_color_b());
+  show_results(get_seed(), get_length(), get_num_paths(), get_color_r(), get_color_g(), get_color_b());
 
   // Function for updating seed input
   function set_seed(x) {
@@ -274,7 +298,7 @@ function enable_compare_demo() {
         let r = get_color_r();
         let g = get_color_g();
         let b = get_color_b();
-        show_results(get_seed(), get_length(), r, g, b);
+        show_results(get_seed(), get_length(), get_num_paths(), r, g, b);
         });
 
   // Set up next button to increment and shuffle:
@@ -286,11 +310,11 @@ function enable_compare_demo() {
         let r = get_color_r();
         let g = get_color_g();
         let b = get_color_b();
-        show_results(seed, get_length(), r, g, b);
+        show_results(seed, get_length(), get_num_paths(), r, g, b);
         });
 
   function set_length(x){
-    if(x < 1){
+    if(x < 1 || x > 100){
       x = 1;
     }
     let length_input = document.getElementById("compare_demo_length");
@@ -298,34 +322,71 @@ function enable_compare_demo() {
   }
 
   let cmp_updateLen_button = document.getElementById("compare_demo_updateLen");
-  cmp_update_button.addEventListener("click", function(){
+  cmp_updateLen_button.addEventListener("click", function(){
     let r = get_color_r();
     let g = get_color_g();
     let b = get_color_b();
-    show_results(get_seed(), get_length(), r, g, b);
+    show_results(get_seed(), get_length(), get_num_paths(), r, g, b);
   });
 
-  cmp_increase_button = document.getElementById("compare_demo_increase");
-  cmp_increase_button.addEventListener("click", function(){
+  cmp_increaseLen_button = document.getElementById("compare_demo_increase");
+  cmp_increaseLen_button.addEventListener("click", function(){
     let length = get_length();
     length += 1;
     set_length(length);
     let r = get_color_r();
     let g = get_color_g();
     let b = get_color_b();
-    show_results(get_seed(), length, r, g, b);
+    show_results(get_seed(), length, get_num_paths(), r, g, b);
   });
 
-  cmp_decrease_button = document.getElementById("compare_demo_decrease");
-  cmp_decrease_button.addEventListener("click", function(){
-
+  cmp_decreaseLen_button = document.getElementById("compare_demo_decrease");
+  cmp_decreaseLen_button.addEventListener("click", function(){
     let length = get_length();
     length -= 1;
     set_length(length);
     let r = get_color_r();
     let g = get_color_g();
     let b = get_color_b();
-    show_results(get_seed(), length, r, g, b);
+    show_results(get_seed(), length, get_num_paths(), r, g, b);
+  });
+
+  function set_num_paths(x){
+    if(x < 1 || x > 100){
+      x = 1;
+    }
+    let paths_input = document.getElementById("compare_demo_numPaths");
+    paths_input.value = x;
+  }
+
+  let cmp_updatePaths_button = document.getElementById("compare_demo_updatePaths");
+  cmp_updatePaths_button.addEventListener("click", function(){
+    let r = get_color_r();
+    let g = get_color_g();
+    let b = get_color_b();
+    show_results(get_seed(), get_length(), get_num_paths(), r, g, b);
+  });
+
+  cmp_incPaths_button = document.getElementById("compare_demo_incPaths");
+  cmp_incPaths_button.addEventListener("click", function(){
+    let numPaths = get_num_paths();
+    numPaths += 1;
+    set_num_paths(numPaths);
+    let r = get_color_r();
+    let g = get_color_g();
+    let b = get_color_b();
+    show_results(get_seed(), get_length(), numPaths, r, g, b);
+  });
+
+  cmp_decPaths_button = document.getElementById("compare_demo_decPaths");
+  cmp_decPaths_button.addEventListener("click", function(){
+    let numPaths = get_num_paths();
+    numPaths -= 1;
+    set_num_paths(numPaths);
+    let r = get_color_r();
+    let g = get_color_g();
+    let b = get_color_b();
+    show_results(get_seed(), get_length(), numPaths, r, g, b);
   });
   
   function set_colors(r, g, b){
@@ -354,7 +415,7 @@ function enable_compare_demo() {
     let r = get_color_r();
     let g = get_color_g();
     let b = get_color_b();
-    show_results(get_seed(), get_length(), r, g, b);
+    show_results(get_seed(), get_length(), get_num_paths(), r, g, b);
   });
 
   cmp_red_button = document.getElementById("compare_demo_red");
@@ -363,7 +424,7 @@ function enable_compare_demo() {
     let r = get_color_r();
     let g = get_color_g();
     let b = get_color_b();
-    show_results(get_seed(), get_length(), r, g, b);
+    show_results(get_seed(), get_length(), get_num_paths(), r, g, b);
   });
 
   cmp_orange_button = document.getElementById("compare_demo_orange");
@@ -372,7 +433,7 @@ function enable_compare_demo() {
     let r = get_color_r();
     let g = get_color_g();
     let b = get_color_b();
-    show_results(get_seed(), get_length(), r, g, b);
+    show_results(get_seed(), get_length(), get_num_paths(), r, g, b);
   });
 
   cmp_yellow_button = document.getElementById("compare_demo_yellow");
@@ -381,7 +442,7 @@ function enable_compare_demo() {
     let r = get_color_r();
     let g = get_color_g();
     let b = get_color_b();
-    show_results(get_seed(), get_length(), r, g, b);
+    show_results(get_seed(), get_length(), get_num_paths(), r, g, b);
   });
 
   cmp_green_button = document.getElementById("compare_demo_green");
@@ -390,7 +451,7 @@ function enable_compare_demo() {
     let r = get_color_r();
     let g = get_color_g();
     let b = get_color_b();
-    show_results(get_seed(), get_length(), r, g, b);
+    show_results(get_seed(), get_length(), get_num_paths(), r, g, b);
   });
 
   cmp_blue_button = document.getElementById("compare_demo_blue");
@@ -399,7 +460,7 @@ function enable_compare_demo() {
     let r = get_color_r();
     let g = get_color_g();
     let b = get_color_b();
-    show_results(get_seed(), get_length(), r, g, b);
+    show_results(get_seed(), get_length(), get_num_paths(), r, g, b);
   });
 }
 
