@@ -745,7 +745,7 @@ export function max_smaller(value, sumtable) {
     if (to - from == 1 && sumtable[from] < value) {
         return from;
     } else {
-        for (var i = from; i < to - 1; ++i) {
+        for (let i = from; i < to - 1; ++i) {
             if (sumtable[i] < value && sumtable[i+1] >= value) {
                 return i;
             }
