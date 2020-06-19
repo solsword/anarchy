@@ -1,0 +1,359 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Encapsulated Anarchy JavaScript Example</title>
+    <meta content="author" value="Liz Huang">
+    <!--script type="text/javascript" src="js/require.js"></script-->
+    <script type="text/javascript">
+        function define(reqs, module) { anarchy = module(reqs); }
+    </script>
+    <script type="text/javascript" src="js/anarchy.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        h2:after {
+            content: ' ';
+            display: block;
+            border: 2px solid rgb(67, 66, 66);
+
+        }
+
+        /* Styling a deck of cards original code from devdojo */
+        .card {
+            width: 40px;
+            height: 60px;
+            border: 1px solid #151718;
+            float: left;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            border-radius: 2px;
+            font-family: courier;
+            cursor: pointer;
+        }
+
+        span.number,
+        span.suit {
+            width: 100%;
+            display: block;
+            text-align: center;
+            padding-top: 8px;
+        }
+
+        #card_deck_table {
+            display: grid;
+            width: 320px;
+            margin: auto;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            /* grid-template-rows: 1fr 1fr 1fr 1fr; */
+            align-items: center;
+            justify-items: center;
+        }
+
+        #shuffle_demo_controls {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .suit_♦,
+        .suit_♥ {
+            color: red;
+        }
+
+        .header {
+            background-color: rgb(216, 221, 223);
+            padding: 20px;
+            border: 3px solid white;
+            text-align: center;
+        }
+
+        /* Style the top navigation bar */
+        .topnav {
+            overflow: hidden;
+            background-color: rgb(91, 90, 90);
+        }
+
+        /* Style the topnav links */
+        .topnav a {
+            float: left;
+            display: block;
+            color: #f7f6f6;
+            text-align: center;
+            padding: 14px 16px;
+            text-decoration: none;
+        }
+
+        /* Change color on hover */
+        .topnav a:hover {
+            background-color: rgb(167, 164, 164);
+            color: black;
+        }
+
+        /* Create three equal columns that floats next to each other */
+        .column {
+            float: left;
+            width: 33.33%;
+            padding: 15px;
+        }
+
+        /* Clear floats after the columns */
+        .row:after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* Responsive layout - makes the three columns stack on top of each other instead of next to each other */
+        @media screen and (max-width:600px) {
+            .column {
+                width: 100%;
+            }
+        }
+
+        .column1 {
+            background-color: aliceblue;
+        }
+        .sourceCode {
+            overflow:visible;
+            background-color: rgb(100, 100, 100);
+            padding: 8pt;
+            border-radius: 8pt;
+            font-family:'Courier New', Courier, monospace;
+            font-weight: bold;
+            color: white;
+        }
+        h1,h2,h3 {
+            font-family:Verdana, Geneva, Tahoma, sans-serif
+        }
+        
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <span style="font-size: 120%;"><h1>Shuffling a Deck of Cards</h1></span>
+        <h3>By: Liz Huang</h3>
+    </div>
+    <div class="topnav">
+        <a href="https://solsword.github.io/anarchy/js/examples.html">Original Samples</a>
+        <a href="http://cs.wellesley.edu/~expressive/research_notes/">Research Webiste</a>
+        <a href="https://github.com/solsword/anarchy">Anarchy Github</a>
+    </div>
+    <div class="row">
+        <div class="column">
+            <span style="font-size: 120%;">
+                <h2>Basic Shuffling</h2>
+            </span>
+            <p>
+                This page contains a working example of how to use the Anarchy Library,
+                using the JavaScript version of the library.
+                You can view the source code of this page to see how the code is written.
+            </p>
+            <p>
+                <strong>Right:</strong> A basic example showing how to use the shuffling interface
+                <br>
+                <br>
+                <span style="font-size: 120%;">
+                    You can enter a numerical seed value and hit shuffle to pick a specific shuffle,
+                    or just hit next to increment the seed and re-shuffle.
+                </span>
+            </p>
+        </div>
+        <div class="column">
+            <span style="font-size: 120%;"><h2>Demo</h2></span>
+            <div id="shuffle_demo_controls">
+                <input id="shuffle_demo_seed" type="text" value="0" />
+                <input id="shuffle_demo_shuffle" type="button" value="shuffle" />
+                <input id="shuffle_demo_next" type="button" value="next" />
+            </div>
+            <div id="card_deck_table"></div>
+        </div>
+        <div class="column">
+            <span style="font-size: 120%;"><h2>Sample Code</h2></span>
+            <p>Here's the core function that does the shuffle:</p>
+            <div class="sourceCode">
+                <p>
+                    <span style="color: #2dc03a;">//Creates RNG that shuffles the deck using
+                    cohort_shuffle</span><br>
+                    <span style="color: #48aaff;">function</span> 
+                    <span style="color: #e7ed91;">shuffle_deck</span>(
+                    <span style="color: #9bdcfa;">seed</span>
+                        ) { <br><br> 
+                    <span style="color: #2dc03a;">//delete previous shuffle</span><br>
+                    <span style="color: #9bdcfa;">table.innerHTML</span> = 
+                    <span style="color: #f3ab58;">""</span> ;<br><br> 
+                    <span style="color: #b096f7;">for</span> (
+                    <span style="color: #48aaff;">let</span>  
+                    <span style="color: #9bdcfa;"> i</span> = 0; 
+                    <span style="color: #9bdcfa;">i</span> &lt;
+                    <span style="color: #9bdcfa;">myDeck.length</span>; ++                    
+                    <span style="color: #9bdcfa;">i</span>) {
+                    <br><br>
+                    <span style="color: #2dc03a;">//Use anarchy to get index</span><br>
+                    <span style="color: #48aaff;">let</span> 
+                    <span style="color: #9bdcfa;">index</span> = 
+                    <span style="color: #9bdcfa;">anarchy</span>
+                    <span style="color: #e7ed91;">.rev_cohort_shuffle</span>(
+                    <span style="color: #9bdcfa;">i, myDeck.length, seed</span>);<br>
+                    <br>
+                    <span style="color: #2dc03a;">//adding card elmt to table</span><br>
+                    <span style="color: #48aaff;">let</span>
+                    <span style="color: #9bdcfa;">card</span> =
+                    <span style="color: #9bdcfa;">myDeck[index]</span>;<br>
+                    <span style="color: #48aaff;">let</span>
+                    <span style="color: #9bdcfa;">elm</span> = 
+                    <span style="color: #9bdcfa;">document</span>.
+                    <span style="color: #e7ed91;">createElement</span>(<span style="color: #f3ab58;">"div"</span>);<br>
+                    <span style="color: #9bdcfa;">elm.classList</span>.<span style="color: #e7ed91;">add</span>(
+                    <span style="color: #f3ab58;">"suit_"</span> + <span style="color: #9bdcfa;">card.suit</span>);<br>
+                    <span style="color: #9bdcfa;">elm.innerHTML</span>.<span style="color: #e7ed91;">add</span>(
+                    <span style="color: #f3ab58;">"&lt;span class = 'number'&gt;"</span> +
+                    <span style="color: #9bdcfa;">card.name</span> +
+                    <span style="color: #f3ab58;">"&lt;/span&gt;&lt;span class = 'suit'&gt;"</span> +
+                    <span style="color: #9bdcfa;">card.suit</span> +
+                    <span style="color: #f3ab58;">"&lt;/span&gt;"</span>);<br>
+                    <span style="color: #9bdcfa;">table</span>.<span style="color: #e7ed91;">appendChild</span>(
+                    <span style="color: #9bdcfa;">elm</span>):<br>
+                        }<br>}
+                </p>
+            </div>
+        </div>
+
+        <!-- the canvas is placed on the top left corner -->
+        <!-- <canvas id="shuffle_demo" width=1000 height=500 style="border:5px solid black;"></canvas> -->
+
+        <script defer type="text/javascript">
+
+            function enable_compare_demo() {
+
+                //accessing canvas element
+                //let canvas = document.getElementById("shuffle_demo");
+
+                let numbers = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+                let suits = ['♥', '♦', '♠', '♣'];
+
+                let table = document.getElementById("card_deck_table");
+
+                //let ctx = canvas.getContext("2d");
+
+
+                // creating a card object, contains it's value, name, and which suit it belongs to
+                function card(value, name, suit) {
+                    this.value = value;
+                    this.name = name;
+                    this.suit = suit;
+                }
+
+                // creates a deck
+                function deck() {
+                    let cards = [];
+                    //let s = 0;
+                    for (let s = 0; s < suits.length; s++) {
+                        for (let n = 0; n < numbers.length; n++) {
+                            // creates a card and pushed into deck in order
+                            cards.push(new card(n + 1, numbers[n], suits[s]));
+                        }
+                    }
+                    return cards;
+                }
+
+                // setting variable for the new deck
+                let myDeck = deck();
+
+                //
+
+                // Creates RNG that shuffles the deck using cohort_shuffle
+                function shuffle_deck(seed) {
+                    //delete previous shuffle
+                    table.innerHTML = "";
+                    for (let i = 0; i < myDeck.length; ++i) {
+
+                        // Use anarchy to get a shuffled index for just this item:
+                        let index = anarchy.rev_cohort_shuffle(i, myDeck.length, seed);
+                        //let y = position % 4;
+                        //let x = Math.floor(position / 4);
+                        // adding the card elements to table
+                        let card = myDeck[index];
+                        let elm = document.createElement("div");
+                        elm.classList.add("card");
+                        elm.classList.add("suit_" + card.suit);
+                        elm.innerHTML = ("<span class = 'number'>" + card.name + "</span><span class = 'suit'>"
+                            + card.suit + "</span>");
+                        table.appendChild(elm);
+                    }
+                }
+
+                // function draw_results(location, rng){
+                //     for (let i = 0; i < 54; ++i) {
+                //         let r = rng();
+
+
+                //     }
+                // }
+                // Function for picking up seed from input
+                function get_seed() {
+                    let seed_input = document.getElementById("shuffle_demo_seed");
+                    let s = parseInt(seed_input.value);
+                    if (s == undefined) {
+                        s = 0;
+                        seed_input.value = s;
+                    }
+                    return s;
+                }
+
+                // Function for updating seed input
+                function set_seed(x) {
+                    let seed_input = document.getElementById("shuffle_demo_seed");
+                    seed_input.value = x;
+                }
+
+                // Do an initial shuffle
+                shuffle_deck(get_seed());
+
+                // Set up shuffle button to use current seed:
+                let shuffle_button = document.getElementById("shuffle_demo_shuffle")
+                shuffle_button.addEventListener("click", function () {
+                    shuffle_deck(get_seed());
+                });
+
+                // Set up next button to increment and shuffle:
+                let next_button = document.getElementById("shuffle_demo_next")
+                next_button.addEventListener("click", function () {
+                    let seed = get_seed();
+                    seed += 1;
+                    set_seed(seed);
+                    shuffle_deck(seed);
+                });
+                //displays the cards on the webpage
+                //     window.onload = function() {
+
+                // this goes through the whole deck
+                //         for(let i=0; i < myDeck.length; i++){
+                //             //creating canvas element
+                //             div = document.createElement('div');
+                //             div.className = 'card';
+                // the ascii character for diamonds is the only one abbreviated which is why theres an if else statement here
+                // assigns the symbol to the suit name
+                //             if(myDeck[i].suit == 'Diamonds'){
+                //             let ascii_char = '&diams;';
+                //             } else {
+                //             let ascii_char = '&' + myDeck[i].suit.toLowerCase() + ';';
+                //             }
+                // displays the number and suit on the card canvas element
+                //         div.innerHTML = '<span class="number">' + myDeck[i].name + '</span><span class="suit">' + ascii_char + '</span>';
+                //         document.body.appendChild(div);
+                //         }
+
+                //     }
+            }
+
+            //runs the whole function above
+            enable_compare_demo();
+        </script>
+</body>
+
+</html>
