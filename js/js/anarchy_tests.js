@@ -1,5 +1,6 @@
 // anarchy_tests.js
 // Tests for the anarchy reversible chaos library.
+/* jshint esversion: 6 */
 
 import * as anarchy from "./anarchy.mjs";
 
@@ -7,7 +8,7 @@ function display_message(m) {
     document.body.innerHTML += "<div>" + m + "</div>";
 }
 
-var VALUE_TESTS = {
+let VALUE_TESTS = {
     "posmod": [
         [ anarchy.posmod(-1, 7), 6 ],
         [ anarchy.posmod(0, 11), 0 ],
@@ -136,7 +137,7 @@ var VALUE_TESTS = {
         [ anarchy.cohort_interleave(3, 12), 6 ],
         [ anarchy.cohort_interleave(7, 12), 9 ],
     ]
-}
+};
 
 let TEST_VALUES = [
     0,
@@ -152,8 +153,8 @@ let TEST_VALUES = [
 ];
 
 // Testing helpers
-var N_SAMPLES = 10000;
-var N_CDF_BUCKETS = 100;
+let N_SAMPLES = 10000;
+let N_CDF_BUCKETS = 100;
 
 // Default tolerance in % of expected value
 function tolerance(n_samples) {
@@ -182,7 +183,7 @@ function moments_test(samples, exp_mean, exp_stdev, label, messages) {
     if (exp_mean == 0) {
         pct = Math.abs(mean - exp_mean); // not a real percentage
     } else {
-        pct = Math.abs(1 - (mean / exp_mean)) // a percentage
+        pct = Math.abs(1 - (mean / exp_mean)); // a percentage
     }
     if (pct > tol) {
         messages.push(
@@ -202,7 +203,7 @@ function moments_test(samples, exp_mean, exp_stdev, label, messages) {
         if (exp_stdev == 0) {
             pct = Math.abs(stdev - exp_stdev); // not a real percentage
         } else {
-            pct = Math.abs(1 - (stdev / exp_stdev)) // a percentage
+            pct = Math.abs(1 - (stdev / exp_stdev)); // a percentage
         }
         if (pct > tol) {
             messages.push(
@@ -222,7 +223,7 @@ function moments_test(samples, exp_mean, exp_stdev, label, messages) {
 function even_cdf_test_points(lower, upper) {
     let result = [];
     for (let i = 0; i < N_CDF_BUCKETS; ++i) {
-        result.push(lower + (i/N_CDF_BUCKETS) * (upper - lower))
+        result.push(lower + (i/N_CDF_BUCKETS) * (upper - lower));
     }
     result.push(upper);
     return result;
@@ -319,7 +320,7 @@ function cdf_test(samples, cdf, test_points, label, messages) {
             console.warn("CA<0", width, prev_exp_pc, exp_precount);
         }
 
-        // Update previous variables for our next step
+        // Update previous letiables for our next step
         prev_exp_pc = exp_precount;
         prev_obs_pc = obs_precount;
         prev_overshoot = overshoot;
@@ -339,13 +340,13 @@ function cdf_test(samples, cdf, test_points, label, messages) {
     return result;
 }
 
-var EXEC_TESTS = {
+let EXEC_TESTS = {
     "unit_ops": function () {
-        var result = 0;
-        var messages = [];
-        for (var o = 0; o < 10; ++o) {
-            for (var i = 0; i < 1024*32; ++i) {
-                var x = (i << o);
+        let result = 0;
+        let messages = [];
+        for (let o = 0; o < 10; ++o) {
+            for (let i = 0; i < 1024*32; ++i) {
+                let x = (i << o);
                 if (x != anarchy.flop(anarchy.flop(x))) {
                     messages.push("flop @ " + x);
                     result += 1;
@@ -358,10 +359,10 @@ var EXEC_TESTS = {
                     messages.push("prng @ " + x);
                     result += 1;
                 }
-                var r = x;
-                var p = x;
-                for (var j = 0; j < TEST_VALUES.length; ++j) {
-                    var y = TEST_VALUES[j];
+                let r = x;
+                let p = x;
+                for (let j = 0; j < TEST_VALUES.length; ++j) {
+                    let y = TEST_VALUES[j];
                     if (
                         x != anarchy.rev_swirl(
                             anarchy.swirl(x, y),
@@ -389,20 +390,20 @@ var EXEC_TESTS = {
             }
         }
         if (result != 0) {
-            console.log("unit_ops failures:")
-                messages.forEach(function (m) {
-                    console.log(m);
-                });
+            console.log("unit_ops failures:");
+            messages.forEach(function (m) {
+                console.log(m);
+            });
         }
         return result;
     },
     "cohort_ops": function () {
-        var result = 0;
-        var messages = [];
-        var cohort_sizes = [ 3, 12, 17, 32, 1024 ];
-        for (var idx = 0; idx < cohort_sizes.length; ++idx) {
-            var cs = cohort_sizes[idx];
-            var observed = {
+        let result = 0;
+        let messages = [];
+        let cohort_sizes = [ 3, 12, 17, 32, 1024 ];
+        for (let idx = 0; idx < cohort_sizes.length; ++idx) {
+            let cs = cohort_sizes[idx];
+            let observed = {
                 "interleave": {},
                 "fold": {},
                 "spin": {},
@@ -412,26 +413,26 @@ var EXEC_TESTS = {
                 "upend": {},
                 "shuffle": {},
             };
-            for (var i = 0; i < cs; ++i) {
+            for (let i = 0; i < cs; ++i) {
                 // interleave
-                var x = anarchy.cohort_interleave(i, cs);
-                var rc = anarchy.rev_cohort_interleave(x, cs);
+                let x = anarchy.cohort_interleave(i, cs);
+                let rc = anarchy.rev_cohort_interleave(x, cs);
                 if (i != rc) {
                     messages.push(
                         "interleave (" + cs + ") @ " + i + " → "
                         + x + " → " + rc
-                    )
-                        result += 1;
+                    );
+                    result += 1;
                 }
-                var v = "" + x;
+                let v = "" + x;
                 if (observed["interleave"].hasOwnProperty(v)) {
                     observed["interleave"][v] += 1;
                 } else {
                     observed["interleave"][v] = 1;
                 }
             }
-            for (var j = 0; j < TEST_VALUES.length; ++j) {
-                var seed = TEST_VALUES[j];
+            for (let j = 0; j < TEST_VALUES.length; ++j) {
+                let seed = TEST_VALUES[j];
                 observed["fold"]["" + j] = {};
                 observed["spin"]["" + j] = {};
                 observed["flop"]["" + j] = {};
@@ -439,114 +440,114 @@ var EXEC_TESTS = {
                 observed["spread"]["" + j] = {};
                 observed["upend"]["" + j] = {};
                 observed["shuffle"]["" + j] = {};
-                for (var i = 0; i < cs; ++i) {
+                for (let i = 0; i < cs; ++i) {
                     // fold
-                    var x = anarchy.cohort_fold(i, cs, seed);
-                    var rc = anarchy.rev_cohort_fold(x, cs, seed);
+                    let x = anarchy.cohort_fold(i, cs, seed);
+                    let rc = anarchy.rev_cohort_fold(x, cs, seed);
                     if (i != rc) {
                         messages.push(
                             "fold (" + cs + ")@ " + i + " / " + seed
                             + " → " + x + " → " + rc
-                        )
-                            result += 1;
+                        );
+                        result += 1;
                     }
-                    var v = "" + x;
+                    let v = "" + x;
                     if (observed["fold"]["" + j].hasOwnProperty(v)) {
                         observed["fold"]["" + j][v] += 1;
                     } else {
                         observed["fold"]["" + j][v] = 1;
                     }
                     // spin
-                    var x = anarchy.cohort_spin(i, cs, seed);
-                    var rc = anarchy.rev_cohort_spin(x, cs, seed);
+                    x = anarchy.cohort_spin(i, cs, seed);
+                    rc = anarchy.rev_cohort_spin(x, cs, seed);
                     if (i != rc) {
                         messages.push(
                             "spin (" + cs + ")@ " + i + " / " + seed
                             + " → " + x + " → " + rc
-                        )
-                            result += 1;
+                        );
+                        result += 1;
                     }
-                    var v = "" + x;
+                    v = "" + x;
                     if (observed["spin"]["" + j].hasOwnProperty(v)) {
                         observed["spin"]["" + j][v] += 1;
                     } else {
                         observed["spin"]["" + j][v] = 1;
                     }
                     // flop
-                    var x = anarchy.cohort_flop(i, cs, seed);
-                    var rc = anarchy.cohort_flop(x, cs, seed);
+                    x = anarchy.cohort_flop(i, cs, seed);
+                    rc = anarchy.cohort_flop(x, cs, seed);
                     if (i != rc) {
                         messages.push(
                             "flop (" + cs + ")@ " + i + " / " + seed
                             + " → " + x + " → " + rc
-                        )
-                            result += 1;
+                        );
+                        result += 1;
                     }
-                    var v = "" + x;
+                    v = "" + x;
                     if (observed["flop"]["" + j].hasOwnProperty(v)) {
                         observed["flop"]["" + j][v] += 1;
                     } else {
                         observed["flop"]["" + j][v] = 1;
                     }
                     // mix
-                    var x = anarchy.cohort_mix(i, cs, seed);
-                    var rc = anarchy.rev_cohort_mix(x, cs, seed);
+                    x = anarchy.cohort_mix(i, cs, seed);
+                    rc = anarchy.rev_cohort_mix(x, cs, seed);
                     if (i != rc) {
                         messages.push(
                             "mix (" + cs + ")@ " + i + " / " + seed
                             + " → " + x + " → " + rc
-                        )
-                            result += 1;
+                        );
+                        result += 1;
                     }
-                    var v = "" + x;
+                    v = "" + x;
                     if (observed["mix"]["" + j].hasOwnProperty(v)) {
                         observed["mix"]["" + j][v] += 1;
                     } else {
                         observed["mix"]["" + j][v] = 1;
                     }
                     // spread
-                    var x = anarchy.cohort_spread(i, cs, seed);
-                    var rc = anarchy.rev_cohort_spread(x, cs, seed);
+                    x = anarchy.cohort_spread(i, cs, seed);
+                    rc = anarchy.rev_cohort_spread(x, cs, seed);
                     if (i != rc) {
                         messages.push(
                             "spread (" + cs + ")@ " + i + " / " + seed
                             + " → " + x + " → " + rc
-                        )
-                            result += 1;
+                        );
+                        result += 1;
                     }
-                    var v = "" + x;
+                    v = "" + x;
                     if (observed["spread"]["" + j].hasOwnProperty(v)) {
                         observed["spread"]["" + j][v] += 1;
                     } else {
                         observed["spread"]["" + j][v] = 1;
                     }
                     // upend
-                    var x = anarchy.cohort_upend(i, cs, seed);
-                    var rc = anarchy.cohort_upend(x, cs, seed);
+                    x = anarchy.cohort_upend(i, cs, seed);
+                    rc = anarchy.cohort_upend(x, cs, seed);
                     if (i != rc) {
                         messages.push(
                             "upend (" + cs + ")@ " + i + " / " + seed
                             + " → " + x + " → " + rc
-                        )
-                            result += 1;
+                        );
+                        result += 1;
                     }
-                    var v = "" + x;
+                    v = "" + x;
                     if (observed["upend"]["" + j].hasOwnProperty(v)) {
                         observed["upend"]["" + j][v] += 1;
                     } else {
                         observed["upend"]["" + j][v] = 1;
                     }
                     // shuffle
-                    var x = anarchy.cohort_shuffle(i, cs, seed);
-                    var rc = anarchy.rev_cohort_shuffle(x, cs, seed);
+                    x = anarchy.cohort_shuffle(i, cs, seed);
+                    rc = anarchy.rev_cohort_shuffle(x, cs, seed);
                     if (i != rc) {
                         messages.push(
                             "shuffle (" + cs + ")@ " + i + " / " + seed
                             + " → " + x + " → " + rc
-                        )
-                            result += 1;
+                        );
+                        result += 1;
                     }
-                    var v = "" + x;
+                    v = "" + x;
                     if (observed["shuffle"]["" + j].hasOwnProperty(v)) {
                         observed["shuffle"]["" + j][v] += 1;
                     } else {
@@ -554,12 +555,12 @@ var EXEC_TESTS = {
                     }
                 }
             }
-            for (var prp in observed) {
+            for (let prp in observed) {
                 if (observed.hasOwnProperty(prp)) {
                     if (prp == "interleave") {
-                        for (var i = 0; i < cs; ++i) {
-                            var v = "" + i;
-                            var count = observed[prp][v];
+                        for (let i = 0; i < cs; ++i) {
+                            let v = "" + i;
+                            let count = observed[prp][v];
                             if (count == undefined) {
                                 count = 0;
                             }
@@ -572,12 +573,12 @@ var EXEC_TESTS = {
                             }
                         }
                     } else {
-                        for (var j = 0; j < TEST_VALUES.length; ++j) {
-                            var seed = TEST_VALUES[j];
-                            var k = "" + j;
-                            for (var i = 0; i < cs; ++i) {
-                                var v = "" + i;
-                                var count = observed[prp][k][v];
+                        for (let j = 0; j < TEST_VALUES.length; ++j) {
+                            let seed = TEST_VALUES[j];
+                            let k = "" + j;
+                            for (let i = 0; i < cs; ++i) {
+                                let v = "" + i;
+                                let count = observed[prp][k][v];
                                 if (count == undefined) {
                                     count = 0;
                                 }
@@ -595,10 +596,10 @@ var EXEC_TESTS = {
             }
         }
         if (result != 0) {
-            console.log("cohort_ops failures:")
-                messages.forEach(function (m) {
-                    console.log('  ' + m);
-                });
+            console.log("cohort_ops failures:");
+            messages.forEach(function (m) {
+                console.log('  ' + m);
+            });
         }
         return result;
     },
@@ -644,31 +645,31 @@ var EXEC_TESTS = {
 
             let exp_mean = 0.5;
             // The expected standard deviation for the average of three
-            // uniformly distributed variables (we know pgdist uses 3
+            // uniformly distributed letiables (we know pgdist uses 3
             // samples) is computed as follows:
             //
-            // 1. The variance of the sum of several independent
-            //    variables is the sum of their variances; we know the
-            //    variance of the uniform distribution is 1/12, so this
+            // 1. The letiance of the sum of several independent
+            //    letiables is the sum of their letiances; we know the
+            //    letiance of the uniform distribution is 1/12, so this
             //    is 3/12, or 1/4 for the sum of the three samples.
-            // 2. The variance of a distribution multiplied by a constant
-            //    is the variance of the original distribution multiplied
+            // 2. The letiance of a distribution multiplied by a constant
+            //    is the letiance of the original distribution multiplied
             //    by the square of that constant. So when we divide by 3
             //    to compute the average of the three samples, we're
-            //    multiplying by 1/3 and so the variance needs to be
-            //    multiplied by 1/9. This gives us 1/36 as the variance
+            //    multiplying by 1/3 and so the letiance needs to be
+            //    multiplied by 1/9. This gives us 1/36 as the letiance
             //    of the average.
             // 3. The standard deviation is the square root of the
-            //    variance, so we get 1/6 as the expected standard
+            //    letiance, so we get 1/6 as the expected standard
             //    deviation of the average of three uniformly distributed
-            //    variables on [0, 1).
-            let exp_stdev = 1/6
+            //    letiables on [0, 1).
+            let exp_stdev = 1/6;
 
-                // compute samples
-                for (let i = 0; i < N_SAMPLES; ++i) {
-                    samples.push(anarchy.pgdist(rng));
-                    rng = anarchy.prng(rng, seed);
-                }
+            // compute samples
+            for (let i = 0; i < N_SAMPLES; ++i) {
+                samples.push(anarchy.pgdist(rng));
+                rng = anarchy.prng(rng, seed);
+            }
 
             // test mean and standard deviation
             result += moments_test(
@@ -770,7 +771,9 @@ var EXEC_TESTS = {
                     if (real_high > real_low + 1) {
                         result += cdf_test(
                             samples,
+                            /* jshint -W083 */
                             x => (x - real_low) / (real_high - real_low),
+                            /* jshint +W083 */
                             even_cdf_test_points(real_low, real_high),
                             "idist(:" + seed + ":, " + low + ", " + high + ")",
                             messages
@@ -808,10 +811,12 @@ var EXEC_TESTS = {
 
                 result += cdf_test(
                     samples,
+                    /* jshint -W083 */
                     x => 1 - Math.exp(-lambda * x),
+                    /* jshint +W083 */
                     Array.prototype.concat(
                         even_cdf_test_points(0, 2),
-                        even_cdf_test_points(2.5, 30),
+                        even_cdf_test_points(2.5, 30)
                     ),
                     "expdist(:" + seed + ":, " + lambda + ")", 
                     messages
@@ -879,11 +884,13 @@ var EXEC_TESTS = {
                 // Essentially, we're just scaling up the old CDF
                 // slightly by a constant factor so that it reaches 1
                 // when x=1 instead of reaching 1 at infinity.
-                function truncated_cdf(x) {
+                /* jshint -W083 */
+                let truncated_cdf = function(x) {
                     let divisor = 1 - Math.exp(-lambda);
                     let numerator = 1 - Math.exp(-lambda * x);
                     return numerator / divisor;
-                }
+                };
+                /* jshint +W083 */
 
                 result += cdf_test(
                     samples,
@@ -896,22 +903,23 @@ var EXEC_TESTS = {
         }
 
         if (result != 0) {
-            console.log("distribution_functions failures:")
-                messages.forEach(function (m) {
-                    console.log('  ' + m);
-                });
+            console.log("distribution_functions failures:");
+            messages.forEach(function (m) {
+                console.log('  ' + m);
+            });
         }
         return result;
     }
-}
+};
 
 function run_value_tests() {
     display_message("Starting value tests...");
-    for (var t in VALUE_TESTS) {
+    for (let t in VALUE_TESTS) {
         if (VALUE_TESTS.hasOwnProperty(t)) {
-            var test_count = VALUE_TESTS[t].length;
-            var passed = 0;
-            VALUE_TESTS[t].forEach(function (sub_t, index) {
+            let test_count = VALUE_TESTS[t].length;
+            let passed = 0;
+            for (let index = 0; index < VALUE_TESTS[t].length; ++index) {
+                let sub_t = VALUE_TESTS[t][index];
                 if (sub_t[0] == sub_t[1]) {
                     passed += 1;
                 } else {
@@ -921,7 +929,7 @@ function run_value_tests() {
                         + sub_t[0]
                     );
                 }
-            });
+            }
             display_message(
                 "Suite '" + t + "': passed " + passed + " / " + test_count
             );
@@ -931,16 +939,16 @@ function run_value_tests() {
 }
 
 function run_exec_tests() {
-    for (var t in EXEC_TESTS) {
+    for (let t in EXEC_TESTS) {
         if (EXEC_TESTS.hasOwnProperty(t)) {
-            var result = EXEC_TESTS[t]()
-                if (result != 0) {
-                    display_message(
-                        "Test '" + t + "' failed " + result +" sub-tests."
-                    );
-                } else {
-                    display_message("Test '" + t + "' succeeded.")
-                }
+            let result = EXEC_TESTS[t]();
+            if (result != 0) {
+                display_message(
+                    "Test '" + t + "' failed " + result +" sub-tests."
+                );
+            } else {
+                display_message("Test '" + t + "' succeeded.");
+            }
         }
     }
 }
