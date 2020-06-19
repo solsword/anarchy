@@ -1,13 +1,16 @@
 // anarchy.mjs
 // Reversible chaos library (ES6 module version).
+/* jshint esversion: 6 */
+
+"use strict";
 
 // Note: anarchy.js operates using 32-bit integer values to remain
 // dependency-free. This breaks full compatibility with the C library, which
 // uses 64-bit integers for obvious reasons. Javascript does not support
 // 64-bit integers at this time (Number.MAX_SAFE_INTEGER is 2^53-1), and in
 // particular, bitwise operations only work on 32-bit integers.
-export var ID_BITS = 32;
-export var ID_BYTES = 4;
+export let ID_BITS = 32;
+export let ID_BYTES = 4;
 
 export function posmod(x, y) {
     // Modulus that's always positive:
@@ -17,7 +20,7 @@ export function posmod(x, y) {
 // A string hashing function.
 // See: https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
 export function hash_string(s) {
-    var hash = 0, i, chr;
+    let hash = 0, i, chr;
     if (s.length === 0) {
         return hash;
     }
@@ -47,9 +50,9 @@ export function byte_mask(n) {
 export function swirl(x, distance) {
     // Circular bit shift; distance is capped at 3/4 of ID_BITS
     distance = posmod(distance, Math.floor(3 * ID_BITS / 4));
-    var m = mask(distance);
-    var fall_off = x & m;
-    var shift_by = (ID_BITS - distance);
+    let m = mask(distance);
+    let fall_off = x & m;
+    let shift_by = (ID_BITS - distance);
     return (
         (x >>> distance)
         | (fall_off << shift_by)
@@ -59,9 +62,9 @@ export function swirl(x, distance) {
 export function rev_swirl(x, distance) {
     // Inverse circular shift (see above).
     distance = posmod(distance, Math.floor(3 * ID_BITS / 4));
-    var m = mask(distance);
-    var fall_off = x & (m << (ID_BITS - distance));
-    var shift_by = (ID_BITS - distance);
+    let m = mask(distance);
+    let fall_off = x & (m << (ID_BITS - distance));
+    let shift_by = (ID_BITS - distance);
     return (
         (x << distance)
         | (fall_off >>> shift_by)
@@ -71,29 +74,29 @@ export function rev_swirl(x, distance) {
 export function fold(x, where) {
     // Folds lower bits into upper bits using xor. 'where' is restricted to
     // fall between 1/4 and 1/2 of ID_BITS.
-    var quarter = Math.floor(ID_BITS / 4)
-        var where = posmod(where, quarter) + quarter;
-    var m = mask(where);
-    var lower = x & m;
-    var shift_by = ID_BITS - where;
+    let quarter = Math.floor(ID_BITS / 4);
+    where = posmod(where, quarter) + quarter;
+    let m = mask(where);
+    let lower = x & m;
+    let shift_by = ID_BITS - where;
     return (x ^ (lower << shift_by)) >>> 0;
 }
 // fold is its own inverse.
 
-export var FLOP_MASK = 0xf0f0f0f0;
+export let FLOP_MASK = 0xf0f0f0f0;
 
 export function flop(x) {
     // Flops each 1/2 byte with the adjacent 1/2 byte.
-    var left = x & FLOP_MASK;
-    var right = x & ~FLOP_MASK;
+    let left = x & FLOP_MASK;
+    let right = x & ~FLOP_MASK;
     return ((right << 4) | (left >>> 4)) >>> 0;
 }
 // flop is its own inverse.
 
 export function scramble(x) {
     // Implements a reversible linear-feedback-shift-register-like operation.
-    var trigger = x & 0x80200003;
-    var r = swirl(x, 1);
+    let trigger = x & 0x80200003;
+    let r = swirl(x, 1);
     if (trigger) {
         r ^= 0x03040610;
     }
@@ -102,8 +105,8 @@ export function scramble(x) {
 
 export function rev_scramble(x) {
     // Inverse of scramble (see above).
-    var pr = rev_swirl(x, 1);
-    var trigger = pr & 0x80200003;
+    let pr = rev_swirl(x, 1);
+    let trigger = pr & 0x80200003;
     if (trigger) {
         // pr ^= rev_swirl(0x03040610, 1);
         pr ^= 0x06080c20;
@@ -211,7 +214,7 @@ export function expdist(seed, lambda) {
     // https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
     // and
     // https://en.wikipedia.org/wiki/Exponential_distribution
-    var u = udist(seed);
+    let u = udist(seed);
     return -Math.log(u)/lambda;
 }
 
@@ -222,7 +225,7 @@ export function trexpdist(seed, lambda) {
     // range is usually reasonable.
     // For why this method works, see:
     // https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
-    var e = expdist(seed, lambda);
+    let e = expdist(seed, lambda);
     return e - Math.floor(e);
 }
 
@@ -271,17 +274,17 @@ export function cohort_fold(inner, cohort_size, seed) {
     // Folds items past an arbitrary split point (in the second half of the
     // cohort) into the middle of the cohort. The split will always leave an
     // odd number at the end.
-    var half = Math.floor(cohort_size / 2);
-    var quarter = Math.floor(cohort_size / 4);
-    var split = half;
+    let half = Math.floor(cohort_size / 2);
+    let quarter = Math.floor(cohort_size / 4);
+    let split = half;
     if (quarter > 0) {
         split += posmod(seed, quarter);
     }
-    var after = cohort_size - split;
+    let after = cohort_size - split;
     split += posmod(after + 1, 2); // force an odd split point
     after = cohort_size - split;
 
-    var fold_to = half - Math.floor(after / 2);
+    let fold_to = half - Math.floor(after / 2);
 
     if (inner < fold_to) { // first region
         return inner >>> 0;
@@ -294,17 +297,17 @@ export function cohort_fold(inner, cohort_size, seed) {
 
 export function rev_cohort_fold(inner, cohort_size, seed) {
     // Inverse fold (see above).
-    var half = Math.floor(cohort_size / 2);
-    var quarter = Math.floor(cohort_size / 4);
-    var split = half;
+    let half = Math.floor(cohort_size / 2);
+    let quarter = Math.floor(cohort_size / 4);
+    let split = half;
     if (quarter > 0) {
         split += posmod(seed, quarter);
     }
-    var after = cohort_size - split;
+    let after = cohort_size - split;
     split += posmod((after + 1), 2); // force an odd split point
     after = cohort_size - split;
 
-    var fold_to = half - Math.floor(after / 2);
+    let fold_to = half - Math.floor(after / 2);
 
     if (inner < fold_to) { // first region
         return inner >>> 0;
@@ -330,15 +333,15 @@ export function rev_cohort_spin(inner, cohort_size, seed) {
 
 export function cohort_flop(inner, cohort_size, seed) {
     // Flops sections (with seeded sizes) with their neighbors.
-    var limit = Math.floor(cohort_size / 8);
+    let limit = Math.floor(cohort_size / 8);
     if (limit < 4) {
         limit += 4;
     }
-    var size = posmod(seed, limit) + 2;
-    var which = Math.floor(inner / size);
-    var local = posmod(inner, size);
+    let size = posmod(seed, limit) + 2;
+    let which = Math.floor(inner / size);
+    let local = posmod(inner, size);
 
-    var result = 0;
+    let result = 0;
     if (posmod(which, 2)) {
         result = (which - 1) * size + local;
     } else {
@@ -355,8 +358,8 @@ export function cohort_flop(inner, cohort_size, seed) {
 
 export function cohort_mix(inner, cohort_size, seed) {
     // Applies a spin to both even and odd items with different seeds.
-    var even = inner - posmod(inner, 2);
-    var target = 0;
+    let even = inner - posmod(inner, 2);
+    let target = 0;
     if (posmod(inner, 2)) {
         target = cohort_spin(
             Math.floor(even / 2),
@@ -376,8 +379,8 @@ export function cohort_mix(inner, cohort_size, seed) {
 
 export function rev_cohort_mix(inner, cohort_size, seed) {
     // Inverse mix (see above).
-    var even = inner - posmod(inner, 2);
-    var target = 0;
+    let even = inner - posmod(inner, 2);
+    let target = 0;
     if (posmod(inner, 2)) {
         target = rev_cohort_spin(
             Math.floor(even / 2),
@@ -395,28 +398,31 @@ export function rev_cohort_mix(inner, cohort_size, seed) {
     }
 }
 
-var MIN_REGION_SIZE = 2;
-var MAX_REGION_COUNT = 16;
+/**
+ * Constants that limit how regions can be sized in cohort_spread.
+ */
+export let MIN_REGION_SIZE = 2;
+export let MAX_REGION_COUNT = 16;
 
 export function cohort_spread(inner, cohort_size, seed) {
     // Spreads items out between a random number of different regions within
     // the cohort.
-    var min_regions = 2;
+    let min_regions = 2;
     if (cohort_size < 2 * MIN_REGION_SIZE) {
         min_regions = 1;
     }
-    var max_regions = 1 + Math.floor(cohort_size / MIN_REGION_SIZE);
-    var regions = (
+    let max_regions = 1 + Math.floor(cohort_size / MIN_REGION_SIZE);
+    let regions = (
         min_regions + posmod(
             posmod(seed, (1 + (max_regions - min_regions))),
             MAX_REGION_COUNT
         )
     );
-    var region_size = Math.floor(cohort_size / regions);
-    var leftovers = cohort_size - (regions * region_size);
+    let region_size = Math.floor(cohort_size / regions);
+    let leftovers = cohort_size - (regions * region_size);
 
-    var region = posmod(inner, regions);
-    var index = Math.floor(inner / regions);
+    let region = posmod(inner, regions);
+    let index = Math.floor(inner / regions);
     if (index < region_size) { // non-leftovers
         return (region * region_size + index + leftovers) >>> 0;
     } else { // leftovers go at the front:
@@ -426,23 +432,23 @@ export function cohort_spread(inner, cohort_size, seed) {
 
 export function rev_cohort_spread(inner, cohort_size, seed) {
     // Inverse spread (see above).
-    var min_regions = 2;
+    let min_regions = 2;
     if (cohort_size < 2 * MIN_REGION_SIZE) {
         min_regions = 1;
     }
-    var max_regions = 1 + Math.floor(cohort_size / MIN_REGION_SIZE);
-    var regions = (
+    let max_regions = 1 + Math.floor(cohort_size / MIN_REGION_SIZE);
+    let regions = (
         min_regions + posmod(
             posmod(seed, (1 + (max_regions - min_regions))),
             MAX_REGION_COUNT
         )
     );
 
-    var region_size = Math.floor(cohort_size / regions);
-    var leftovers = cohort_size - (regions * region_size);
+    let region_size = Math.floor(cohort_size / regions);
+    let leftovers = cohort_size - (regions * region_size);
 
-    var index = Math.floor((inner - leftovers) / region_size);
-    var region = posmod((inner - leftovers), region_size);
+    let index = Math.floor((inner - leftovers) / region_size);
+    let region = posmod((inner - leftovers), region_size);
 
     if (inner < leftovers) { // leftovers back to the end:
         return (regions * region_size + inner) >>> 0;
@@ -453,23 +459,23 @@ export function rev_cohort_spread(inner, cohort_size, seed) {
 
 export function cohort_upend(inner, cohort_size, seed) {
     // Reverses ordering within each of several fragments.
-    var min_regions = 2;
+    let min_regions = 2;
     if (cohort_size < 2 * MIN_REGION_SIZE) {
         min_regions = 1;
     }
-    var max_regions = 1 + Math.floor(cohort_size / MIN_REGION_SIZE);
-    var regions = (
+    let max_regions = 1 + Math.floor(cohort_size / MIN_REGION_SIZE);
+    let regions = (
         min_regions + posmod(
             posmod(seed, (1 + (max_regions - min_regions))),
             MAX_REGION_COUNT
         )
     );
-    var region_size = Math.floor(cohort_size / regions);
+    let region_size = Math.floor(cohort_size / regions);
 
-    var region = Math.floor(inner / region_size);
-    var index = posmod(inner, region_size);
+    let region = Math.floor(inner / region_size);
+    let index = posmod(inner, region_size);
 
-    var result = (region * region_size) + (region_size - 1 - index);
+    let result = (region * region_size) + (region_size - 1 - index);
 
     if (result < cohort_size) {
         return result >>> 0;
@@ -482,7 +488,7 @@ export function cohort_upend(inner, cohort_size, seed) {
 export function cohort_shuffle(inner, cohort_size, seed) {
     // Compose a bunch of the above functions to perform a nice thorough
     // shuffle within a cohort.
-    var r = inner;
+    let r = inner;
     seed = seed ^ cohort_size;
     r = cohort_spread(r, cohort_size, seed + 457); // prime
     r = cohort_mix(r, cohort_size, seed + 2897); // prime
@@ -504,7 +510,7 @@ export function cohort_shuffle(inner, cohort_size, seed) {
 
 export function rev_cohort_shuffle(inner, cohort_size, seed) {
     // Inverse shuffle (see above).
-    var r = inner;
+    let r = inner;
     seed = seed ^ cohort_size;
     r = rev_cohort_spin(r, cohort_size, seed + 19); // prime
     r = cohort_upend(r, cohort_size, seed + 794641); // prime
@@ -537,12 +543,12 @@ export function distribution_spilt_point(
     // index for the segments.
 
     // how the segments are divided:
-    var first_half = Math.floor(n_segments / 2);
+    let first_half = Math.floor(n_segments / 2);
 
     // compute min/max split points according to roughness:
-    var nat = Math.floor(total * (first_half / n_segments));
-    var split_min = Math.floor(nat - nat * roughness);
-    var split_max = Math.floor(nat + (total - nat) * roughness);
+    let nat = Math.floor(total * (first_half / n_segments));
+    let split_min = Math.floor(nat - nat * roughness);
+    let split_max = Math.floor(nat + (total - nat) * roughness);
 
     // adjust for capacity limits:
     if ((total - split_min) > segment_capacity * (n_segments - first_half)) {
@@ -554,14 +560,14 @@ export function distribution_spilt_point(
     }
 
     // compute a random split point:
-    var split = nat;
+    let split = nat;
     if (split_min >= split_max) {
         split = split_min;
     } else {
         split = split_min + posmod(
             prng(total, seed),
             (split_max - split_min)
-        )
+        );
     }
 
     return [split, first_half];
@@ -639,7 +645,7 @@ export function distribution_prior_sum(
         return 0; // nothing prior
     }
 
-    var first_half = Math.floor(n_segments / 2);
+    let first_half = Math.floor(n_segments / 2);
 
     // compute split point:
     let split = distribution_spilt_point(
@@ -690,7 +696,7 @@ export function distribution_segment(
     }
 
     // compute split point:
-    split = distribution_spilt_point(
+    let split = distribution_spilt_point(
         total,
         n_segments,
         segment_capacity,
@@ -725,12 +731,12 @@ export function max_smaller(value, sumtable) {
     // the given sumtable that's smaller than the given value. Works in time
     // proportional to the logarithm of the sumtable size. Returns -1 if there
     // is no entry in the sumtable smaller than the given value.
-    var from = 0;
-    var to = sumtable.length;
-    var where = 0;
+    let from = 0;
+    let to = sumtable.length;
+    let where = 0;
     while (to - from > 2) {
         where = Math.floor((to - from)/2);
-        if (mpsums[where] >= value) {
+        if (sumtable[where] >= value) {
             to = where;
         } else {
             from = where;
