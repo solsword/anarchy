@@ -14,10 +14,10 @@ then the result running live in the page.
 Here are a few more independent examples that compliment the ones on this
 page:
 
-[Fireworks](fireworks.html)
-[Galaxies](galaxies.html)
-[Cards](card_deck.html)
-[Random Paths](random_path.html)
+- [Fireworks](fireworks.html)
+- [Galaxies](galaxies.html)
+- [Cards](card_deck.html)
+- [Random Paths](random_path.html)
 
 ## Basic Shuffling
 
