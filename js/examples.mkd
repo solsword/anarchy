@@ -9,6 +9,16 @@ This page contains worked examples of how to use the Anarchy library, using the
 JavaScript version of the library. Each example below shows the code used and
 then the result running live in the page.
 
+## Extra examples:
+
+Here are a few more independent examples that compliment the ones on this
+page:
+
+[Fireworks](fireworks.html)
+[Galaxies](galaxies.html)
+[Cards](card_deck.html)
+[Random Paths](random_path.html)
+
 ## Basic Shuffling
 
 Here's a basic example showing how to use the shuffling interface.
