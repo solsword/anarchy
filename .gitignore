@@ -2,3 +2,4 @@
 c/obj/*
 c/bin/*
 c/test/*
+*/.DS_Store
