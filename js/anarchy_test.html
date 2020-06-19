@@ -4,8 +4,10 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>Anarchy Unit Tests</title>
 
-		<!-- scripts (via require; see js/main.js) -->
-    <script data-main="js/anarchy_tests" src="js/require.js"></script>
+    <script type="module" src="js/anarchy_tests.js"></script>
+
+    <!-- scripts (via require; see js/anarchy_tests.js) -->
+    <script nomodule data-main="js/anarchy_tests" src="js/require.js"></script>
   </head>
 <body>
   <div>Testing anarchy controlled chaos library...</div>
