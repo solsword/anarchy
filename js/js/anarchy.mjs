@@ -591,7 +591,7 @@ export function distribution_portion(
     }
 
     // compute split point:
-    split = distribution_spilt_point(
+    let split = distribution_spilt_point(
         total,
         n_segments,
         segment_capacity,
@@ -642,7 +642,7 @@ export function distribution_prior_sum(
     var first_half = Math.floor(n_segments / 2);
 
     // compute split point:
-    split = distribution_spilt_point(
+    let split = distribution_spilt_point(
         total,
         n_segments,
         segment_capacity,
