@@ -1,0 +1,1839 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.8.4" />
+<title>anarchy.cohort API documentation</title>
+<meta name="description" content="Reversible &amp; incremental operations on cohorts …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.1/highlight.min.js" integrity="sha256-eOgo0OtLL4cdq7RdwRUiGKLX9XsIJ7nGhWEKbohmVAQ=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>anarchy.cohort</code></h1>
+</header>
+<section id="section-intro">
+<p>Reversible &amp; incremental operations on cohorts.</p>
+<p>cohort.py</p>
+<p>Cohorts are simply sequences of adjacent numbers, taken in chunks of a
+fixed size. For example, if the cohort size is 10, then the numbers 0-9
+form the first cohort, 10-19 form the second cohort, etc.</p>
+<p>These operations do things like shuffle values within cohorts, but are
+incremental, in the sense that we can compute the shuffled position of
+one cohort member without knowing about all of the rest of them, and
+they're reversible, in the sense that we can compute not just where a
+value will end up after shuffling, but given a shuffled position, which
+value will end up there.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Reversible &amp; incremental operations on cohorts.
+
+cohort.py
+
+Cohorts are simply sequences of adjacent numbers, taken in chunks of a
+fixed size. For example, if the cohort size is 10, then the numbers 0-9
+form the first cohort, 10-19 form the second cohort, etc.
+
+These operations do things like shuffle values within cohorts, but are
+incremental, in the sense that we can compute the shuffled position of
+one cohort member without knowing about all of the rest of them, and
+they&#39;re reversible, in the sense that we can compute not just where a
+value will end up after shuffling, but given a shuffled position, which
+value will end up there.
+&#34;&#34;&#34;
+
+import math
+
+from . import rng
+
+
+# Basic operations
+# ----------------
+
+
+def cohort(outer, cohort_size):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `outer` (int): An integer to be assigned to a cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+    Returns (int): Which cohort the given outer item is assigned to.
+
+    Simply returns the outer index divided by the cohort size, rounded
+    down. Note that for extremely large integers, they will be truncated
+    to fit within 64 bits.
+    &#34;&#34;&#34;
+    return math.floor(outer // cohort_size) &amp; rng.ID_MASK
+
+
+def cohort_inner(outer, cohort_size):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `outer` (int): An integer to be assigned to a cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+    Returns (int): Where within its cohort the given integer ends up.
+
+    Computes within-cohort index for the given outer index and cohorts of
+    the given size, which is just the index modulus the cohort size. Like
+    `cohort`, truncates to 64 bits.
+    &#34;&#34;&#34;
+    return (outer % cohort_size) &amp; rng.ID_MASK
+
+
+def cohort_and_inner(outer, cohort_size):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `outer` (int): An integer to be assigned to a cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+    Returns (length-2 list): A cohort number and within-cohort index.
+
+    Simply returns the results of the `cohort` and `cohort_inner` as a
+    pair.
+    &#34;&#34;&#34;
+    return [ cohort(outer, cohort_size), cohort_inner(outer, cohort_size) ]
+
+
+def cohort_outer(cohort, inner, cohort_size):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `cohort` (int): Which cohort the item is in.
+    - `inner` (int): The index of the item in that cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+    Returns (int): The outer index that would be mapped to this
+    within-cohort index.
+
+    This is the Inverse of `cohort_and_inner`: it computes the outer
+    index from a cohort number and inner index.
+    &#34;&#34;&#34;
+    return (cohort_size * cohort + inner) &amp; rng.ID_MASK
+
+
+# Shuffling
+# ---------
+
+def cohort_interleave(inner, cohort_size):
+    &#34;&#34;&#34;
+    Interleaves cohort members by folding the top half into the bottom
+    half.
+    &#34;&#34;&#34;
+    if inner &lt; (cohort_size + 1) // 2:
+        return (inner * 2) &amp; rng.ID_MASK
+    else:
+        return (((cohort_size - 1 - inner) * 2) + 1) &amp; rng.ID_MASK
+
+
+def rev_cohort_interleave(inner, cohort_size):
+    &#34;&#34;&#34;
+    Inverse of `cohort_interleave`.
+    &#34;&#34;&#34;
+    if inner % 2:
+        return cohort_size - 1 - inner // 2
+    else:
+        return inner // 2
+
+
+def cohort_fold(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Folds items past an arbitrary split point (in the second half of the
+    cohort) into the middle of the cohort. The split will always leave
+    an odd number at the end.
+    &#34;&#34;&#34;
+    half = cohort_size // 2
+    quarter = cohort_size // 4
+    split = half
+    if quarter &gt; 0:
+        split += seed % quarter
+
+    after = cohort_size - split
+    split += (after + 1) % 2 # force an odd split point
+    after = cohort_size - split
+
+    fold_to = half - after // 2
+
+    if (inner &lt; fold_to): # first region
+        return inner &amp; rng.ID_MASK
+    elif (inner &lt; split): # second region
+        return (inner + after) &amp; rng.ID_MASK # push out past fold region
+    else: # fold region
+        return (inner - split + fold_to) &amp; rng.ID_MASK
+
+
+def rev_cohort_fold(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Inverse of `cohort_fold`.
+    &#34;&#34;&#34;
+    half = cohort_size // 2
+    quarter = cohort_size // 4
+    split = half
+    if quarter &gt; 0:
+        split += seed % quarter
+
+    after = cohort_size - split
+    split += (after + 1) % 2 # force an odd split point
+    after = cohort_size - split
+
+    fold_to = half - after // 2
+
+    if (inner &lt; fold_to): # first region
+        return inner &amp; rng.ID_MASK
+    elif (inner &lt; fold_to + after): # second region
+        return (inner - fold_to + split) &amp; rng.ID_MASK
+    else:
+        return (inner - after) &amp; rng.ID_MASK
+
+
+def cohort_spin(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Applies a circular offset
+    &#34;&#34;&#34;
+    return ((inner + seed) % cohort_size) &amp; rng.ID_MASK
+
+
+def rev_cohort_spin(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Inverse of `cohort_spin`.
+    &#34;&#34;&#34;
+    return (
+        (inner + (cohort_size - seed % cohort_size))
+      % cohort_size
+    ) &amp; rng.ID_MASK
+
+
+def cohort_flop(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Flops sections (with seeded sizes) with their neighbors.
+
+    Flop is its own inverse.
+    &#34;&#34;&#34;
+    limit = cohort_size // 8
+    if limit &lt; 4:
+        limit += 4
+
+    size = (seed % limit) + 2
+    which = inner // size
+    local = (inner % size)
+
+    result = 0
+    if which % 2:
+        result = (which - 1) * size + local
+    else:
+        result = (which + 1) * size + local
+
+    if (result &gt;= cohort_size): # don&#39;t flop out of the cohort
+        return inner &amp; rng.ID_MASK
+    else:
+        return result &amp; rng.ID_MASK
+
+
+def cohort_mix(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Applies a spin to both even and odd items with different seeds.
+    &#34;&#34;&#34;
+    even = inner - (inner % 2)
+    target = 0
+    if inner % 2:
+        target = cohort_spin(
+            even // 2,
+            cohort_size // 2,
+            seed + 464185
+        )
+        return (2 * target + 1) &amp; rng.ID_MASK
+    else:
+        target = cohort_spin(
+            even // 2,
+            (cohort_size + 1) // 2,
+            seed + 1048239
+        )
+        return (2 * target) &amp; rng.ID_MASK
+
+
+def rev_cohort_mix(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Inverse of `cohort_mix`.
+    &#34;&#34;&#34;
+    even = inner - (inner % 2)
+    target = 0
+    if inner % 2:
+        target = rev_cohort_spin(
+            even // 2,
+            cohort_size // 2,
+            seed + 464185
+        )
+        return (2 * target + 1) &amp; rng.ID_MASK
+    else:
+        target = rev_cohort_spin(
+            even // 2,
+            (cohort_size + 1) // 2,
+            seed + 1048239
+        )
+        return (2 * target) &amp; rng.ID_MASK
+
+
+MIN_REGION_SIZE = 2
+&#34;&#34;&#34;
+Minimum size of a region for `cohort_spread`.
+&#34;&#34;&#34;
+
+MAX_REGION_COUNT = 16
+&#34;&#34;&#34;
+Maximum number of regions for `cohort_spread`.
+&#34;&#34;&#34;
+
+
+def cohort_spread(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Spreads items out between a random number of different regions within
+    the cohort.
+    &#34;&#34;&#34;
+    min_regions = 2
+    if cohort_size &lt; 2 * MIN_REGION_SIZE:
+        min_regions = 1
+
+    max_regions = 1 + cohort_size // MIN_REGION_SIZE
+    regions = (
+        min_regions + (
+          (seed % (1 + (max_regions - min_regions)))
+        % MAX_REGION_COUNT
+        )
+    )
+    region_size = cohort_size // regions
+    leftovers = cohort_size - (regions * region_size)
+
+    region = inner % regions
+    index = inner // regions
+    if index &lt; region_size: # non-leftovers
+        return (region * region_size + index + leftovers) &amp; rng.ID_MASK
+    else: # leftovers go at the front:
+        return (inner - regions * region_size) &amp; rng.ID_MASK
+
+
+def rev_cohort_spread(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Inverse of `cohort_spread`.
+    &#34;&#34;&#34;
+    min_regions = 2
+    if cohort_size &lt; 2 * MIN_REGION_SIZE:
+        min_regions = 1
+
+    max_regions = 1 + cohort_size // MIN_REGION_SIZE
+    regions = (
+        min_regions + (
+          (seed % (1 + (max_regions - min_regions)))
+        % MAX_REGION_COUNT
+        )
+    )
+
+    region_size = cohort_size // regions
+    leftovers = cohort_size - (regions * region_size)
+
+    index = (inner - leftovers) // region_size
+    region = (inner - leftovers) % region_size
+
+    if inner &lt; leftovers: # leftovers back to the end:
+        return (regions * region_size + inner) &amp; rng.ID_MASK
+    else:
+        return (region * regions + index) &amp; rng.ID_MASK
+
+
+def cohort_upend(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Reverses ordering within each of several fragments.
+
+    Upend is its own inverse.
+    &#34;&#34;&#34;
+    min_regions = 2
+    if cohort_size &lt; 2 * MIN_REGION_SIZE:
+        min_regions = 1
+
+    max_regions = 1 + cohort_size // MIN_REGION_SIZE
+    regions = (
+        min_regions + (
+          (seed % (1 + (max_regions - min_regions)))
+        % MAX_REGION_COUNT
+        )
+    )
+    region_size = cohort_size // regions
+
+    region = inner // region_size
+    index = inner % region_size
+
+    result = (region * region_size) + (region_size - 1 - index)
+
+    if result &lt; cohort_size:
+        return result &amp; rng.ID_MASK
+    else:
+        return inner &amp; rng.ID_MASK
+
+
+def cohort_shuffle(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `inner` (int): The index of an item in a cohort.
+    - `cohort_size` (int): The size of each cohort.
+    - `seed` (int): The seed that determines the shuffle order.
+
+    Returns (int): A new within-cohort index for the given item.
+
+    Implements an incremental shuffle, such that if you were to call
+    `cohort_shuffle` on each index in a cohort of a given size, each of
+    the items would end up in a different new spot within that cohort.
+    The shuffle is reversible using the `rev_cohort_shuffle` function.
+
+    It works by composing several of the simpler reversible/indexable
+    functions to produce a sufficiently complex operation that humans
+    generally won&#39;t be able to see the pattern it uses.
+
+    Note that this should *not* be used for cryptography or statistics:
+    when the cohort size is even moderately large (say 100), the number
+    of possible shuffles (constrained by the seed, which is 64 bits, so
+    2^64) will be much smaller than the number of possible orderings of
+    the items, so not all possible orderings will be able to be
+    produced.
+
+    Both the seed and the cohort size are used to determine the
+    particular ordering of items, so the same seed with a different
+    cohort size won&#39;t necessarily produce a similar ordering to another
+    run.
+    &#34;&#34;&#34;
+    r = inner
+    seed = seed ^ cohort_size
+    r = cohort_spread(r, cohort_size, seed + 457) # prime
+    r = cohort_mix(r, cohort_size, seed + 2897) # prime
+    r = cohort_interleave(r, cohort_size)
+    r = cohort_spin(r, cohort_size, seed + 1987) # prime
+    r = cohort_upend(r, cohort_size, seed + 47) # prime
+    r = cohort_fold(r, cohort_size, seed + 839) # prime
+    r = cohort_interleave(r, cohort_size)
+    r = cohort_flop(r, cohort_size, seed + 53) # prime
+    r = cohort_fold(r, cohort_size, seed + 211) # prime
+    r = cohort_mix(r, cohort_size, seed + 733) # prime
+    r = cohort_spread(r, cohort_size, seed + 881) # prime
+    r = cohort_interleave(r, cohort_size)
+    r = cohort_flop(r, cohort_size, seed + 193) # prime
+    r = cohort_upend(r, cohort_size, seed + 794641) # prime
+    r = cohort_spin(r, cohort_size, seed + 19) # prime
+    return r
+
+
+def rev_cohort_shuffle(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `inner` (int): The index of an item in a cohort.
+    - `cohort_size` (int): The size of each cohort.
+    - `seed` (int): The seed that determines the shuffle order.
+
+    Returns (int): A new within-cohort index for the given item.
+
+    Works just like `cohort_shuffle`, but applies the same operations in
+    the opposite order, so that:
+
+    ```py
+    seed = 478273827
+    y = cohort_shuffle(x, 100, seed)
+    x == rev_cohort_shuffle(y, 100, seed)
+    ```
+    &#34;&#34;&#34;
+    r = inner
+    seed = seed ^ cohort_size
+    r = rev_cohort_spin(r, cohort_size, seed + 19) # prime
+    r = cohort_upend(r, cohort_size, seed + 794641) # prime
+    r = cohort_flop(r, cohort_size, seed + 193) # prime
+    r = rev_cohort_interleave(r, cohort_size)
+    r = rev_cohort_spread(r, cohort_size, seed + 881) # prime
+    r = rev_cohort_mix(r, cohort_size, seed + 733) # prime
+    r = rev_cohort_fold(r, cohort_size, seed + 211) # prime
+    r = cohort_flop(r, cohort_size, seed + 53) # prime
+    r = rev_cohort_interleave(r, cohort_size)
+    r = rev_cohort_fold(r, cohort_size, seed + 839) # prime
+    r = cohort_upend(r, cohort_size, seed + 47) # prime
+    r = rev_cohort_spin(r, cohort_size, seed + 1987) # prime
+    r = rev_cohort_interleave(r, cohort_size)
+    r = rev_cohort_mix(r, cohort_size, seed + 2897) # prime
+    r = rev_cohort_spread(r, cohort_size, seed + 457) # prime
+    return r
+
+
+# Distribution
+# ------------
+
+def distribution_spilt_point(
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+):
+    &#34;&#34;&#34;
+    Implements common distribution functionality: given a total item
+    count, a segment count and per-segment capacity, and a roughness
+    value and seed, computes the split point for the items as well as
+    the halfway index for the segments.
+    &#34;&#34;&#34;
+
+    # how the segments are divided:
+    first_half = n_segments // 2
+
+    # compute min/max split points according to roughness:
+    nat = math.floor(total * (first_half / n_segments) )
+    split_min = math.floor(nat - nat * roughness)
+    split_max = math.floor(nat + (total - nat) * roughness)
+
+    # adjust for capacity limits:
+    if (total - split_min) &gt; segment_capacity * (n_segments - first_half):
+        split_min = total - (segment_capacity * (n_segments - first_half))
+
+    if split_max &gt; segment_capacity * first_half:
+        split_max = segment_capacity * first_half
+
+    # compute a random split point:
+    split = nat
+    if split_min &gt;= split_max:
+        split = split_min
+    else:
+        split = split_min + (
+            rng.prng(total ^ rng.prng(seed, seed), seed)
+          % (split_max - split_min)
+        )
+
+    return [split, first_half]
+
+
+def distribution_portion(
+    segment,
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `segment` (int): Which segment of a distribution we are
+      interested in.
+    - `total` (int): The total number of items being distributed.
+    - `n_segments` (int): The number of segments to distribute items
+      among.
+    - `segment_capacity` (int): The capacity of each segment.
+    - `roughness` (float in [0,1]): How rough the distribution should
+      be.
+    - `seed` (int): The seed that determines a specific distribution.
+
+    Returns (int): the number of items from a distribution that end up
+    in the given segment.
+
+    Given that `total` items are to be distributed evenly among
+    `n_segment` segments each with at most `segment_capacity` items and
+    we&#39;re in segment `segment` of those, computes how many items are in
+    this segment. The `roughness` argument must be a number between 0
+    and 1 indicating how even the distribution is: 0 indicates a
+    perfectly even distribution, while 1 indicates a perfectly random
+    distribution. Does work proportional to the log of the number of
+    segments.
+
+    Note that segment_capacity * n_segments should be &gt; total.
+    &#34;&#34;&#34;
+
+    # base case
+    if n_segments == 1:
+        return total
+
+    # compute split point:
+    split, first_half = distribution_spilt_point(
+        total,
+        n_segments,
+        segment_capacity,
+        roughness,
+        seed
+    )
+
+    # call ourselves recursively:
+    if segment &lt; first_half:
+        return distribution_portion(
+            segment,
+            split,
+            first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+    else:
+        return distribution_portion(
+            segment - first_half,
+            total - split,
+            n_segments - first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+
+
+def distribution_prior_sum(
+    segment,
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `segment` (int): Which segment of a distribution we are
+      interested in.
+    - `total` (int): The total number of items being distributed.
+    - `n_segments` (int): The number of segments to distribute items
+      among.
+    - `segment_capacity` (int): The capacity of each segment.
+    - `roughness` (float in [0,1]): How rough the distribution should
+      be.
+    - `seed` (int): The seed that determines a specific distribution.
+
+    Returns (int): the cumulative number of items from a distribution
+    that are distributed before the given segment.
+
+    Does similar math to the `distribution_portion` function above, but
+    instead of returning the number of items in the given segment, it
+    returns the number of items in all segments before the given
+    segment. Only does work proportional to the log of the number of
+    segments.
+    &#34;&#34;&#34;
+
+    # base case
+    if n_segments == 1:
+        return 0 # nothing prior
+
+    # compute split point:
+    split, first_half = distribution_spilt_point(
+        total,
+        n_segments,
+        segment_capacity,
+        roughness,
+        seed
+    )
+
+    # call ourselves recursively:
+    if segment &lt; first_half:
+        return distribution_prior_sum(
+            segment, # segment
+            split, # total
+            first_half, # n_segments
+            segment_capacity, # capacity
+            roughness, # roughness
+            seed # seed
+        )
+    else:
+        return split + distribution_prior_sum(
+            segment - first_half,
+            total - split,
+            n_segments - first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+
+
+def distribution_segment(
+    index,
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `index` (int): Which item are we asking about.
+    - `total` (int): The total number of items being distributed.
+    - `n_segments` (int): The number of segments to distribute items
+      among.
+    - `segment_capacity` (int): The capacity of each segment.
+    - `roughness` (float in [0,1]): How rough the distribution should
+      be.
+    - `seed` (int): The seed that determines a specific distribution.
+
+    Returns (int): the index of the segment that the item of interest is
+    distributed into.
+
+    Computes the segment number in which a certain item appears (one of
+    the `total` items distributed between segments; see
+    `distribution_portion` above). Requires work proportional to the log
+    of the number of segments.
+
+    Note that the index should be between 0 and `total - 1`.
+    &#34;&#34;&#34;
+
+    # base case
+    if n_segments == 1:
+        return 0 # we are in the only segment there is
+
+    # compute split point:
+    split, first_half = distribution_spilt_point(
+        total,
+        n_segments,
+        segment_capacity,
+        roughness,
+        seed
+    )
+
+    # call ourselves recursively:
+    if index &lt; split:
+        return distribution_segment(
+            index,
+            split,
+            first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+    else:
+        return first_half + distribution_segment(
+            index - split,
+            total - split,
+            n_segments - first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+
+
+def max_smaller(value, sumtable):
+    &#34;&#34;&#34;
+    Uses binary search to find and return the index of the largest sum in
+    the given sumtable that&#39;s smaller than the given value. Works in time
+    proportional to the logarithm of the sumtable size. Returns -1 if
+    there is no entry in the sumtable smaller than the given value.
+
+    TODO: more sumtable functions in Python?
+    &#34;&#34;&#34;
+    fr = 0
+    to = len(sumtable)
+    where = 0
+    while to - fr &gt; 2:
+        where = (to - fr) // 2
+        if sumtable[where] &gt;= value:
+            to = where
+        else:
+            fr = where
+
+    if to - fr == 1 and sumtable[fr] &lt; value:
+        return fr
+    else:
+        for i in range(fr, to - 1):
+            if sumtable[i] &lt; value and sumtable[i + 1] &gt;= value:
+                return i
+
+    # no entry is smaller than the given value:
+    return -1</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-variables">Global variables</h2>
+<dl>
+<dt id="anarchy.cohort.MAX_REGION_COUNT"><code class="name">var <span class="ident">MAX_REGION_COUNT</span></code></dt>
+<dd>
+<div class="desc"><p>Maximum number of regions for <code><a title="anarchy.cohort.cohort_spread" href="#anarchy.cohort.cohort_spread">cohort_spread()</a></code>.</p></div>
+</dd>
+<dt id="anarchy.cohort.MIN_REGION_SIZE"><code class="name">var <span class="ident">MIN_REGION_SIZE</span></code></dt>
+<dd>
+<div class="desc"><p>Minimum size of a region for <code><a title="anarchy.cohort.cohort_spread" href="#anarchy.cohort.cohort_spread">cohort_spread()</a></code>.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="anarchy.cohort.cohort"><code class="name flex">
+<span>def <span class="ident">cohort</span></span>(<span>outer, cohort_size)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parameters:</p>
+<ul>
+<li><code>outer</code> (int): An integer to be assigned to a cohort.</li>
+<li><code>cohort_size</code> (int): The size of each cohort.</li>
+</ul>
+<p>Returns (int): Which cohort the given outer item is assigned to.</p>
+<p>Simply returns the outer index divided by the cohort size, rounded
+down. Note that for extremely large integers, they will be truncated
+to fit within 64 bits.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort(outer, cohort_size):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `outer` (int): An integer to be assigned to a cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+    Returns (int): Which cohort the given outer item is assigned to.
+
+    Simply returns the outer index divided by the cohort size, rounded
+    down. Note that for extremely large integers, they will be truncated
+    to fit within 64 bits.
+    &#34;&#34;&#34;
+    return math.floor(outer // cohort_size) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_and_inner"><code class="name flex">
+<span>def <span class="ident">cohort_and_inner</span></span>(<span>outer, cohort_size)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parameters:</p>
+<ul>
+<li><code>outer</code> (int): An integer to be assigned to a cohort.</li>
+<li><code>cohort_size</code> (int): The size of each cohort.</li>
+</ul>
+<p>Returns (length-2 list): A cohort number and within-cohort index.</p>
+<p>Simply returns the results of the <code><a title="anarchy.cohort.cohort" href="#anarchy.cohort.cohort">cohort()</a></code> and <code><a title="anarchy.cohort.cohort_inner" href="#anarchy.cohort.cohort_inner">cohort_inner()</a></code> as a
+pair.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_and_inner(outer, cohort_size):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `outer` (int): An integer to be assigned to a cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+    Returns (length-2 list): A cohort number and within-cohort index.
+
+    Simply returns the results of the `cohort` and `cohort_inner` as a
+    pair.
+    &#34;&#34;&#34;
+    return [ cohort(outer, cohort_size), cohort_inner(outer, cohort_size) ]</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_flop"><code class="name flex">
+<span>def <span class="ident">cohort_flop</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Flops sections (with seeded sizes) with their neighbors.</p>
+<p>Flop is its own inverse.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_flop(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Flops sections (with seeded sizes) with their neighbors.
+
+    Flop is its own inverse.
+    &#34;&#34;&#34;
+    limit = cohort_size // 8
+    if limit &lt; 4:
+        limit += 4
+
+    size = (seed % limit) + 2
+    which = inner // size
+    local = (inner % size)
+
+    result = 0
+    if which % 2:
+        result = (which - 1) * size + local
+    else:
+        result = (which + 1) * size + local
+
+    if (result &gt;= cohort_size): # don&#39;t flop out of the cohort
+        return inner &amp; rng.ID_MASK
+    else:
+        return result &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_fold"><code class="name flex">
+<span>def <span class="ident">cohort_fold</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Folds items past an arbitrary split point (in the second half of the
+cohort) into the middle of the cohort. The split will always leave
+an odd number at the end.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_fold(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Folds items past an arbitrary split point (in the second half of the
+    cohort) into the middle of the cohort. The split will always leave
+    an odd number at the end.
+    &#34;&#34;&#34;
+    half = cohort_size // 2
+    quarter = cohort_size // 4
+    split = half
+    if quarter &gt; 0:
+        split += seed % quarter
+
+    after = cohort_size - split
+    split += (after + 1) % 2 # force an odd split point
+    after = cohort_size - split
+
+    fold_to = half - after // 2
+
+    if (inner &lt; fold_to): # first region
+        return inner &amp; rng.ID_MASK
+    elif (inner &lt; split): # second region
+        return (inner + after) &amp; rng.ID_MASK # push out past fold region
+    else: # fold region
+        return (inner - split + fold_to) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_inner"><code class="name flex">
+<span>def <span class="ident">cohort_inner</span></span>(<span>outer, cohort_size)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parameters:</p>
+<ul>
+<li><code>outer</code> (int): An integer to be assigned to a cohort.</li>
+<li><code>cohort_size</code> (int): The size of each cohort.</li>
+</ul>
+<p>Returns (int): Where within its cohort the given integer ends up.</p>
+<p>Computes within-cohort index for the given outer index and cohorts of
+the given size, which is just the index modulus the cohort size. Like
+<code><a title="anarchy.cohort.cohort" href="#anarchy.cohort.cohort">cohort()</a></code>, truncates to 64 bits.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_inner(outer, cohort_size):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `outer` (int): An integer to be assigned to a cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+    Returns (int): Where within its cohort the given integer ends up.
+
+    Computes within-cohort index for the given outer index and cohorts of
+    the given size, which is just the index modulus the cohort size. Like
+    `cohort`, truncates to 64 bits.
+    &#34;&#34;&#34;
+    return (outer % cohort_size) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_interleave"><code class="name flex">
+<span>def <span class="ident">cohort_interleave</span></span>(<span>inner, cohort_size)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Interleaves cohort members by folding the top half into the bottom
+half.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_interleave(inner, cohort_size):
+    &#34;&#34;&#34;
+    Interleaves cohort members by folding the top half into the bottom
+    half.
+    &#34;&#34;&#34;
+    if inner &lt; (cohort_size + 1) // 2:
+        return (inner * 2) &amp; rng.ID_MASK
+    else:
+        return (((cohort_size - 1 - inner) * 2) + 1) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_mix"><code class="name flex">
+<span>def <span class="ident">cohort_mix</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Applies a spin to both even and odd items with different seeds.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_mix(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Applies a spin to both even and odd items with different seeds.
+    &#34;&#34;&#34;
+    even = inner - (inner % 2)
+    target = 0
+    if inner % 2:
+        target = cohort_spin(
+            even // 2,
+            cohort_size // 2,
+            seed + 464185
+        )
+        return (2 * target + 1) &amp; rng.ID_MASK
+    else:
+        target = cohort_spin(
+            even // 2,
+            (cohort_size + 1) // 2,
+            seed + 1048239
+        )
+        return (2 * target) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_outer"><code class="name flex">
+<span>def <span class="ident">cohort_outer</span></span>(<span>cohort, inner, cohort_size)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parameters:</p>
+<ul>
+<li><code><a title="anarchy.cohort.cohort" href="#anarchy.cohort.cohort">cohort()</a></code> (int): Which cohort the item is in.</li>
+<li><code>inner</code> (int): The index of the item in that cohort.</li>
+<li><code>cohort_size</code> (int): The size of each cohort.</li>
+</ul>
+<p>Returns (int): The outer index that would be mapped to this
+within-cohort index.</p>
+<p>This is the Inverse of <code><a title="anarchy.cohort.cohort_and_inner" href="#anarchy.cohort.cohort_and_inner">cohort_and_inner()</a></code>: it computes the outer
+index from a cohort number and inner index.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_outer(cohort, inner, cohort_size):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `cohort` (int): Which cohort the item is in.
+    - `inner` (int): The index of the item in that cohort.
+    - `cohort_size` (int): The size of each cohort.
+
+    Returns (int): The outer index that would be mapped to this
+    within-cohort index.
+
+    This is the Inverse of `cohort_and_inner`: it computes the outer
+    index from a cohort number and inner index.
+    &#34;&#34;&#34;
+    return (cohort_size * cohort + inner) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_shuffle"><code class="name flex">
+<span>def <span class="ident">cohort_shuffle</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parameters:</p>
+<ul>
+<li><code>inner</code> (int): The index of an item in a cohort.</li>
+<li><code>cohort_size</code> (int): The size of each cohort.</li>
+<li><code>seed</code> (int): The seed that determines the shuffle order.</li>
+</ul>
+<p>Returns (int): A new within-cohort index for the given item.</p>
+<p>Implements an incremental shuffle, such that if you were to call
+<code><a title="anarchy.cohort.cohort_shuffle" href="#anarchy.cohort.cohort_shuffle">cohort_shuffle()</a></code> on each index in a cohort of a given size, each of
+the items would end up in a different new spot within that cohort.
+The shuffle is reversible using the <code><a title="anarchy.cohort.rev_cohort_shuffle" href="#anarchy.cohort.rev_cohort_shuffle">rev_cohort_shuffle()</a></code> function.</p>
+<p>It works by composing several of the simpler reversible/indexable
+functions to produce a sufficiently complex operation that humans
+generally won't be able to see the pattern it uses.</p>
+<p>Note that this should <em>not</em> be used for cryptography or statistics:
+when the cohort size is even moderately large (say 100), the number
+of possible shuffles (constrained by the seed, which is 64 bits, so
+2^64) will be much smaller than the number of possible orderings of
+the items, so not all possible orderings will be able to be
+produced.</p>
+<p>Both the seed and the cohort size are used to determine the
+particular ordering of items, so the same seed with a different
+cohort size won't necessarily produce a similar ordering to another
+run.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_shuffle(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `inner` (int): The index of an item in a cohort.
+    - `cohort_size` (int): The size of each cohort.
+    - `seed` (int): The seed that determines the shuffle order.
+
+    Returns (int): A new within-cohort index for the given item.
+
+    Implements an incremental shuffle, such that if you were to call
+    `cohort_shuffle` on each index in a cohort of a given size, each of
+    the items would end up in a different new spot within that cohort.
+    The shuffle is reversible using the `rev_cohort_shuffle` function.
+
+    It works by composing several of the simpler reversible/indexable
+    functions to produce a sufficiently complex operation that humans
+    generally won&#39;t be able to see the pattern it uses.
+
+    Note that this should *not* be used for cryptography or statistics:
+    when the cohort size is even moderately large (say 100), the number
+    of possible shuffles (constrained by the seed, which is 64 bits, so
+    2^64) will be much smaller than the number of possible orderings of
+    the items, so not all possible orderings will be able to be
+    produced.
+
+    Both the seed and the cohort size are used to determine the
+    particular ordering of items, so the same seed with a different
+    cohort size won&#39;t necessarily produce a similar ordering to another
+    run.
+    &#34;&#34;&#34;
+    r = inner
+    seed = seed ^ cohort_size
+    r = cohort_spread(r, cohort_size, seed + 457) # prime
+    r = cohort_mix(r, cohort_size, seed + 2897) # prime
+    r = cohort_interleave(r, cohort_size)
+    r = cohort_spin(r, cohort_size, seed + 1987) # prime
+    r = cohort_upend(r, cohort_size, seed + 47) # prime
+    r = cohort_fold(r, cohort_size, seed + 839) # prime
+    r = cohort_interleave(r, cohort_size)
+    r = cohort_flop(r, cohort_size, seed + 53) # prime
+    r = cohort_fold(r, cohort_size, seed + 211) # prime
+    r = cohort_mix(r, cohort_size, seed + 733) # prime
+    r = cohort_spread(r, cohort_size, seed + 881) # prime
+    r = cohort_interleave(r, cohort_size)
+    r = cohort_flop(r, cohort_size, seed + 193) # prime
+    r = cohort_upend(r, cohort_size, seed + 794641) # prime
+    r = cohort_spin(r, cohort_size, seed + 19) # prime
+    return r</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_spin"><code class="name flex">
+<span>def <span class="ident">cohort_spin</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Applies a circular offset</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_spin(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Applies a circular offset
+    &#34;&#34;&#34;
+    return ((inner + seed) % cohort_size) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_spread"><code class="name flex">
+<span>def <span class="ident">cohort_spread</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Spreads items out between a random number of different regions within
+the cohort.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_spread(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Spreads items out between a random number of different regions within
+    the cohort.
+    &#34;&#34;&#34;
+    min_regions = 2
+    if cohort_size &lt; 2 * MIN_REGION_SIZE:
+        min_regions = 1
+
+    max_regions = 1 + cohort_size // MIN_REGION_SIZE
+    regions = (
+        min_regions + (
+          (seed % (1 + (max_regions - min_regions)))
+        % MAX_REGION_COUNT
+        )
+    )
+    region_size = cohort_size // regions
+    leftovers = cohort_size - (regions * region_size)
+
+    region = inner % regions
+    index = inner // regions
+    if index &lt; region_size: # non-leftovers
+        return (region * region_size + index + leftovers) &amp; rng.ID_MASK
+    else: # leftovers go at the front:
+        return (inner - regions * region_size) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.cohort_upend"><code class="name flex">
+<span>def <span class="ident">cohort_upend</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reverses ordering within each of several fragments.</p>
+<p>Upend is its own inverse.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cohort_upend(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Reverses ordering within each of several fragments.
+
+    Upend is its own inverse.
+    &#34;&#34;&#34;
+    min_regions = 2
+    if cohort_size &lt; 2 * MIN_REGION_SIZE:
+        min_regions = 1
+
+    max_regions = 1 + cohort_size // MIN_REGION_SIZE
+    regions = (
+        min_regions + (
+          (seed % (1 + (max_regions - min_regions)))
+        % MAX_REGION_COUNT
+        )
+    )
+    region_size = cohort_size // regions
+
+    region = inner // region_size
+    index = inner % region_size
+
+    result = (region * region_size) + (region_size - 1 - index)
+
+    if result &lt; cohort_size:
+        return result &amp; rng.ID_MASK
+    else:
+        return inner &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.distribution_portion"><code class="name flex">
+<span>def <span class="ident">distribution_portion</span></span>(<span>segment, total, n_segments, segment_capacity, roughness, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parameters:</p>
+<ul>
+<li><code>segment</code> (int): Which segment of a distribution we are
+interested in.</li>
+<li><code>total</code> (int): The total number of items being distributed.</li>
+<li><code>n_segments</code> (int): The number of segments to distribute items
+among.</li>
+<li><code>segment_capacity</code> (int): The capacity of each segment.</li>
+<li><code>roughness</code> (float in [0,1]): How rough the distribution should
+be.</li>
+<li><code>seed</code> (int): The seed that determines a specific distribution.</li>
+</ul>
+<p>Returns (int): the number of items from a distribution that end up
+in the given segment.</p>
+<p>Given that <code>total</code> items are to be distributed evenly among
+<code>n_segment</code> segments each with at most <code>segment_capacity</code> items and
+we're in segment <code>segment</code> of those, computes how many items are in
+this segment. The <code>roughness</code> argument must be a number between 0
+and 1 indicating how even the distribution is: 0 indicates a
+perfectly even distribution, while 1 indicates a perfectly random
+distribution. Does work proportional to the log of the number of
+segments.</p>
+<p>Note that segment_capacity * n_segments should be &gt; total.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def distribution_portion(
+    segment,
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `segment` (int): Which segment of a distribution we are
+      interested in.
+    - `total` (int): The total number of items being distributed.
+    - `n_segments` (int): The number of segments to distribute items
+      among.
+    - `segment_capacity` (int): The capacity of each segment.
+    - `roughness` (float in [0,1]): How rough the distribution should
+      be.
+    - `seed` (int): The seed that determines a specific distribution.
+
+    Returns (int): the number of items from a distribution that end up
+    in the given segment.
+
+    Given that `total` items are to be distributed evenly among
+    `n_segment` segments each with at most `segment_capacity` items and
+    we&#39;re in segment `segment` of those, computes how many items are in
+    this segment. The `roughness` argument must be a number between 0
+    and 1 indicating how even the distribution is: 0 indicates a
+    perfectly even distribution, while 1 indicates a perfectly random
+    distribution. Does work proportional to the log of the number of
+    segments.
+
+    Note that segment_capacity * n_segments should be &gt; total.
+    &#34;&#34;&#34;
+
+    # base case
+    if n_segments == 1:
+        return total
+
+    # compute split point:
+    split, first_half = distribution_spilt_point(
+        total,
+        n_segments,
+        segment_capacity,
+        roughness,
+        seed
+    )
+
+    # call ourselves recursively:
+    if segment &lt; first_half:
+        return distribution_portion(
+            segment,
+            split,
+            first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+    else:
+        return distribution_portion(
+            segment - first_half,
+            total - split,
+            n_segments - first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.distribution_prior_sum"><code class="name flex">
+<span>def <span class="ident">distribution_prior_sum</span></span>(<span>segment, total, n_segments, segment_capacity, roughness, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parameters:</p>
+<ul>
+<li><code>segment</code> (int): Which segment of a distribution we are
+interested in.</li>
+<li><code>total</code> (int): The total number of items being distributed.</li>
+<li><code>n_segments</code> (int): The number of segments to distribute items
+among.</li>
+<li><code>segment_capacity</code> (int): The capacity of each segment.</li>
+<li><code>roughness</code> (float in [0,1]): How rough the distribution should
+be.</li>
+<li><code>seed</code> (int): The seed that determines a specific distribution.</li>
+</ul>
+<p>Returns (int): the cumulative number of items from a distribution
+that are distributed before the given segment.</p>
+<p>Does similar math to the <code><a title="anarchy.cohort.distribution_portion" href="#anarchy.cohort.distribution_portion">distribution_portion()</a></code> function above, but
+instead of returning the number of items in the given segment, it
+returns the number of items in all segments before the given
+segment. Only does work proportional to the log of the number of
+segments.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def distribution_prior_sum(
+    segment,
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `segment` (int): Which segment of a distribution we are
+      interested in.
+    - `total` (int): The total number of items being distributed.
+    - `n_segments` (int): The number of segments to distribute items
+      among.
+    - `segment_capacity` (int): The capacity of each segment.
+    - `roughness` (float in [0,1]): How rough the distribution should
+      be.
+    - `seed` (int): The seed that determines a specific distribution.
+
+    Returns (int): the cumulative number of items from a distribution
+    that are distributed before the given segment.
+
+    Does similar math to the `distribution_portion` function above, but
+    instead of returning the number of items in the given segment, it
+    returns the number of items in all segments before the given
+    segment. Only does work proportional to the log of the number of
+    segments.
+    &#34;&#34;&#34;
+
+    # base case
+    if n_segments == 1:
+        return 0 # nothing prior
+
+    # compute split point:
+    split, first_half = distribution_spilt_point(
+        total,
+        n_segments,
+        segment_capacity,
+        roughness,
+        seed
+    )
+
+    # call ourselves recursively:
+    if segment &lt; first_half:
+        return distribution_prior_sum(
+            segment, # segment
+            split, # total
+            first_half, # n_segments
+            segment_capacity, # capacity
+            roughness, # roughness
+            seed # seed
+        )
+    else:
+        return split + distribution_prior_sum(
+            segment - first_half,
+            total - split,
+            n_segments - first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.distribution_segment"><code class="name flex">
+<span>def <span class="ident">distribution_segment</span></span>(<span>index, total, n_segments, segment_capacity, roughness, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parameters:</p>
+<ul>
+<li><code>index</code> (int): Which item are we asking about.</li>
+<li><code>total</code> (int): The total number of items being distributed.</li>
+<li><code>n_segments</code> (int): The number of segments to distribute items
+among.</li>
+<li><code>segment_capacity</code> (int): The capacity of each segment.</li>
+<li><code>roughness</code> (float in [0,1]): How rough the distribution should
+be.</li>
+<li><code>seed</code> (int): The seed that determines a specific distribution.</li>
+</ul>
+<p>Returns (int): the index of the segment that the item of interest is
+distributed into.</p>
+<p>Computes the segment number in which a certain item appears (one of
+the <code>total</code> items distributed between segments; see
+<code><a title="anarchy.cohort.distribution_portion" href="#anarchy.cohort.distribution_portion">distribution_portion()</a></code> above). Requires work proportional to the log
+of the number of segments.</p>
+<p>Note that the index should be between 0 and <code>total - 1</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def distribution_segment(
+    index,
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `index` (int): Which item are we asking about.
+    - `total` (int): The total number of items being distributed.
+    - `n_segments` (int): The number of segments to distribute items
+      among.
+    - `segment_capacity` (int): The capacity of each segment.
+    - `roughness` (float in [0,1]): How rough the distribution should
+      be.
+    - `seed` (int): The seed that determines a specific distribution.
+
+    Returns (int): the index of the segment that the item of interest is
+    distributed into.
+
+    Computes the segment number in which a certain item appears (one of
+    the `total` items distributed between segments; see
+    `distribution_portion` above). Requires work proportional to the log
+    of the number of segments.
+
+    Note that the index should be between 0 and `total - 1`.
+    &#34;&#34;&#34;
+
+    # base case
+    if n_segments == 1:
+        return 0 # we are in the only segment there is
+
+    # compute split point:
+    split, first_half = distribution_spilt_point(
+        total,
+        n_segments,
+        segment_capacity,
+        roughness,
+        seed
+    )
+
+    # call ourselves recursively:
+    if index &lt; split:
+        return distribution_segment(
+            index,
+            split,
+            first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+    else:
+        return first_half + distribution_segment(
+            index - split,
+            total - split,
+            n_segments - first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.distribution_spilt_point"><code class="name flex">
+<span>def <span class="ident">distribution_spilt_point</span></span>(<span>total, n_segments, segment_capacity, roughness, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Implements common distribution functionality: given a total item
+count, a segment count and per-segment capacity, and a roughness
+value and seed, computes the split point for the items as well as
+the halfway index for the segments.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def distribution_spilt_point(
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+):
+    &#34;&#34;&#34;
+    Implements common distribution functionality: given a total item
+    count, a segment count and per-segment capacity, and a roughness
+    value and seed, computes the split point for the items as well as
+    the halfway index for the segments.
+    &#34;&#34;&#34;
+
+    # how the segments are divided:
+    first_half = n_segments // 2
+
+    # compute min/max split points according to roughness:
+    nat = math.floor(total * (first_half / n_segments) )
+    split_min = math.floor(nat - nat * roughness)
+    split_max = math.floor(nat + (total - nat) * roughness)
+
+    # adjust for capacity limits:
+    if (total - split_min) &gt; segment_capacity * (n_segments - first_half):
+        split_min = total - (segment_capacity * (n_segments - first_half))
+
+    if split_max &gt; segment_capacity * first_half:
+        split_max = segment_capacity * first_half
+
+    # compute a random split point:
+    split = nat
+    if split_min &gt;= split_max:
+        split = split_min
+    else:
+        split = split_min + (
+            rng.prng(total ^ rng.prng(seed, seed), seed)
+          % (split_max - split_min)
+        )
+
+    return [split, first_half]</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.max_smaller"><code class="name flex">
+<span>def <span class="ident">max_smaller</span></span>(<span>value, sumtable)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Uses binary search to find and return the index of the largest sum in
+the given sumtable that's smaller than the given value. Works in time
+proportional to the logarithm of the sumtable size. Returns -1 if
+there is no entry in the sumtable smaller than the given value.</p>
+<p>TODO: more sumtable functions in Python?</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def max_smaller(value, sumtable):
+    &#34;&#34;&#34;
+    Uses binary search to find and return the index of the largest sum in
+    the given sumtable that&#39;s smaller than the given value. Works in time
+    proportional to the logarithm of the sumtable size. Returns -1 if
+    there is no entry in the sumtable smaller than the given value.
+
+    TODO: more sumtable functions in Python?
+    &#34;&#34;&#34;
+    fr = 0
+    to = len(sumtable)
+    where = 0
+    while to - fr &gt; 2:
+        where = (to - fr) // 2
+        if sumtable[where] &gt;= value:
+            to = where
+        else:
+            fr = where
+
+    if to - fr == 1 and sumtable[fr] &lt; value:
+        return fr
+    else:
+        for i in range(fr, to - 1):
+            if sumtable[i] &lt; value and sumtable[i + 1] &gt;= value:
+                return i
+
+    # no entry is smaller than the given value:
+    return -1</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.rev_cohort_fold"><code class="name flex">
+<span>def <span class="ident">rev_cohort_fold</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Inverse of <code><a title="anarchy.cohort.cohort_fold" href="#anarchy.cohort.cohort_fold">cohort_fold()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rev_cohort_fold(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Inverse of `cohort_fold`.
+    &#34;&#34;&#34;
+    half = cohort_size // 2
+    quarter = cohort_size // 4
+    split = half
+    if quarter &gt; 0:
+        split += seed % quarter
+
+    after = cohort_size - split
+    split += (after + 1) % 2 # force an odd split point
+    after = cohort_size - split
+
+    fold_to = half - after // 2
+
+    if (inner &lt; fold_to): # first region
+        return inner &amp; rng.ID_MASK
+    elif (inner &lt; fold_to + after): # second region
+        return (inner - fold_to + split) &amp; rng.ID_MASK
+    else:
+        return (inner - after) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.rev_cohort_interleave"><code class="name flex">
+<span>def <span class="ident">rev_cohort_interleave</span></span>(<span>inner, cohort_size)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Inverse of <code><a title="anarchy.cohort.cohort_interleave" href="#anarchy.cohort.cohort_interleave">cohort_interleave()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rev_cohort_interleave(inner, cohort_size):
+    &#34;&#34;&#34;
+    Inverse of `cohort_interleave`.
+    &#34;&#34;&#34;
+    if inner % 2:
+        return cohort_size - 1 - inner // 2
+    else:
+        return inner // 2</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.rev_cohort_mix"><code class="name flex">
+<span>def <span class="ident">rev_cohort_mix</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Inverse of <code><a title="anarchy.cohort.cohort_mix" href="#anarchy.cohort.cohort_mix">cohort_mix()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rev_cohort_mix(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Inverse of `cohort_mix`.
+    &#34;&#34;&#34;
+    even = inner - (inner % 2)
+    target = 0
+    if inner % 2:
+        target = rev_cohort_spin(
+            even // 2,
+            cohort_size // 2,
+            seed + 464185
+        )
+        return (2 * target + 1) &amp; rng.ID_MASK
+    else:
+        target = rev_cohort_spin(
+            even // 2,
+            (cohort_size + 1) // 2,
+            seed + 1048239
+        )
+        return (2 * target) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.rev_cohort_shuffle"><code class="name flex">
+<span>def <span class="ident">rev_cohort_shuffle</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Parameters:</p>
+<ul>
+<li><code>inner</code> (int): The index of an item in a cohort.</li>
+<li><code>cohort_size</code> (int): The size of each cohort.</li>
+<li><code>seed</code> (int): The seed that determines the shuffle order.</li>
+</ul>
+<p>Returns (int): A new within-cohort index for the given item.</p>
+<p>Works just like <code><a title="anarchy.cohort.cohort_shuffle" href="#anarchy.cohort.cohort_shuffle">cohort_shuffle()</a></code>, but applies the same operations in
+the opposite order, so that:</p>
+<pre><code class="py">seed = 478273827
+y = cohort_shuffle(x, 100, seed)
+x == rev_cohort_shuffle(y, 100, seed)
+</code></pre></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rev_cohort_shuffle(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Parameters:
+
+    - `inner` (int): The index of an item in a cohort.
+    - `cohort_size` (int): The size of each cohort.
+    - `seed` (int): The seed that determines the shuffle order.
+
+    Returns (int): A new within-cohort index for the given item.
+
+    Works just like `cohort_shuffle`, but applies the same operations in
+    the opposite order, so that:
+
+    ```py
+    seed = 478273827
+    y = cohort_shuffle(x, 100, seed)
+    x == rev_cohort_shuffle(y, 100, seed)
+    ```
+    &#34;&#34;&#34;
+    r = inner
+    seed = seed ^ cohort_size
+    r = rev_cohort_spin(r, cohort_size, seed + 19) # prime
+    r = cohort_upend(r, cohort_size, seed + 794641) # prime
+    r = cohort_flop(r, cohort_size, seed + 193) # prime
+    r = rev_cohort_interleave(r, cohort_size)
+    r = rev_cohort_spread(r, cohort_size, seed + 881) # prime
+    r = rev_cohort_mix(r, cohort_size, seed + 733) # prime
+    r = rev_cohort_fold(r, cohort_size, seed + 211) # prime
+    r = cohort_flop(r, cohort_size, seed + 53) # prime
+    r = rev_cohort_interleave(r, cohort_size)
+    r = rev_cohort_fold(r, cohort_size, seed + 839) # prime
+    r = cohort_upend(r, cohort_size, seed + 47) # prime
+    r = rev_cohort_spin(r, cohort_size, seed + 1987) # prime
+    r = rev_cohort_interleave(r, cohort_size)
+    r = rev_cohort_mix(r, cohort_size, seed + 2897) # prime
+    r = rev_cohort_spread(r, cohort_size, seed + 457) # prime
+    return r</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.rev_cohort_spin"><code class="name flex">
+<span>def <span class="ident">rev_cohort_spin</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Inverse of <code><a title="anarchy.cohort.cohort_spin" href="#anarchy.cohort.cohort_spin">cohort_spin()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rev_cohort_spin(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Inverse of `cohort_spin`.
+    &#34;&#34;&#34;
+    return (
+        (inner + (cohort_size - seed % cohort_size))
+      % cohort_size
+    ) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+<dt id="anarchy.cohort.rev_cohort_spread"><code class="name flex">
+<span>def <span class="ident">rev_cohort_spread</span></span>(<span>inner, cohort_size, seed)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Inverse of <code><a title="anarchy.cohort.cohort_spread" href="#anarchy.cohort.cohort_spread">cohort_spread()</a></code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def rev_cohort_spread(inner, cohort_size, seed):
+    &#34;&#34;&#34;
+    Inverse of `cohort_spread`.
+    &#34;&#34;&#34;
+    min_regions = 2
+    if cohort_size &lt; 2 * MIN_REGION_SIZE:
+        min_regions = 1
+
+    max_regions = 1 + cohort_size // MIN_REGION_SIZE
+    regions = (
+        min_regions + (
+          (seed % (1 + (max_regions - min_regions)))
+        % MAX_REGION_COUNT
+        )
+    )
+
+    region_size = cohort_size // regions
+    leftovers = cohort_size - (regions * region_size)
+
+    index = (inner - leftovers) // region_size
+    region = (inner - leftovers) % region_size
+
+    if inner &lt; leftovers: # leftovers back to the end:
+        return (regions * region_size + inner) &amp; rng.ID_MASK
+    else:
+        return (region * regions + index) &amp; rng.ID_MASK</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="anarchy" href="index.html">anarchy</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-variables">Global variables</a></h3>
+<ul class="">
+<li><code><a title="anarchy.cohort.MAX_REGION_COUNT" href="#anarchy.cohort.MAX_REGION_COUNT">MAX_REGION_COUNT</a></code></li>
+<li><code><a title="anarchy.cohort.MIN_REGION_SIZE" href="#anarchy.cohort.MIN_REGION_SIZE">MIN_REGION_SIZE</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="anarchy.cohort.cohort" href="#anarchy.cohort.cohort">cohort</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_and_inner" href="#anarchy.cohort.cohort_and_inner">cohort_and_inner</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_flop" href="#anarchy.cohort.cohort_flop">cohort_flop</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_fold" href="#anarchy.cohort.cohort_fold">cohort_fold</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_inner" href="#anarchy.cohort.cohort_inner">cohort_inner</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_interleave" href="#anarchy.cohort.cohort_interleave">cohort_interleave</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_mix" href="#anarchy.cohort.cohort_mix">cohort_mix</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_outer" href="#anarchy.cohort.cohort_outer">cohort_outer</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_shuffle" href="#anarchy.cohort.cohort_shuffle">cohort_shuffle</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_spin" href="#anarchy.cohort.cohort_spin">cohort_spin</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_spread" href="#anarchy.cohort.cohort_spread">cohort_spread</a></code></li>
+<li><code><a title="anarchy.cohort.cohort_upend" href="#anarchy.cohort.cohort_upend">cohort_upend</a></code></li>
+<li><code><a title="anarchy.cohort.distribution_portion" href="#anarchy.cohort.distribution_portion">distribution_portion</a></code></li>
+<li><code><a title="anarchy.cohort.distribution_prior_sum" href="#anarchy.cohort.distribution_prior_sum">distribution_prior_sum</a></code></li>
+<li><code><a title="anarchy.cohort.distribution_segment" href="#anarchy.cohort.distribution_segment">distribution_segment</a></code></li>
+<li><code><a title="anarchy.cohort.distribution_spilt_point" href="#anarchy.cohort.distribution_spilt_point">distribution_spilt_point</a></code></li>
+<li><code><a title="anarchy.cohort.max_smaller" href="#anarchy.cohort.max_smaller">max_smaller</a></code></li>
+<li><code><a title="anarchy.cohort.rev_cohort_fold" href="#anarchy.cohort.rev_cohort_fold">rev_cohort_fold</a></code></li>
+<li><code><a title="anarchy.cohort.rev_cohort_interleave" href="#anarchy.cohort.rev_cohort_interleave">rev_cohort_interleave</a></code></li>
+<li><code><a title="anarchy.cohort.rev_cohort_mix" href="#anarchy.cohort.rev_cohort_mix">rev_cohort_mix</a></code></li>
+<li><code><a title="anarchy.cohort.rev_cohort_shuffle" href="#anarchy.cohort.rev_cohort_shuffle">rev_cohort_shuffle</a></code></li>
+<li><code><a title="anarchy.cohort.rev_cohort_spin" href="#anarchy.cohort.rev_cohort_spin">rev_cohort_spin</a></code></li>
+<li><code><a title="anarchy.cohort.rev_cohort_spread" href="#anarchy.cohort.rev_cohort_spread">rev_cohort_spread</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.8.4</a>.</p>
+</footer>
+</body>
+</html>

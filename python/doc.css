@@ -22,3 +22,12 @@ h1, h2, h3, h4, h5, h6 {
 h3 {
   margin-top: 32pt;
 }
+
+.pixels {
+  margin: auto;
+  display: block;
+  width: 80%;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+}

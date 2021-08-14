@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+setup.cfg
+anarchy/__init__.py
+anarchy/_version.py
+anarchy/cohort.py
+anarchy/rng.py
+anarchy/test.py
+anarchy.egg-info/PKG-INFO
+anarchy.egg-info/SOURCES.txt
+anarchy.egg-info/dependency_links.txt
+anarchy.egg-info/requires.txt
+anarchy.egg-info/top_level.txt

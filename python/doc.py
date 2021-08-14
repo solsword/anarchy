@@ -1,147 +1,141 @@
-import pydoc
 import sys
+import re
 
 import anarchy
 
+
 def unindent(docstr):
-  """
-  Strips indentation from a docstring that's in this format.
-  """
-  indent = 0
-  for i, c in enumerate(docstr):
-    if i == 0 and c == '\n':
-      continue
-    if c != ' ':
-      break
-    indent += 1
-  lines = docstr.split('\n')
-  result = ''
-  for line in lines:
-    if line == '':
-      result += '\n'
-    else:
-      if line[:indent].strip() != '':
-        print("Warning: non-indented line:\n{}".format(line), file=sys.stderr)
-      result += line[indent:] + '\n'
+    """
+    Strips indentation from a docstring that's in this format.
+    """
+    indent = 0
+    for i, c in enumerate(docstr):
+        if i == 0 and c == '\n':
+            continue
+        if c != ' ':
+            break
+        indent += 1
+    lines = docstr.split('\n')
+    result = ''
+    for line in lines:
+        if line == '':
+            result += '\n'
+        else:
+            if line[:indent].strip() != '':
+                print(
+                    "Warning: non-indented line:\n{}".format(line),
+                    file=sys.stderr
+                )
+            result += line[indent:] + '\n'
 
-  return result
+    return result
 
-INTRO = """
-`anarchy` is a library for generating random numbers in an incremental and
-reversible fashion. It also has routines for incremental shuffling and
-distribution of items. The goal is to give a high level of control to designers
-of PCG systems while maintaining incremental operation as is necessary in
-incrementally-generated open-world situations.
-
-However, it can also be used in simpler situations as it provides a variety of
-built-in convenience functions like pseudo-gaussian and
-exponentially-distributed random numbers (these are not reversible).
-
-Note that this documentation applies most closely to the Python implementation,
-and it is drawn from that code. Each different language implementation
-has its own idiosyncrasies, but the higher-level things, like number and
-meaning of parameters, are the same for these core functions.
-
-## Replacing `random()`
-
-The incremental shuffling algorithm can be used as a replacement for a standard
-random number generator in cases where you want to guarantee a global
-distribution of items and are currently using independent random number checks
-to control item distribution. For example, if you have code that looks like
-this:
-
-```python
-def roll_item():
-  r = random.random()
-  if r < 0.01: # 1% chance for Rare item
-    return "Rare"
-  elif r < 0.06: # 5% chance for Uncommon item
-    return "Uncommon"
-  else:
-    return "Common"
-```
-
-You have no guarantees about exactly how often rare/uncommon items will be, and
-some players will get lucky or unlucky. Instead, even if you don't know the
-number of roll_item calls, with `anarchy` you can do this:
-
-```python
-N = 0
-seed = 472389223
-
-def roll_item():
-  global N, seed
-  r = anarchy.cohort_shuffle(N, 100, seed + N//100)
-  if r < 1:
-    return "Rare"
-  elif r < 6:
-    return "Uncommon"
-  else:
-    return "Common"
-```
-
-In this code there are two extra variables that have to be managed in some way,
-but the benefit is that for every 100 calls to the function, "Rare" will be
-returned exactly once, and "Uncommon" will be returned exactly 5 times. Each
-group of 100 calls will still have a different ordering of the items, because
-it uses a different seed.
-
-There are many other potential applications of reversible/incremental
-shuffling; this is one of the most direct.
-
-## Core Functions
-
-(Note: these are the most useful functions available but there are others, like
-the individual reversible operations used for shuffling or random number
-generation. Those functions are documented in the source code.)
-
-"""
 
 PRNG_FUNCTIONS = [
-  anarchy.prng,
-  anarchy.rev_prng,
-  anarchy.udist,
-  anarchy.pgdist,
-  anarchy.flip,
-  anarchy.idist,
-  anarchy.expdist,
-  anarchy.trexpdist,
+  ("rng.prng", anarchy.rng.prng),
+  ("rng.rev_prng", anarchy.rng.rev_prng),
+  ("rng.uniform", anarchy.rng.uniform),
+  ("rng.normalish", anarchy.rng.normalish),
+  ("rng.flip", anarchy.rng.flip),
+  ("rng.integer", anarchy.rng.integer),
+  ("rng.exponential", anarchy.rng.exponential),
+  ("rng.truncated_exponential", anarchy.rng.truncated_exponential),
 ]
 
 COHORT_FUNCTIONS = [
-  anarchy.cohort,
-  anarchy.cohort_inner,
-  anarchy.cohort_outer,
-  anarchy.cohort_shuffle,
-  anarchy.rev_cohort_shuffle,
-  anarchy.distribution_portion,
-  anarchy.distribution_prior_sum,
-  anarchy.distribution_segment,
+  ("cohort.cohort", anarchy.cohort.cohort),
+  ("cohort.cohort_inner", anarchy.cohort.cohort_inner),
+  ("cohort.cohort_outer", anarchy.cohort.cohort_outer),
+  ("cohort.cohort_shuffle", anarchy.cohort.cohort_shuffle),
+  ("cohort.rev_cohort_shuffle", anarchy.cohort.rev_cohort_shuffle),
+  ("cohort.distribution_portion", anarchy.cohort.distribution_portion),
+  ("cohort.distribution_prior_sum", anarchy.cohort.distribution_prior_sum),
+  ("cohort.distribution_segment", anarchy.cohort.distribution_segment),
 ]
 
-with open("doc.mkd", 'w') as fout:
-  fout.write("""\
+
+def as_link(identifier):
+    """
+    Returns Markdown link syntax for a link to the given identifier, or
+    just the identifier itself in backticks if it's not a thing we can
+    link to.
+    """
+    matches = [
+        fn
+        for (fn, f) in PRNG_FUNCTIONS + COHORT_FUNCTIONS
+        if identifier == fn
+    ]
+    link_to = None
+    if len(matches) == 1:
+        link_to = matches[0]
+    else: # not something we can link to
+        rmatches = [
+            fn for (fn, f) in PRNG_FUNCTIONS + COHORT_FUNCTIONS
+            if fn.endswith("." + identifier)
+        ]
+        if len(rmatches) == 1:
+            link_to = rmatches[0]
+
+    if link_to is None:
+        return f"`{identifier}`"
+    else:
+        return f"[`{identifier}`](#{link_to})"
+
+
+def make_links(doc):
+    """
+    Turns back-tick-quoted names from the functions we know about into
+    links to the doc entry for those functions.
+    """
+    return re.sub(
+        r"(?<!### )`([a-zA-Z_.]+)`",
+        lambda match: as_link(match.group(1)),
+        doc
+    )
+
+
+doc = """\
 ---
 title: Anarchy Library Documentation
 author: Peter Mawhorter (pmawhorter@gmail.com)
 ...
-""")
-  #fout.write("# `anarchy` Library Documentation\n")
-  fout.write(INTRO)
-  fout.write(
-    "### Single Number Functions\n\nDeal with individual random numbers.\n\n"
-  )
-  for f in PRNG_FUNCTIONS:
-    fout.write("- [`{}`](#{})\n".format(f.__name__, f.__name__))
-  for f in PRNG_FUNCTIONS:
-    fout.write("\n### `{}`\n\n".format(f.__name__, f.__name__))
-    fout.write(unindent(f.__doc__) + '\n')
+"""
+with open("README.md", 'r') as fin:
+    doc += fin.read()
+doc += """
 
-  fout.write(
-    "### Cohort Functions\n\nDeal similarly with numbers from a range.\n\n"
-  )
-  for f in COHORT_FUNCTIONS:
-    fout.write("- [`{}`](#{})\n".format(f.__name__, f.__name__))
-  for f in COHORT_FUNCTIONS:
-    fout.write("\n### `{}`\n\n".format(f.__name__, f.__name__))
-    fout.write(unindent(f.__doc__) + '\n')
+## Contents
+
+### Single Number Functions
+
+Deal with individual random numbers.
+
+"""
+for fullname, f in PRNG_FUNCTIONS:
+    doc += f"- [`{fullname}`](#{fullname})\n"
+
+doc += """
+
+### Cohort Functions
+
+Deal consistently with numbers in groups.
+
+"""
+for fullname, f in COHORT_FUNCTIONS:
+    doc += f"- [`{fullname}`](#{fullname})\n"
+
+doc += """
+## Functions
+
+"""
+
+for fullname, f in PRNG_FUNCTIONS:
+    doc += f"\n### `{fullname}`\n\n"
+    doc += unindent(make_links(f.__doc__)) + '\n'
+for fullname, f in COHORT_FUNCTIONS:
+    doc += f"\n### `{fullname}`\n\n"
+    doc += unindent(make_links(f.__doc__)) + '\n'
+
+
+with open("doc.md", 'w') as fout:
+    fout.write(doc)
