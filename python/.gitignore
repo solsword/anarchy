@@ -1,1 +1,4 @@
 __pycache__/
+anarchy.egg-info/
+dist/
+doc.md
