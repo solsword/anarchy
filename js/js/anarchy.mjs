@@ -201,10 +201,10 @@ export function flip(p, seed) {
 }
 
 export function idist(seed, start, end) {
-    // Even distribution over the given integer range, including the start but
-    // excluding the end (even if the end is smaller).
-    // The value right before the end is about 1/2^31 less-likely to be generated
-    // than the other values.
+    // Even distribution over the given integer range, including the
+    // start but excluding the end (even if the end is smaller). The
+    // value right before the end is about 1/2^31 less-likely to be
+    // generated than the other values.
     return Math.floor(udist(seed) * (end - start)) + start;
 }
 
