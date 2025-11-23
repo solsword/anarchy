@@ -3,30 +3,42 @@
 `anarchy` is a package for managed & beautiful chaos, designed with
 incremental procedural content generation in mind. It includes
 incremental & reversible random numbers, a selection of distribution
-functions for random values, and cohort operations that can be applied
-incrementally to groups along an indefinite 1-dimensional space.
+functions for random values, cohort operations that can be applied
+incrementally to groups along an indefinite 1-dimensional space, and
+function to incrementally/reversibly manage uneven distribution of items
+among segments.
 
 The goal is to give a high level of control to designers of PCG systems
-while maintaining incremental operation.
+while maintaining incremental operation and reversibility.
 
 Coming soon: fractal coordinates.
+
+
+## Changelog
+
+- Version 2.0: Added `distribution` sub-module, moved some old `cohort`
+    functions over to it. Fixed bugs & added many tests. Added
+    `distribution_items` and the `sumtable_*` functions. Got rid of
+    `max_smaller` in favor of `sumtable_segment`.
+- Version 1.1: Initial working version.
 
 
 ## Versions
 
 There are implementations of at least the core functionality available in
-C, C#, Javascript, and Python; this documentation applies most closely to
-the Python implementation, and it is drawn from that code. Each different
-language implementation has its own idiosyncrasies, but the higher-level
-things, like number and meaning of parameters, are the same for the core
-functions.
+C, C#, Javascript, Python, and Lua; this documentation applies most
+closely to the Python implementation, and it is drawn from that code.
+Each different language implementation has its own idiosyncrasies, but
+the higher-level things, like number and meaning of parameters, are the
+same for the core functions.
 
 TODO: Links to versions...
 
 Note: the anarchy Python package uses 64-bit integers, for compatibility
 with the C version of the library and for a larger output space.
-Technical limitations with JavaScript mean that the JS version of the
-library uses 32-bit integers and will therefore give different results.
+Technical limitations with JavaScript and Lua mean that the JS and Lua
+versions of the library effectively use 32-bit integers (stored inside
+64-bit floats) and will therefore give different results.
 
 
 ## Dependencies

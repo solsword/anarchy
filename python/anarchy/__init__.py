@@ -10,4 +10,4 @@ numbers.
 from ._version import __version__ # noqa F401
 
 # rng and cohort modules are available by default
-from . import rng, cohort # noqa F401
+from . import rng, cohort, distribution # noqa F401

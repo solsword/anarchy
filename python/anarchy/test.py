@@ -7,8 +7,9 @@ test.py
 import math
 import sys
 
-from . import rng, cohort
+import pytest
 
+from . import rng, cohort, distribution
 
 # Straightforward value tests...
 
@@ -152,9 +153,38 @@ def test_cohort_interleave():
     assert cohort.cohort_interleave(7, 12) == 9
 
 
+def test_cohort_fold():
+    assert cohort.cohort_fold(0, 3, 0) == 0
+    assert cohort.cohort_fold(1, 3, 0) == 2
+    assert cohort.cohort_fold(2, 3, 0) == 1
+    assert cohort.rev_cohort_fold(0, 3, 0) == 0
+    assert cohort.rev_cohort_fold(1, 3, 0) == 2
+    assert cohort.rev_cohort_fold(2, 3, 0) == 1
+
+
 def test_cohort_spin():
     assert cohort.cohort_spin(0, 2, 1048239) == 1
     assert cohort.rev_cohort_spin(1, 2, 1048239) == 0
+
+
+def test_cohort_flop():
+    assert cohort.cohort_flop(0, 32, 3) == 5  # size will be 5
+    assert cohort.cohort_flop(1, 32, 3) == 6
+    assert cohort.cohort_flop(2, 32, 3) == 7
+    assert cohort.cohort_flop(3, 32, 3) == 8
+    assert cohort.cohort_flop(4, 32, 3) == 9
+    assert cohort.cohort_flop(5, 32, 3) == 0
+    assert cohort.cohort_flop(6, 32, 3) == 1
+    assert cohort.cohort_flop(7, 32, 3) == 2
+    assert cohort.cohort_flop(8, 32, 3) == 3
+    assert cohort.cohort_flop(9, 32, 3) == 4
+    assert cohort.cohort_flop(10, 32, 3) == 15
+    assert cohort.cohort_flop(15, 32, 3) == 10
+    assert cohort.cohort_flop(21, 32, 3) == 26
+    assert cohort.cohort_flop(30, 32, 3) == 30
+    assert cohort.cohort_flop(31, 32, 3) == 31
+    assert cohort.cohort_flop(1, 1024, 17) == 20
+    assert cohort.cohort_flop(20, 1024, 17) == 1
 
 
 def test_cohort_mix():
@@ -166,14 +196,94 @@ def test_cohort_mix():
     assert cohort.rev_cohort_mix(0, 3, 0) == 2
 
 
-def test_cohort_fold():
-    assert cohort.cohort_fold(0, 3, 0) == 0
-    assert cohort.cohort_fold(1, 3, 0) == 2
-    assert cohort.cohort_fold(2, 3, 0) == 1
-    assert cohort.rev_cohort_fold(0, 3, 0) == 0
-    assert cohort.rev_cohort_fold(1, 3, 0) == 2
-    assert cohort.rev_cohort_fold(2, 3, 0) == 1
+def test_cohort_spread():
+    # Min regions 2, max regions 50, so 2 + 5 = 7 regions
+    # Region size 100 // 7 = 14
+    # 2 leftovers
+    assert cohort.cohort_spread(0, 100, 5) == 2
+    assert cohort.cohort_spread(1, 100, 5) == 16
+    assert cohort.cohort_spread(2, 100, 5) == 30
+    assert cohort.cohort_spread(3, 100, 5) == 44
+    assert cohort.cohort_spread(4, 100, 5) == 58
+    assert cohort.cohort_spread(5, 100, 5) == 72
+    assert cohort.cohort_spread(6, 100, 5) == 86
+    assert cohort.cohort_spread(7, 100, 5) == 3
+    assert cohort.cohort_spread(8, 100, 5) == 17
+    assert cohort.cohort_spread(9, 100, 5) == 31
+    assert cohort.cohort_spread(10, 100, 5) == 45
+    # etc.
+    assert cohort.cohort_spread(14, 100, 5) == 4
+    assert cohort.cohort_spread(15, 100, 5) == 18
+    # Leftovers
+    assert cohort.cohort_spread(98, 100, 5) == 0
+    assert cohort.cohort_spread(99, 100, 5) == 1
 
+    # Same in reverse
+    assert cohort.rev_cohort_spread(2, 100, 5) == 0
+    assert cohort.rev_cohort_spread(16, 100, 5) == 1
+    assert cohort.rev_cohort_spread(30, 100, 5) == 2
+    assert cohort.rev_cohort_spread(44, 100, 5) == 3
+    assert cohort.rev_cohort_spread(58, 100, 5) == 4
+    assert cohort.rev_cohort_spread(72, 100, 5) == 5
+    assert cohort.rev_cohort_spread(86, 100, 5) == 6
+    assert cohort.rev_cohort_spread(3, 100, 5) == 7
+    assert cohort.rev_cohort_spread(17, 100, 5) == 8
+    assert cohort.rev_cohort_spread(31, 100, 5) == 9
+    assert cohort.rev_cohort_spread(45, 100, 5) == 10
+    # etc.
+    assert cohort.rev_cohort_spread(4, 100, 5) == 14
+    assert cohort.rev_cohort_spread(18, 100, 5) == 15
+    # Leftovers
+    assert cohort.rev_cohort_spread(0, 100, 5) == 98
+    assert cohort.rev_cohort_spread(1, 100, 5) == 99
+
+
+def test_cohort_upend():
+    # Min regions 2, max regions 50, so (2 + 25 % 16) = 11 regions
+    # Region size 100 // 11 = 9
+    # 1 leftover
+    assert cohort.cohort_upend(0, 100, 25) == 8
+    assert cohort.cohort_upend(1, 100, 25) == 7
+    assert cohort.cohort_upend(2, 100, 25) == 6
+    assert cohort.cohort_upend(3, 100, 25) == 5
+    assert cohort.cohort_upend(4, 100, 25) == 4
+    assert cohort.cohort_upend(5, 100, 25) == 3
+    assert cohort.cohort_upend(6, 100, 25) == 2
+    assert cohort.cohort_upend(7, 100, 25) == 1
+    assert cohort.cohort_upend(8, 100, 25) == 0
+    assert cohort.cohort_upend(9, 100, 25) == 17
+    assert cohort.cohort_upend(10, 100, 25) == 16
+    assert cohort.cohort_upend(11, 100, 25) == 15
+    assert cohort.cohort_upend(12, 100, 25) == 14
+    assert cohort.cohort_upend(13, 100, 25) == 13
+    assert cohort.cohort_upend(17, 100, 25) == 9
+    # etc.
+    # here's the end of the last region + leftovers
+    assert cohort.cohort_upend(97, 100, 25) == 91
+    assert cohort.cohort_upend(98, 100, 25) == 90
+    assert cohort.cohort_upend(99, 100, 25) == 99
+
+    # Same stuff in reverse
+    assert cohort.cohort_upend(8, 100, 25) == 0 
+    assert cohort.cohort_upend(7, 100, 25) == 1 
+    assert cohort.cohort_upend(6, 100, 25) == 2 
+    assert cohort.cohort_upend(5, 100, 25) == 3 
+    assert cohort.cohort_upend(4, 100, 25) == 4 
+    assert cohort.cohort_upend(3, 100, 25) == 5 
+    assert cohort.cohort_upend(2, 100, 25) == 6 
+    assert cohort.cohort_upend(1, 100, 25) == 7 
+    assert cohort.cohort_upend(0, 100, 25) == 8 
+    assert cohort.cohort_upend(17, 100, 25) == 9 
+    assert cohort.cohort_upend(16, 100, 25) == 10
+    assert cohort.cohort_upend(15, 100, 25) == 11
+    assert cohort.cohort_upend(14, 100, 25) == 12
+    assert cohort.cohort_upend(13, 100, 25) == 13
+    assert cohort.cohort_upend(9 , 100, 25) == 17
+    # etc.                                       
+    # here's the end of the last region + leftovers
+    assert cohort.cohort_upend(91, 100, 25) == 97
+    assert cohort.cohort_upend(90, 100, 25) == 98
+    assert cohort.cohort_upend(99, 100, 25) == 99
 
 def test_cohort_shuffle():
     assert cohort.cohort_shuffle(0, 3, 17) == 0
@@ -183,6 +293,10 @@ def test_cohort_shuffle():
     assert cohort.rev_cohort_shuffle(2, 3, 17) == 1
     assert cohort.rev_cohort_shuffle(1, 3, 17) == 2
 
+
+#-----------------------#
+# Complex testing setup #
+#-----------------------#
 
 TEST_VALUES = [
     0,
@@ -289,6 +403,10 @@ def {name}({args}):
 
     return result
 
+
+#---------------#
+# Complex Tests #
+#---------------#
 
 @loudtest
 def test_unit_ops():
@@ -847,12 +965,15 @@ def test_truncated_exponential_distribution():
 @loudtest
 def test_cohort_ops():
     """
-    Tests for the cohort operations.
+    Tests the cohort operations.
     """
     cohort_sizes = [ 3, 12, 17, 32, 1024 ]
     start_progress(
         "cohort_ops",
-        2 * sum(cohort_sizes) * (len(TEST_VALUES) + 1)
+        (
+            sum(cohort_sizes) * (len(TEST_VALUES) + 1)
+          + sum(cohort_sizes) * (7 * len(TEST_VALUES) + 1)
+        )
     )
     for idx in range(len(cohort_sizes)):
         cs = cohort_sizes[idx]
@@ -989,7 +1110,310 @@ def test_cohort_ops():
                         )
                         progress()
 
+@loudtest
+def test_distributions():
+    """
+    Tests the distribution operations.
+    """
+    dist_setups = [
+        # items, segments, capacity
+        (10, 5, 4),  # 10 items across 5 buckets of 4 items each
+        (100, 5, 20),  # 100 items across 5 buckets of 20 items each
+        (100, 1000, 1),  # 100 items across 1000 1-item buckets
+        (100, 1000, 2),  # 100 items across 1000 2-item buckets
+        (100, 100, 10),  # 100 items across 100 10-item buckets
+        (100, 3, 50),  # 100 items across 3 50-item buckets
+        (100, 4, 25),  # 100 items across 4 25-item buckets
+    ]
+    start_progress(
+        "smooth_dist_split_points",
+        3 * len(dist_setups)
+    )
+    for total, segments, capacity in dist_setups:
+        for seed in [8349, 0, 1029104024]:
+            split, half = distribution.distribution_spilt_point(
+                total,
+                segments,
+                capacity,
+                0,
+                seed
+            )
+            assert half == segments // 2, (
+                f"bad half {half} != {segments // 2} for seed {seed} setup"
+                f" {(total, segments, capacity)}"
+            )
+            exp_split = math.floor(total * (segments // 2) / segments)
+            assert split == exp_split, (
+                f"bad split {split} != {exp_split} for seed {seed} setup"
+                f" {(total, segments, capacity)}"
+            )
+            progress()
+
+    start_progress(
+        "rough_dist_split_points",
+        1000 * len(dist_setups)
+    )
+    roughness = 0.75
+    for total, segments, capacity in dist_setups:
+        splits = []
+        first_half = segments // 2
+        # Natural portion for first half of segments
+        nat = math.floor(total * first_half / segments)
+        # Pre- and post-split caps
+        pre_cap = first_half * capacity
+        post_cap = (segments - first_half) * capacity
+        # Min portion given roughness
+        min_portion = max(
+            total - post_cap,
+            math.floor((1 - roughness) * nat)
+        )
+        # Max portion given roughness
+        max_portion = min(
+            pre_cap,
+            math.floor(nat + (total - nat) * roughness)
+        )
+        for seed in range(9382948, 9382948 + 1000):
+            split, half = distribution.distribution_spilt_point(
+                total,
+                segments,
+                capacity,
+                roughness,
+                seed
+            )
+            assert half == first_half, (
+                f"bad half {half} != {first_half} for seed {seed} setup"
+                f" {(total, segments, capacity)}"
+            )
+            assert min_portion <= split <= max_portion, (
+                f"bad split BROKE {min_portion} <= {split} <= {max_portion} for"
+                f" seed {seed} setup {(total, segments, capacity)}"
+            )
+            splits.append(split)
+            progress()
+
+        # Test for variability & coverage of splits
+        if min_portion < max_portion:
+            assert any(splits[i] != splits[0] for i in range(len(splits))), (
+                f"NO split variability (all {splits[0]}) despite min"
+                f" {min_portion} and max {max_portion}) for setup"
+                f" {(total, segments, capacity)}"
+            )
+            coverage = (max(splits) - min(splits)) / (max_portion - min_portion)
+            assert coverage > 0.5, (
+                f"SUSPICIOUSLY small coverage of available splits:"
+                f" {coverage:.3f} < 0.5 over 1000 seeds. Limits {min_portion} to"
+                f" {max_portion} but only covered {min(splits)} to {max(splits)}"
+                f" for setup {(total, segments, capacity)}"
+            )
+
+    start_progress(
+        "dist_portions",
+        20 * sum(s[1] for s in dist_setups)
+    )
+    for total, segments, capacity in dist_setups:
+        splits = []
+        # Natural portion for each segment with 0 roughness
+        per_segment = total // segments
+        # Few seeds w/ 0 roughness
+        for seed in range(1278, 1278 + 100, 10):
+            sofar = 0
+            for s in range(segments):
+                portion = distribution.distribution_portion(
+                    s,
+                    total,
+                    segments,
+                    capacity,
+                    0,
+                    seed
+                )
+                prior = distribution.distribution_prior_sum(
+                    s,
+                    total,
+                    segments,
+                    capacity,
+                    0,
+                    seed
+                )
+                assert (prior, portion) == distribution.distribution_items(
+                    s,
+                    total,
+                    segments,
+                    capacity,
+                    0,
+                    seed
+                )
+                assert prior == sofar, (
+                    f"Prior sum mismatch for segment {s}: counted"
+                    f" {sofar} but computed {prior} for setup"
+                    f" {(total, segments, capacity)} with seed {seed}."
+                )
+                assert (
+                    portion == per_segment or portion == per_segment + 1
+                ), (
+                    f"Invalid portion {portion} for segment {s} with 0"
+                    f" roughness; should have been either {per_segment}"
+                    f" or {per_segment + 1} for each segment. Setup"
+                    f" {(total, segments, capacity)} with seed {seed}."
+                )
+                sofar += portion
+                progress()
+            assert sofar == total, (
+                f"Total sum mismatch: counted {sofar} but total was"
+                f" {total} for setup {(total, segments, capacity)} with"
+                f" seed {seed}."
+            )
+            
+        for seed in range(89483, 89483 + 100, 10):
+            sofar = 0
+            for s in range(segments):
+                portion = distribution.distribution_portion(
+                    s,
+                    total,
+                    segments,
+                    capacity,
+                    0.75,
+                    seed
+                )
+                prior = distribution.distribution_prior_sum(
+                    s,
+                    total,
+                    segments,
+                    capacity,
+                    0.75,
+                    seed
+                )
+                assert (prior, portion) == distribution.distribution_items(
+                    s,
+                    total,
+                    segments,
+                    capacity,
+                    0.75,
+                    seed
+                )
+                assert prior == sofar, (
+                    f"Prior sum mismatch for segment {s}: counted {sofar}"
+                    f" but computed {prior} for setup"
+                    f" {(total, segments, capacity)}" f" with seed {seed}."
+                )
+                assert portion <= capacity, (
+                    f"Portion too large ({portion} > {capacity}) for"
+                    f" segment {s} of setup {(total, segments, capacity)}"
+                    f" with seed {seed}."
+                )
+                sofar += portion
+                progress()
+            assert sofar == total, (
+                f"Total sum mismatch: counted {sofar} but total was {total}"
+                f" for setup {(total, segments, capacity)} with seed {seed}."
+            )
+
+
+def test_sumtables():
+    """
+    Tests sumtable functions from `anarchy.distribution`.
+    """
+    p = [2, 2, 2, 2, 2]
+    t = [2, 4, 6, 8, 10]
+    total = 10
+    n_segments = 5
+
+    # Value error on empty sum table
+    with pytest.raises(ValueError):
+        distribution.sumtable_segment([], 0)
+
+    with pytest.raises(IndexError):
+        distribution.sumtable_segment(t, -3)
+    with pytest.raises(IndexError):
+        distribution.sumtable_segment(t, -1)
+    with pytest.raises(IndexError):
+        distribution.sumtable_segment(t, 11)
+    with pytest.raises(IndexError):
+        distribution.sumtable_segment(t, 100)
+
+    for seed in TEST_VALUES:
+        nt = distribution.sumtable_for_distribution(
+            total,
+            n_segments,
+            10,  # not limiting
+            0,  # distribution should be even
+            seed  # shouldn't matter
+        )
+        assert nt == t, f"smooth {nt} != {t}" 
+        ntr = distribution.sumtable_for_distribution(
+            total,
+            n_segments,
+            2,
+            1,  # doesn't matter since it's limited by capacity
+            seed  # shouldn't matter
+        )
+        assert ntr == t, f"rough {ntr} != {t}" 
+        # Shorter by 1 should still work
+        snt = distribution.sumtable_for_distribution(
+            total - 2,
+            n_segments - 1,
+            10,  # not limiting
+            0,  # distribution should be even
+            seed  # shouldn't matter
+        )
+        assert snt == t[:-1], f"short smooth {snt} != {t}"
+        sntr = distribution.sumtable_for_distribution(
+            total - 2,
+            n_segments - 1,
+            2,
+            1,  # doesn't matter since it's limited by capacity
+            seed  # shouldn't matter
+        )
+        assert sntr == t[:-1], f"short rough {sntr} != {t}"
+
+    # Check integrity of two distribution tables
+    for seed in [2938, 823974]:
+        total = int(384 + seed % 423)
+        n_segments = 10 + seed % 100
+        cap = int((total * 1.5) // n_segments)
+        rough = rng.uniform(seed)
+        t = distribution.sumtable_for_distribution(
+            total, n_segments, cap, rough, seed
+        )
+        assert len(t) == n_segments
+        for i in range(len(t)):
+            assert distribution.distribution_items(
+                i,
+                total, n_segments, cap, rough, seed
+            ) == distribution.sumtable_items(t, i)
+        for item in range(total):
+            assert distribution.distribution_segment(
+                item,
+                total, n_segments, cap, rough, seed
+            ) == distribution.sumtable_segment(t, item)
+
+    # Sumtables from portions for a few different hand-crafted examples
+    for p, t in [
+        ([3, 1, 0, 2, 4, 2], [3, 4, 4, 6, 10, 12]),
+        ([100, 900, 9000, 1], [100, 1000, 10000, 10001]),
+        ([3, 0, 0, 0], [3, 3, 3, 3]),
+        ([0, 0, 1, 1, 0, 0, 3], [0, 0, 1, 2, 2, 2, 5]),
+    ]:
+        # Check table properties
+        nt = distribution.sumtable_from_portions(p)
+        assert nt == t, f"SFP {p} -/> {t} (got {nt})"
+        assert distribution.sumtable_total(t) == sum(p)
+        assert distribution.sumtable_segments(t) == len(p)
+        # Figure out item -> index mapping empirically
+        imap = {}
+        sofar = 0
+        for i in range(len(p)):
+            # Check portion + items here
+            assert distribution.sumtable_portion(t, i) == p[i]
+            nit = distribution.sumtable_items(t, i)
+            assert nit == (sofar, p[i]), f"si {nit} != {(sofar, p[i])}"
+            for j in range(p[i]):
+                imap[sofar] = i
+                sofar += 1
+
+        # Check empirical map of item -> index
+        for item, in_segment in imap.items():
+            assert distribution.sumtable_segment(t, item) == in_segment
+
 
 if __name__ == "__main__":
-    import pytest
-    sys.exit(pytest.main(["--pyargs", "anarchy.test"]))
+    sys.exit(pytest.main(sys.argv[3:] + ["--pyargs", "anarchy.test"]))

@@ -199,7 +199,7 @@ def cohort_flop(inner, cohort_size, seed):
     else:
         result = (which + 1) * size + local
 
-    if (result >= cohort_size): # don't flop out of the cohort
+    if result >= cohort_size: # don't flop out of the cohort
         return inner & rng.ID_MASK
     else:
         return result & rng.ID_MASK
@@ -251,12 +251,12 @@ def rev_cohort_mix(inner, cohort_size, seed):
 
 MIN_REGION_SIZE = 2
 """
-Minimum size of a region for `cohort_spread`.
+Minimum size of a region for `cohort_spread` and `cohort_upend`.
 """
 
 MAX_REGION_COUNT = 16
 """
-Maximum number of regions for `cohort_spread`.
+Maximum number of regions for `cohort_spread` and `cohort_upend`.
 """
 
 
@@ -342,7 +342,7 @@ def cohort_upend(inner, cohort_size, seed):
     if result < cohort_size:
         return result & rng.ID_MASK
     else:
-        return inner & rng.ID_MASK
+        return inner & rng.ID_MASK  # leftovers stay at end
 
 
 def cohort_shuffle(inner, cohort_size, seed):
@@ -480,7 +480,7 @@ def distribution_spilt_point(
     return [split, first_half]
 
 
-def distribution_portion(
+def distribution_items(
     segment,
     total,
     n_segments,
@@ -501,24 +501,25 @@ def distribution_portion(
       be.
     - `seed` (int): The seed that determines a specific distribution.
 
-    Returns (int): the number of items from a distribution that end up
-    in the given segment.
+    Returns (2-tuple of ints): the number of items from a distribution
+    that come before the start of the given segment, and the number of
+    items in that segment.
 
     Given that `total` items are to be distributed evenly among
     `n_segment` segments each with at most `segment_capacity` items and
-    we're in segment `segment` of those, computes how many items are in
-    this segment. The `roughness` argument must be a number between 0
-    and 1 indicating how even the distribution is: 0 indicates a
-    perfectly even distribution, while 1 indicates a perfectly random
-    distribution. Does work proportional to the log of the number of
-    segments.
+    we're in segment `segment` of those, computes how many items come
+    before this segment and how many are in it. The `roughness` argument
+    must be a number between 0 and 1 indicating how even the distribution
+    is: 0 indicates a perfectly even distribution, while 1 indicates a
+    perfectly random distribution. Does work proportional to the log of
+    the number of segments.
 
-    Note that segment_capacity * n_segments should be > total.
+    Note that segment_capacity * n_segments should be >= total.
     """
 
     # base case
     if n_segments == 1:
-        return total
+        return 0, total
 
     # compute split point:
     split, first_half = distribution_spilt_point(
@@ -531,7 +532,7 @@ def distribution_portion(
 
     # call ourselves recursively:
     if segment < first_half:
-        return distribution_portion(
+        return distribution_items(
             segment,
             split,
             first_half,
@@ -540,7 +541,7 @@ def distribution_portion(
             seed
         )
     else:
-        return distribution_portion(
+        additional_before, portion = distribution_items(
             segment - first_half,
             total - split,
             n_segments - first_half,
@@ -548,6 +549,31 @@ def distribution_portion(
             roughness,
             seed
         )
+        return split + additional_before, portion
+
+
+def distribution_portion(
+    segment,
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+):
+    """
+    Works like `distribution_items` but only returns the count of items in
+    the indicated segment. Preserved for backwards compatibility with
+    versions before `distribution_items` was added.
+    """
+
+    return distribution_items(
+        segment,
+        total,
+        n_segments,
+        segment_capacity,
+        roughness,
+        seed
+    )[1]
 
 
 def distribution_prior_sum(
@@ -559,60 +585,19 @@ def distribution_prior_sum(
     seed
 ):
     """
-    Parameters:
-
-    - `segment` (int): Which segment of a distribution we are
-      interested in.
-    - `total` (int): The total number of items being distributed.
-    - `n_segments` (int): The number of segments to distribute items
-      among.
-    - `segment_capacity` (int): The capacity of each segment.
-    - `roughness` (float in [0,1]): How rough the distribution should
-      be.
-    - `seed` (int): The seed that determines a specific distribution.
-
-    Returns (int): the cumulative number of items from a distribution
-    that are distributed before the given segment.
-
-    Does similar math to the `distribution_portion` function above, but
-    instead of returning the number of items in the given segment, it
-    returns the number of items in all segments before the given
-    segment. Only does work proportional to the log of the number of
-    segments.
+    Works like `distribution_items` but only returns the number of items
+    that come before the indicated segment. Preserved for backwards
+    compatibility with versions before `distribution_items` was added.
     """
 
-    # base case
-    if n_segments == 1:
-        return 0 # nothing prior
-
-    # compute split point:
-    split, first_half = distribution_spilt_point(
+    return distribution_items(
+        segment,
         total,
         n_segments,
         segment_capacity,
         roughness,
         seed
-    )
-
-    # call ourselves recursively:
-    if segment < first_half:
-        return distribution_prior_sum(
-            segment, # segment
-            split, # total
-            first_half, # n_segments
-            segment_capacity, # capacity
-            roughness, # roughness
-            seed # seed
-        )
-    else:
-        return split + distribution_prior_sum(
-            segment - first_half,
-            total - split,
-            n_segments - first_half,
-            segment_capacity,
-            roughness,
-            seed
-        )
+    )[0]
 
 
 def distribution_segment(
@@ -693,17 +678,24 @@ def max_smaller(value, sumtable):
     to = len(sumtable)
     where = 0
     while to - fr > 2:
-        where = (to - fr) // 2
+        where = fr + (to - fr) // 2
         if sumtable[where] >= value:
+            print(f"MS {sumtable[where]} @ {where} >= {value}")
             to = where
         else:
+            print(f"MS {sumtable[where]} @ {where} < {value}")
             fr = where
+
+    print("MSM", fr, to)
 
     if to - fr == 1 and sumtable[fr] < value:
         return fr
     else:
-        for i in range(fr, to - 1):
-            if sumtable[i] < value and sumtable[i + 1] >= value:
+        for i in range(fr, to):
+            if (
+                 sumtable[i] < value
+             and (i + 1 == len(sumtable) or sumtable[i + 1] >= value)
+            ):
                 return i
 
     # no entry is smaller than the given value:

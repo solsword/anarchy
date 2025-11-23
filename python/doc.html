@@ -9,13 +9,25 @@
   <style>
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
-    span.underline{text-decoration: underline;}
-    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    ul.task-list{list-style: none;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
     pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
     pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
     code.sourceCode > span { color: inherit; text-decoration: inherit; }
     div.sourceCode { margin: 1em 0; }
     pre.sourceCode { margin: 0; }
@@ -50,7 +62,7 @@
     code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
     code span.at { color: #7d9029; } /* Attribute */
     code span.bn { color: #40a070; } /* BaseN */
-    code span.bu { } /* BuiltIn */
+    code span.bu { color: #008000; } /* BuiltIn */
     code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
     code span.ch { color: #4070a0; } /* Char */
     code span.cn { color: #880000; } /* Constant */
@@ -63,7 +75,7 @@
     code span.ex { } /* Extension */
     code span.fl { color: #40a070; } /* Float */
     code span.fu { color: #06287e; } /* Function */
-    code span.im { } /* Import */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
     code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
     code span.kw { color: #007020; font-weight: bold; } /* Keyword */
     code span.op { color: #666666; } /* Operator */
@@ -75,12 +87,8 @@
     code span.va { color: #19177c; } /* Variable */
     code span.vs { color: #4070a0; } /* VerbatimString */
     code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
   <link rel="stylesheet" href="doc.css" />
-  <!--[if lt IE 9]>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
-  <![endif]-->
 </head>
 <body>
 <header id="title-block-header">
@@ -88,43 +96,87 @@
 <p class="author">Peter Mawhorter (pmawhorter@gmail.com)</p>
 </header>
 <h2 id="overview">Overview</h2>
-<p><code>anarchy</code> is a package for managed &amp; beautiful chaos, designed with incremental procedural content generation in mind. It includes incremental &amp; reversible random numbers, a selection of distribution functions for random values, and cohort operations that can be applied incrementally to groups along an indefinite 1-dimensional space.</p>
-<p>The goal is to give a high level of control to designers of PCG systems while maintaining incremental operation.</p>
+<p><code>anarchy</code> is a package for managed &amp; beautiful chaos,
+designed with incremental procedural content generation in mind. It
+includes incremental &amp; reversible random numbers, a selection of
+distribution functions for random values, cohort operations that can be
+applied incrementally to groups along an indefinite 1-dimensional space,
+and function to incrementally/reversibly manage uneven distribution of
+items among segments.</p>
+<p>The goal is to give a high level of control to designers of PCG
+systems while maintaining incremental operation and reversibility.</p>
 <p>Coming soon: fractal coordinates.</p>
+<h2 id="changelog">Changelog</h2>
+<ul>
+<li>Version 2.0: Added <code>distribution</code> sub-module, moved some
+old <code>cohort</code> functions over to it. Fixed bugs &amp; added
+many tests. Added <code>distribution_items</code> and the
+<code>sumtable_*</code> functions. Got rid of <code>max_smaller</code>
+in favor of <code>sumtable_segment</code>.</li>
+<li>Version 1.1: Initial working version.</li>
+</ul>
 <h2 id="versions">Versions</h2>
-<p>There are implementations of at least the core functionality available in C, C#, Javascript, and Python; this documentation applies most closely to the Python implementation, and it is drawn from that code. Each different language implementation has its own idiosyncrasies, but the higher-level things, like number and meaning of parameters, are the same for the core functions.</p>
+<p>There are implementations of at least the core functionality
+available in C, C#, Javascript, Python, and Lua; this documentation
+applies most closely to the Python implementation, and it is drawn from
+that code. Each different language implementation has its own
+idiosyncrasies, but the higher-level things, like number and meaning of
+parameters, are the same for the core functions.</p>
 <p>TODO: Links to versions…</p>
-<p>Note: the anarchy Python package uses 64-bit integers, for compatibility with the C version of the library and for a larger output space. Technical limitations with JavaScript mean that the JS version of the library uses 32-bit integers and will therefore give different results.</p>
+<p>Note: the anarchy Python package uses 64-bit integers, for
+compatibility with the C version of the library and for a larger output
+space. Technical limitations with JavaScript and Lua mean that the JS
+and Lua versions of the library effectively use 32-bit integers (stored
+inside 64-bit floats) and will therefore give different results.</p>
 <h2 id="dependencies">Dependencies</h2>
-<p>The python version requires Python 3; tests use <code>pytest</code> and require Python &gt;=3.6.</p>
+<p>The python version requires Python 3; tests use <code>pytest</code>
+and require Python &gt;=3.6.</p>
 <h2 id="example-application">Example Application</h2>
-<p>The incremental shuffling algorithm can be used as a replacement for a standard random number generator in cases where you want to guarantee a global distribution of items and are currently using independent random number checks to control item distribution. For example, if you have code that looks like this…</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true"></a><span class="kw">def</span> roll_item():</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true"></a>  r <span class="op">=</span> random.random()</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true"></a>  <span class="cf">if</span> r <span class="op">&lt;</span> <span class="fl">0.01</span>: <span class="co"># 1% chance for Rare item</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true"></a>    <span class="cf">return</span> <span class="st">&quot;Rare&quot;</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true"></a>  <span class="cf">elif</span> r <span class="op">&lt;</span> <span class="fl">0.06</span>: <span class="co"># 5% chance for Uncommon item</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true"></a>    <span class="cf">return</span> <span class="st">&quot;Uncommon&quot;</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true"></a>  <span class="cf">else</span>:</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true"></a>    <span class="cf">return</span> <span class="st">&quot;Common&quot;</span></span></code></pre></div>
-<p>…you have no guarantees about exactly how often rare/uncommon items will be, and some players will get lucky or unlucky. Instead, even if you don’t know the number of <code>roll_item</code> calls, with <code>anarchy</code> you can do this:</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true"></a>N <span class="op">=</span> <span class="dv">0</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true"></a>seed <span class="op">=</span> <span class="dv">472389223</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true"></a><span class="kw">def</span> roll_item():</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true"></a>  <span class="kw">global</span> N, seed</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true"></a>  r <span class="op">=</span> anarchy.cohort_shuffle(N, <span class="dv">100</span>, seed <span class="op">+</span> N<span class="op">//</span><span class="dv">100</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true"></a>  N <span class="op">+=</span> <span class="dv">1</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true"></a>  <span class="cf">if</span> r <span class="op">&lt;</span> <span class="dv">1</span>:</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true"></a>    <span class="cf">return</span> <span class="st">&quot;Rare&quot;</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true"></a>  <span class="cf">elif</span> r <span class="op">&lt;</span> <span class="dv">6</span>:</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true"></a>    <span class="cf">return</span> <span class="st">&quot;Uncommon&quot;</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true"></a>  <span class="cf">else</span>:</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true"></a>    <span class="cf">return</span> <span class="st">&quot;Common&quot;</span></span></code></pre></div>
-<p>In this code there are two extra variables that have to be managed in some way, but the benefit is that for every 100 calls to the function, “Rare” will be returned exactly once, and “Uncommon” will be returned exactly 5 times. Each group of 100 calls will still have a different ordering of the items, because it uses a different seed.</p>
-<p>Here’s an image illustrating the differences between these two approaches: in the top half, results are generated using independent random numbers, while the bottom half uses anarchy’s cohort shuffling to guarantee one red cell and 5 blue cells per 10×10 white square..</p>
-<p><img src="demos/rng_shuf_compare.png" class="pixels" alt="100 10x10 squares in which blue and/or red pixels are placed. In the top 50 squares, each pixel has an independent 1% chance of being red and 5% chance of being blue, and as a result, some of the white squares have zero red pixels, or have more red pixels than blue pixels, or have many more than 5 blue pixels or 1 red pixel. In the bottom half, anarchy cohort shuffling is used, so while the positions of the colored pixels are different in each block, each block contains exactly 1 red pixel and exactly 5 blue pixels." /> </p>
-<p>There are many other potential applications of reversible/incremental shuffling; this is one of the most direct.</p>
+<p>The incremental shuffling algorithm can be used as a replacement for
+a standard random number generator in cases where you want to guarantee
+a global distribution of items and are currently using independent
+random number checks to control item distribution. For example, if you
+have code that looks like this…</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> roll_item():</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  r <span class="op">=</span> random.random()</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> r <span class="op">&lt;</span> <span class="fl">0.01</span>: <span class="co"># 1% chance for Rare item</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&quot;Rare&quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">elif</span> r <span class="op">&lt;</span> <span class="fl">0.06</span>: <span class="co"># 5% chance for Uncommon item</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&quot;Uncommon&quot;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span>:</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&quot;Common&quot;</span></span></code></pre></div>
+<p>…you have no guarantees about exactly how often rare/uncommon items
+will be, and some players will get lucky or unlucky. Instead, even if
+you don’t know the number of <code>roll_item</code> calls, with
+<code>anarchy</code> you can do this:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>N <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>seed <span class="op">=</span> <span class="dv">472389223</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> roll_item():</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">global</span> N, seed</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  r <span class="op">=</span> anarchy.cohort_shuffle(N, <span class="dv">100</span>, seed <span class="op">+</span> N<span class="op">//</span><span class="dv">100</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  N <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> r <span class="op">&lt;</span> <span class="dv">1</span>:</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&quot;Rare&quot;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">elif</span> r <span class="op">&lt;</span> <span class="dv">6</span>:</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&quot;Uncommon&quot;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="cf">else</span>:</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&quot;Common&quot;</span></span></code></pre></div>
+<p>In this code there are two extra variables that have to be managed in
+some way, but the benefit is that for every 100 calls to the function,
+“Rare” will be returned exactly once, and “Uncommon” will be returned
+exactly 5 times. Each group of 100 calls will still have a different
+ordering of the items, because it uses a different seed.</p>
+<p>Here’s an image illustrating the differences between these two
+approaches: in the top half, results are generated using independent
+random numbers, while the bottom half uses anarchy’s cohort shuffling to
+guarantee one red cell and 5 blue cells per 10×10 white square..</p>
+<p><img src="demos/rng_shuf_compare.png" class="pixels"
+alt="100 10x10 squares in which blue and/or red pixels are placed. In the top 50 squares, each pixel has an independent 1% chance of being red and 5% chance of being blue, and as a result, some of the white squares have zero red pixels, or have more red pixels than blue pixels, or have many more than 5 blue pixels or 1 red pixel. In the bottom half, anarchy cohort shuffling is used, so while the positions of the colored pixels are different in each block, each block contains exactly 1 red pixel and exactly 5 blue pixels." /> </p>
+<p>There are many other potential applications of reversible/incremental
+shuffling; this is one of the most direct.</p>
 <h2 id="contents">Contents</h2>
 <h3 id="single-number-functions">Single Number Functions</h3>
 <p>Deal with individual random numbers.</p>
@@ -136,167 +188,368 @@
 <li><a href="#rng.flip"><code>rng.flip</code></a></li>
 <li><a href="#rng.integer"><code>rng.integer</code></a></li>
 <li><a href="#rng.exponential"><code>rng.exponential</code></a></li>
-<li><a href="#rng.truncated_exponential"><code>rng.truncated_exponential</code></a></li>
+<li><a
+href="#rng.truncated_exponential"><code>rng.truncated_exponential</code></a></li>
 </ul>
 <h3 id="cohort-functions">Cohort Functions</h3>
 <p>Deal consistently with numbers in groups.</p>
 <ul>
 <li><a href="#cohort.cohort"><code>cohort.cohort</code></a></li>
-<li><a href="#cohort.cohort_inner"><code>cohort.cohort_inner</code></a></li>
-<li><a href="#cohort.cohort_outer"><code>cohort.cohort_outer</code></a></li>
-<li><a href="#cohort.cohort_shuffle"><code>cohort.cohort_shuffle</code></a></li>
-<li><a href="#cohort.rev_cohort_shuffle"><code>cohort.rev_cohort_shuffle</code></a></li>
-<li><a href="#cohort.distribution_portion"><code>cohort.distribution_portion</code></a></li>
-<li><a href="#cohort.distribution_prior_sum"><code>cohort.distribution_prior_sum</code></a></li>
-<li><a href="#cohort.distribution_segment"><code>cohort.distribution_segment</code></a></li>
+<li><a
+href="#cohort.cohort_inner"><code>cohort.cohort_inner</code></a></li>
+<li><a
+href="#cohort.cohort_outer"><code>cohort.cohort_outer</code></a></li>
+<li><a
+href="#cohort.cohort_shuffle"><code>cohort.cohort_shuffle</code></a></li>
+<li><a
+href="#cohort.rev_cohort_shuffle"><code>cohort.rev_cohort_shuffle</code></a></li>
+</ul>
+<h3 id="distribution-functions">Distribution Functions</h3>
+<p>Deal with items distributed evenly or unevenly among segments.</p>
+<ul>
+<li><a
+href="#distribution.distribution_items"><code>distribution.distribution_items</code></a></li>
+<li><a
+href="#distribution.distribution_segment"><code>distribution.distribution_segment</code></a></li>
+<li><a
+href="#distribution.sumtable_for_distribution"><code>distribution.sumtable_for_distribution</code></a></li>
+<li><a
+href="#distribution.sumtable_from_portions"><code>distribution.sumtable_from_portions</code></a></li>
+<li><a
+href="#distribution.sumtable_total"><code>distribution.sumtable_total</code></a></li>
+<li><a
+href="#distribution.sumtable_segments"><code>distribution.sumtable_segments</code></a></li>
+<li><a
+href="#distribution.sumtable_items"><code>distribution.sumtable_items</code></a></li>
+<li><a
+href="#distribution.sumtable_segment"><code>distribution.sumtable_segment</code></a></li>
 </ul>
 <h2 id="functions">Functions</h2>
 <h3 id="rng.prng"><code>rng.prng</code></h3>
 <p>Parameters:</p>
 <ul>
-<li><code>x</code> (int): The current random number (next one is returned).</li>
-<li><code>seed</code> (int): The seed; each seed will produce a distinct sequence of numbers.</li>
+<li><code>x</code> (int): The current random number (next one is
+returned).</li>
+<li><code>seed</code> (int): The seed; each seed will produce a distinct
+sequence of numbers.</li>
 </ul>
-<p>Returns (int): The next random number in the sequence for the given seed.</p>
-<p>A reversible pseudo-random number generator. Uses low-level reversible functions to scramble a number and produce an hard-to-predict result. The <a href="#rng.rev_prng"><code>rev_prng</code></a> function is the inverse of this function.</p>
+<p>Returns (int): The next random number in the sequence for the given
+seed.</p>
+<p>A reversible pseudo-random number generator. Uses low-level
+reversible functions to scramble a number and produce an hard-to-predict
+result. The <a href="#rng.rev_prng"><code>rev_prng</code></a> function
+is the inverse of this function.</p>
 <h3 id="rng.rev_prng"><code>rng.rev_prng</code></h3>
 <p>Parameters:</p>
 <ul>
-<li><code>x</code> (int): the current random number (previous one is returned).</li>
-<li><code>seed</code> (int): The seed; each seed will produce a distinct sequence of numbers.</li>
+<li><code>x</code> (int): the current random number (previous one is
+returned).</li>
+<li><code>seed</code> (int): The seed; each seed will produce a distinct
+sequence of numbers.</li>
 </ul>
-<p>Returns (int): The previous random number in the sequence for the given seed.</p>
-<p>The inverse of <a href="#rng.prng"><code>prng</code></a> (see above). Returns the previous number in a pseudo-random sequence, so that:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true"></a>prng(rev_prng(n, seed), seed) <span class="op">==</span> n</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true"></a>rev_prng(prng(n, seed), seed) <span class="op">==</span> n</span></code></pre></div>
+<p>Returns (int): The previous random number in the sequence for the
+given seed.</p>
+<p>The inverse of <a href="#rng.prng"><code>prng</code></a> (see above).
+Returns the previous number in a pseudo-random sequence, so that:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>prng(rev_prng(n, seed), seed) <span class="op">==</span> n</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>rev_prng(prng(n, seed), seed) <span class="op">==</span> n</span></code></pre></div>
 <h3 id="rng.uniform"><code>rng.uniform</code></h3>
-<p>Parameter (int): <code>seed</code>–The seed that determines the result (could be a result from <a href="#rng.prng"><code>prng</code></a> or <code>lfsr</code>)</p>
-<p>Returns (float): A pseudo-random number between 0 (inclusive) and 1 (exclusive).</p>
+<p>Parameter (int): <code>seed</code>–The seed that determines the
+result (could be a result from <a href="#rng.prng"><code>prng</code></a>
+or <code>lfsr</code>)</p>
+<p>Returns (float): A pseudo-random number between 0 (inclusive) and 1
+(exclusive).</p>
 <h3 id="rng.normalish"><code>rng.normalish</code></h3>
-<p>Parameter (int): <code>seed</code>–The seed that determines the result.</p>
-<p>Returns (float): A pseudo-random number between 0 (inclusive) and 1 (exclusive).</p>
-<p>The result is created by averaging three results from <a href="#rng.uniform"><code>uniform</code></a>, and its distribution has a normal-like shape centered at 0.5.</p>
+<p>Parameter (int): <code>seed</code>–The seed that determines the
+result.</p>
+<p>Returns (float): A pseudo-random number between 0 (inclusive) and 1
+(exclusive).</p>
+<p>The result is created by averaging three results from <a
+href="#rng.uniform"><code>uniform</code></a>, and its distribution has a
+normal-like shape centered at 0.5.</p>
 <h3 id="rng.flip"><code>rng.flip</code></h3>
 <p>Parameters:</p>
 <ul>
 <li><code>p</code> (float): The probability of returning True.</li>
-<li><code>seed</code> (int): The seed value that determines the result.</li>
+<li><code>seed</code> (int): The seed value that determines the
+result.</li>
 </ul>
 <p>Returns (True or False): a decision value.</p>
-<p>Flips a biased coin with probability <code>p</code> of being true. Using the same seed always gives the same result, but over many seeds the given probability is adhered to.</p>
+<p>Flips a biased coin with probability <code>p</code> of being true.
+Using the same seed always gives the same result, but over many seeds
+the given probability is adhered to.</p>
 <h3 id="rng.integer"><code>rng.integer</code></h3>
 <p>Parameters:</p>
 <ul>
-<li><code>seed</code> (int): The seed value that determines the result.</li>
+<li><code>seed</code> (int): The seed value that determines the
+result.</li>
 <li><code>start</code> (int): The minimum possible output value.</li>
-<li><code>end</code> (int): One more than the maximum possible output value.</li>
+<li><code>end</code> (int): One more than the maximum possible output
+value.</li>
 </ul>
-<p>Returns (int): a pseudo-random integer between the start (inclusive) and the end (exclusive).</p>
-<p>Returns a number drawn evenly from the given integer range, including the lower end but excluding the higher end (even if the lower end is given second).</p>
+<p>Returns (int): a pseudo-random integer between the start (inclusive)
+and the end (exclusive).</p>
+<p>Returns a number drawn evenly from the given integer range, including
+the lower end but excluding the higher end (even if the lower end is
+given second).</p>
 <p>Distribution bias is about one part in (range/2^63).</p>
 <h3 id="rng.exponential"><code>rng.exponential</code></h3>
 <p>Parameters:</p>
 <ul>
 <li><code>seed</code> (int)–The seed that determines the result.</li>
-<li><code>shape</code> (float):–The lambda shape parameter for the exponential distribution. Values between 0.5 and 1.5 are typical, with higher values biasing the distribution more towards smaller results.</li>
+<li><code>shape</code> (float):–The lambda shape parameter for the
+exponential distribution. Values between 0.5 and 1.5 are typical, with
+higher values biasing the distribution more towards smaller
+results.</li>
 </ul>
-<p>Returns (float): A number with an exponential distribution on [0,∞).</p>
-<p>Generates a number from an exponential distribution with the given lambda shape parameter.</p>
-<p>See: <a href="https://math.stackexchange.com/questions/28004/random-exponential-like-distribution">this StackExchange answer on exponential distribution</a> and <a href="https://en.wikipedia.org/wiki/Exponential_distribution">the Wikipedia page for the exponential distribution</a></p>
-<h3 id="rng.truncated_exponential"><code>rng.truncated_exponential</code></h3>
+<p>Returns (float): A number with an exponential distribution on
+[0,∞).</p>
+<p>Generates a number from an exponential distribution with the given
+lambda shape parameter.</p>
+<p>See: <a
+href="https://math.stackexchange.com/questions/28004/random-exponential-like-distribution">this
+StackExchange answer on exponential distribution</a> and <a
+href="https://en.wikipedia.org/wiki/Exponential_distribution">the
+Wikipedia page for the exponential distribution</a></p>
+<h3
+id="rng.truncated_exponential"><code>rng.truncated_exponential</code></h3>
 <p>Parameters:</p>
 <ul>
 <li><code>seed</code> (int)–The seed that determines the result.</li>
-<li><code>shape</code> (float)–The lambda shape parameter for the exponential distribution. Values between 0.5 and 1.5 are typical, with higher values biasing the distribution more towards smaller results.</li>
+<li><code>shape</code> (float)–The lambda shape parameter for the
+exponential distribution. Values between 0.5 and 1.5 are typical, with
+higher values biasing the distribution more towards smaller
+results.</li>
 </ul>
-<p>Returns (float) A number with a truncated exponential distribution on [0, 1].</p>
-<p>Generates a number from a truncated exponential distribution on [0, 1] with the given lambda shape parameter. See reference material for <a href="#rng.exponential"><code>exponential</code></a>.</p>
+<p>Returns (float) A number with a truncated exponential distribution on
+[0, 1].</p>
+<p>Generates a number from a truncated exponential distribution on [0,
+1] with the given lambda shape parameter. See reference material for <a
+href="#rng.exponential"><code>exponential</code></a>.</p>
 <h3 id="cohort.cohort"><code>cohort.cohort</code></h3>
 <p>Parameters:</p>
 <ul>
-<li><code>outer</code> (int): An integer to be assigned to a cohort.</li>
+<li><code>outer</code> (int): An integer to be assigned to a
+cohort.</li>
 <li><code>cohort_size</code> (int): The size of each cohort.</li>
 </ul>
 <p>Returns (int): Which cohort the given outer item is assigned to.</p>
-<p>Simply returns the outer index divided by the cohort size, rounded down. Note that for extremely large integers, they will be truncated to fit within 64 bits.</p>
+<p>Simply returns the outer index divided by the cohort size, rounded
+down. Note that for extremely large integers, they will be truncated to
+fit within 64 bits.</p>
 <h3 id="cohort.cohort_inner"><code>cohort.cohort_inner</code></h3>
 <p>Parameters:</p>
 <ul>
-<li><code>outer</code> (int): An integer to be assigned to a cohort.</li>
+<li><code>outer</code> (int): An integer to be assigned to a
+cohort.</li>
 <li><code>cohort_size</code> (int): The size of each cohort.</li>
 </ul>
 <p>Returns (int): Where within its cohort the given integer ends up.</p>
-<p>Computes within-cohort index for the given outer index and cohorts of the given size, which is just the index modulus the cohort size. Like <a href="#cohort.cohort"><code>cohort</code></a>, truncates to 64 bits.</p>
+<p>Computes within-cohort index for the given outer index and cohorts of
+the given size, which is just the index modulus the cohort size. Like <a
+href="#cohort.cohort"><code>cohort</code></a>, truncates to 64 bits.</p>
 <h3 id="cohort.cohort_outer"><code>cohort.cohort_outer</code></h3>
 <p>Parameters:</p>
 <ul>
-<li><a href="#cohort.cohort"><code>cohort</code></a> (int): Which cohort the item is in.</li>
+<li><a href="#cohort.cohort"><code>cohort</code></a> (int): Which cohort
+the item is in.</li>
 <li><code>inner</code> (int): The index of the item in that cohort.</li>
 <li><code>cohort_size</code> (int): The size of each cohort.</li>
 </ul>
-<p>Returns (int): The outer index that would be mapped to this within-cohort index.</p>
-<p>This is the Inverse of <code>cohort_and_inner</code>: it computes the outer index from a cohort number and inner index.</p>
+<p>Returns (int): The outer index that would be mapped to this
+within-cohort index.</p>
+<p>This is the Inverse of <code>cohort_and_inner</code>: it computes the
+outer index from a cohort number and inner index.</p>
 <h3 id="cohort.cohort_shuffle"><code>cohort.cohort_shuffle</code></h3>
 <p>Parameters:</p>
 <ul>
 <li><code>inner</code> (int): The index of an item in a cohort.</li>
 <li><code>cohort_size</code> (int): The size of each cohort.</li>
-<li><code>seed</code> (int): The seed that determines the shuffle order.</li>
+<li><code>seed</code> (int): The seed that determines the shuffle
+order.</li>
 </ul>
 <p>Returns (int): A new within-cohort index for the given item.</p>
-<p>Implements an incremental shuffle, such that if you were to call <a href="#cohort.cohort_shuffle"><code>cohort_shuffle</code></a> on each index in a cohort of a given size, each of the items would end up in a different new spot within that cohort. The shuffle is reversible using the <a href="#cohort.rev_cohort_shuffle"><code>rev_cohort_shuffle</code></a> function.</p>
-<p>It works by composing several of the simpler reversible/indexable functions to produce a sufficiently complex operation that humans generally won’t be able to see the pattern it uses.</p>
-<p>Note that this should <em>not</em> be used for cryptography or statistics: when the cohort size is even moderately large (say 100), the number of possible shuffles (constrained by the seed, which is 64 bits, so 2^64) will be much smaller than the number of possible orderings of the items, so not all possible orderings will be able to be produced.</p>
-<p>Both the seed and the cohort size are used to determine the particular ordering of items, so the same seed with a different cohort size won’t necessarily produce a similar ordering to another run.</p>
-<h3 id="cohort.rev_cohort_shuffle"><code>cohort.rev_cohort_shuffle</code></h3>
+<p>Implements an incremental shuffle, such that if you were to call <a
+href="#cohort.cohort_shuffle"><code>cohort_shuffle</code></a> on each
+index in a cohort of a given size, each of the items would end up in a
+different new spot within that cohort. The shuffle is reversible using
+the <a
+href="#cohort.rev_cohort_shuffle"><code>rev_cohort_shuffle</code></a>
+function.</p>
+<p>It works by composing several of the simpler reversible/indexable
+functions to produce a sufficiently complex operation that humans
+generally won’t be able to see the pattern it uses.</p>
+<p>Note that this should <em>not</em> be used for cryptography or
+statistics: when the cohort size is even moderately large (say 100), the
+number of possible shuffles (constrained by the seed, which is 64 bits,
+so 2^64) will be much smaller than the number of possible orderings of
+the items, so not all possible orderings will be able to be
+produced.</p>
+<p>Both the seed and the cohort size are used to determine the
+particular ordering of items, so the same seed with a different cohort
+size won’t necessarily produce a similar ordering to another run.</p>
+<h3
+id="cohort.rev_cohort_shuffle"><code>cohort.rev_cohort_shuffle</code></h3>
 <p>Parameters:</p>
 <ul>
 <li><code>inner</code> (int): The index of an item in a cohort.</li>
 <li><code>cohort_size</code> (int): The size of each cohort.</li>
-<li><code>seed</code> (int): The seed that determines the shuffle order.</li>
+<li><code>seed</code> (int): The seed that determines the shuffle
+order.</li>
 </ul>
 <p>Returns (int): A new within-cohort index for the given item.</p>
-<p>Works just like <a href="#cohort.cohort_shuffle"><code>cohort_shuffle</code></a>, but applies the same operations in the opposite order, so that:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true"></a>seed <span class="op">=</span> <span class="dv">478273827</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true"></a>y <span class="op">=</span> cohort_shuffle(x, <span class="dv">100</span>, seed)</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true"></a>x <span class="op">==</span> rev_cohort_shuffle(y, <span class="dv">100</span>, seed)</span></code></pre></div>
-<h3 id="cohort.distribution_portion"><code>cohort.distribution_portion</code></h3>
+<p>Works just like <a
+href="#cohort.cohort_shuffle"><code>cohort_shuffle</code></a>, but
+applies the same operations in the opposite order, so that:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode py"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>seed <span class="op">=</span> <span class="dv">478273827</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> cohort_shuffle(x, <span class="dv">100</span>, seed)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>x <span class="op">==</span> rev_cohort_shuffle(y, <span class="dv">100</span>, seed)</span></code></pre></div>
+<h3
+id="distribution.distribution_items"><code>distribution.distribution_items</code></h3>
 <p>Parameters:</p>
 <ul>
-<li><code>segment</code> (int): Which segment of a distribution we are interested in.</li>
-<li><code>total</code> (int): The total number of items being distributed.</li>
-<li><code>n_segments</code> (int): The number of segments to distribute items among.</li>
-<li><code>segment_capacity</code> (int): The capacity of each segment.</li>
-<li><code>roughness</code> (float in [0,1]): How rough the distribution should be.</li>
-<li><code>seed</code> (int): The seed that determines a specific distribution.</li>
+<li><code>segment</code> (int): Which segment of a distribution we are
+interested in.</li>
+<li><code>total</code> (int): The total number of items being
+distributed.</li>
+<li><code>n_segments</code> (int): The number of segments to distribute
+items among.</li>
+<li><code>segment_capacity</code> (int): The capacity of each
+segment.</li>
+<li><code>roughness</code> (float in [0,1]): How rough the distribution
+should be.</li>
+<li><code>seed</code> (int): The seed that determines a specific
+distribution.</li>
 </ul>
-<p>Returns (int): the number of items from a distribution that end up in the given segment.</p>
-<p>Given that <code>total</code> items are to be distributed evenly among <code>n_segment</code> segments each with at most <code>segment_capacity</code> items and we’re in segment <code>segment</code> of those, computes how many items are in this segment. The <code>roughness</code> argument must be a number between 0 and 1 indicating how even the distribution is: 0 indicates a perfectly even distribution, while 1 indicates a perfectly random distribution. Does work proportional to the log of the number of segments.</p>
-<p>Note that segment_capacity * n_segments should be &gt; total.</p>
-<h3 id="cohort.distribution_prior_sum"><code>cohort.distribution_prior_sum</code></h3>
-<p>Parameters:</p>
-<ul>
-<li><code>segment</code> (int): Which segment of a distribution we are interested in.</li>
-<li><code>total</code> (int): The total number of items being distributed.</li>
-<li><code>n_segments</code> (int): The number of segments to distribute items among.</li>
-<li><code>segment_capacity</code> (int): The capacity of each segment.</li>
-<li><code>roughness</code> (float in [0,1]): How rough the distribution should be.</li>
-<li><code>seed</code> (int): The seed that determines a specific distribution.</li>
-</ul>
-<p>Returns (int): the cumulative number of items from a distribution that are distributed before the given segment.</p>
-<p>Does similar math to the <a href="#cohort.distribution_portion"><code>distribution_portion</code></a> function above, but instead of returning the number of items in the given segment, it returns the number of items in all segments before the given segment. Only does work proportional to the log of the number of segments.</p>
-<h3 id="cohort.distribution_segment"><code>cohort.distribution_segment</code></h3>
+<p>Returns (2-tuple of ints): the number of items from a distribution
+that come before the start of the given segment, and the number of items
+in that segment.</p>
+<p>Note: Consider constructing a sumtable and using
+<code>sumtable_items</code> instead for faster results at the cost of a
+bit of memory (see <code>sumtable_for_distribution</code>).</p>
+<p>Given that <code>total</code> items are to be distributed evenly
+among <code>n_segment</code> segments each with at most
+<code>segment_capacity</code> items and we’re in segment
+<code>segment</code> of those, computes how many items come before this
+segment and how many are in it. The <code>roughness</code> argument must
+be a number between 0 and 1 indicating how even the distribution is: 0
+indicates a perfectly even distribution, while 1 indicates a perfectly
+random distribution. Does work proportional to the log of the number of
+segments.</p>
+<p>Note that segment_capacity * n_segments should be &gt;= total.</p>
+<h3
+id="distribution.distribution_segment"><code>distribution.distribution_segment</code></h3>
 <p>Parameters:</p>
 <ul>
 <li><code>index</code> (int): Which item are we asking about.</li>
-<li><code>total</code> (int): The total number of items being distributed.</li>
-<li><code>n_segments</code> (int): The number of segments to distribute items among.</li>
-<li><code>segment_capacity</code> (int): The capacity of each segment.</li>
-<li><code>roughness</code> (float in [0,1]): How rough the distribution should be.</li>
-<li><code>seed</code> (int): The seed that determines a specific distribution.</li>
+<li><code>total</code> (int): The total number of items being
+distributed.</li>
+<li><code>n_segments</code> (int): The number of segments to distribute
+items among.</li>
+<li><code>segment_capacity</code> (int): The capacity of each
+segment.</li>
+<li><code>roughness</code> (float in [0,1]): How rough the distribution
+should be.</li>
+<li><code>seed</code> (int): The seed that determines a specific
+distribution.</li>
 </ul>
-<p>Returns (int): the index of the segment that the item of interest is distributed into.</p>
-<p>Computes the segment number in which a certain item appears (one of the <code>total</code> items distributed between segments; see <a href="#cohort.distribution_portion"><code>distribution_portion</code></a> above). Requires work proportional to the log of the number of segments.</p>
-<p>Note that the index should be between 0 and <code>total - 1</code>.</p>
+<p>Returns (int): the index of the segment that the item of interest is
+distributed into.</p>
+<p>Note: Consider constructing a sumtable and using
+<code>sumtable_segment</code> instead for faster results at the cost of
+a bit of memory (see <code>sumtable_for_distribution</code>).</p>
+<p>Computes the segment number in which a certain item appears (one of
+the <code>total</code> items distributed between segments; see
+<code>distribution_portion</code> above). Requires work proportional to
+the log of the number of segments.</p>
+<p>Note that the index should be between 0 and
+<code>total - 1</code>.</p>
+<h3
+id="distribution.sumtable_for_distribution"><code>distribution.sumtable_for_distribution</code></h3>
+<p>Parameters:</p>
+<ul>
+<li><code>total</code> (int): The total number of items being
+distributed.</li>
+<li><code>n_segments</code> (int): The number of segments to distribute
+items among.</li>
+<li><code>segment_capacity</code> (int): The capacity of each
+segment.</li>
+<li><code>roughness</code> (float in [0,1]): How rough the distribution
+should be.</li>
+<li><code>seed</code> (int): The seed that determines a specific
+distribution.</li>
+</ul>
+<p>Takes distribution parameters and returns a list containing the
+cumulative sum of items in each segment. The list contains
+<code>n_segments</code> entries, and each entry holds the sum of the
+items from the <code>total</code> assigned to that segment plus all
+earlier segments. This means that each entry is greater than or equal to
+the entry to its left (and they’re only equal if zero items are assigned
+to that segment). The last entry will be equal to the total.</p>
+<p><code>n_segments</code> times <code>segment_capacity</code> must be
+&gt;= <code>total</code> otherwise a <code>ValueError</code> will be
+raised.</p>
+<h3
+id="distribution.sumtable_from_portions"><code>distribution.sumtable_from_portions</code></h3>
+<p>Parameters:</p>
+<ul>
+<li><code>portions</code> (list of integers): A list where each entry
+holds the portion of some total that’s assigned to a segment at that
+index.</li>
+</ul>
+<p>Returns a sumtable for the same distribution, where entries are the
+cumulative sum of all portions up to an index, rather than just the
+portion at that index. Use functions like <code>sumtable_total</code>,
+<code>sumtable_segments</code>, <code>sumtable_portion</code>, and
+<code>sumtable_segment</code> to get information out of the sumtable
+efficiently.</p>
+<h3
+id="distribution.sumtable_total"><code>distribution.sumtable_total</code></h3>
+<p>Parameters:</p>
+<ul>
+<li><code>sumtable</code> (list of integers): The table of cumulative
+sums describing a distribution of items across segments.</li>
+</ul>
+<p>Returns the total number of items across all segments in a sumtable,
+which is just the last entry in that table.</p>
+<h3
+id="distribution.sumtable_segments"><code>distribution.sumtable_segments</code></h3>
+<p>Parameters:</p>
+<ul>
+<li><code>sumtable</code> (list of integers): The table of cumulative
+sums describing a distribution of items across segments.</li>
+</ul>
+<p>Returns the number of segments in the given sumtable, which is just
+its length.</p>
+<h3
+id="distribution.sumtable_items"><code>distribution.sumtable_items</code></h3>
+<p>Parameters:</p>
+<ul>
+<li><code>sumtable</code> (list of integers): The table of cumulative
+sums describing a distribution of items across segments.</li>
+<li><code>i</code> (int): The index to compute the items for.</li>
+</ul>
+<p>Returns a pair containing the number of items prior to the specified
+segment and then the number of items in that segment, like
+<code>distribution_items</code>, but for a sumtable.</p>
+<h3
+id="distribution.sumtable_segment"><code>distribution.sumtable_segment</code></h3>
+<p>Parameters:</p>
+<ul>
+<li><code>sumtable</code> (list of integers): The table of cumulative
+sums describing a distribution of items across segments.</li>
+<li><code>item</code> (int): The item index out of the total items that
+we want to figure out the segment for (starting from 0 for the first
+item).</li>
+</ul>
+<p>Returns (int): The segment index that the given item falls into based
+on the sumtable.</p>
+<p>Raises a <code>ValueError</code> if the sumtable is empty, and raises
+an <code>IndexError</code> if the item index is too large for the
+sumtable or if it’s negative.</p>
+<p>Uses binary search to find the smallest sum in the given sumtable
+that’s larger than the given value breaking ties towards earlier
+entries. Works in time proportional to the logarithm of the sumtable
+size.</p>
 </body>
 </html>

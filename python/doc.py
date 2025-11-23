@@ -48,9 +48,35 @@ COHORT_FUNCTIONS = [
   ("cohort.cohort_outer", anarchy.cohort.cohort_outer),
   ("cohort.cohort_shuffle", anarchy.cohort.cohort_shuffle),
   ("cohort.rev_cohort_shuffle", anarchy.cohort.rev_cohort_shuffle),
-  ("cohort.distribution_portion", anarchy.cohort.distribution_portion),
-  ("cohort.distribution_prior_sum", anarchy.cohort.distribution_prior_sum),
-  ("cohort.distribution_segment", anarchy.cohort.distribution_segment),
+]
+
+DISTRIBUTION_FUNCTIONS = [
+  (
+      "distribution.distribution_items",
+      anarchy.distribution.distribution_items
+  ),
+  (
+      "distribution.distribution_segment",
+      anarchy.distribution.distribution_segment
+  ),
+  (
+      "distribution.sumtable_for_distribution",
+      anarchy.distribution.sumtable_for_distribution
+  ),
+  (
+      "distribution.sumtable_from_portions",
+      anarchy.distribution.sumtable_from_portions
+  ),
+  ("distribution.sumtable_total", anarchy.distribution.sumtable_total),
+  ("distribution.sumtable_segments", anarchy.distribution.sumtable_segments),
+  (
+      "distribution.sumtable_items",
+      anarchy.distribution.sumtable_items
+  ),
+  (
+      "distribution.sumtable_segment",
+      anarchy.distribution.sumtable_segment
+  ),
 ]
 
 
@@ -125,6 +151,16 @@ for fullname, f in COHORT_FUNCTIONS:
     doc += f"- [`{fullname}`](#{fullname})\n"
 
 doc += """
+
+### Distribution Functions
+
+Deal with items distributed evenly or unevenly among segments.
+
+"""
+for fullname, f in DISTRIBUTION_FUNCTIONS:
+    doc += f"- [`{fullname}`](#{fullname})\n"
+
+doc += """
 ## Functions
 
 """
@@ -133,6 +169,9 @@ for fullname, f in PRNG_FUNCTIONS:
     doc += f"\n### `{fullname}`\n\n"
     doc += unindent(make_links(f.__doc__)) + '\n'
 for fullname, f in COHORT_FUNCTIONS:
+    doc += f"\n### `{fullname}`\n\n"
+    doc += unindent(make_links(f.__doc__)) + '\n'
+for fullname, f in DISTRIBUTION_FUNCTIONS:
     doc += f"\n### `{fullname}`\n\n"
     doc += unindent(make_links(f.__doc__)) + '\n'
 

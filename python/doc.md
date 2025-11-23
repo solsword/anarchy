@@ -7,30 +7,42 @@ author: Peter Mawhorter (pmawhorter@gmail.com)
 `anarchy` is a package for managed & beautiful chaos, designed with
 incremental procedural content generation in mind. It includes
 incremental & reversible random numbers, a selection of distribution
-functions for random values, and cohort operations that can be applied
-incrementally to groups along an indefinite 1-dimensional space.
+functions for random values, cohort operations that can be applied
+incrementally to groups along an indefinite 1-dimensional space, and
+function to incrementally/reversibly manage uneven distribution of items
+among segments.
 
 The goal is to give a high level of control to designers of PCG systems
-while maintaining incremental operation.
+while maintaining incremental operation and reversibility.
 
 Coming soon: fractal coordinates.
+
+
+## Changelog
+
+- Version 2.0: Added `distribution` sub-module, moved some old `cohort`
+    functions over to it. Fixed bugs & added many tests. Added
+    `distribution_items` and the `sumtable_*` functions. Got rid of
+    `max_smaller` in favor of `sumtable_segment`.
+- Version 1.1: Initial working version.
 
 
 ## Versions
 
 There are implementations of at least the core functionality available in
-C, C#, Javascript, and Python; this documentation applies most closely to
-the Python implementation, and it is drawn from that code. Each different
-language implementation has its own idiosyncrasies, but the higher-level
-things, like number and meaning of parameters, are the same for the core
-functions.
+C, C#, Javascript, Python, and Lua; this documentation applies most
+closely to the Python implementation, and it is drawn from that code.
+Each different language implementation has its own idiosyncrasies, but
+the higher-level things, like number and meaning of parameters, are the
+same for the core functions.
 
 TODO: Links to versions...
 
 Note: the anarchy Python package uses 64-bit integers, for compatibility
 with the C version of the library and for a larger output space.
-Technical limitations with JavaScript mean that the JS version of the
-library uses 32-bit integers and will therefore give different results.
+Technical limitations with JavaScript and Lua mean that the JS and Lua
+versions of the library effectively use 32-bit integers (stored inside
+64-bit floats) and will therefore give different results.
 
 
 ## Dependencies
@@ -121,9 +133,20 @@ Deal consistently with numbers in groups.
 - [`cohort.cohort_outer`](#cohort.cohort_outer)
 - [`cohort.cohort_shuffle`](#cohort.cohort_shuffle)
 - [`cohort.rev_cohort_shuffle`](#cohort.rev_cohort_shuffle)
-- [`cohort.distribution_portion`](#cohort.distribution_portion)
-- [`cohort.distribution_prior_sum`](#cohort.distribution_prior_sum)
-- [`cohort.distribution_segment`](#cohort.distribution_segment)
+
+
+### Distribution Functions
+
+Deal with items distributed evenly or unevenly among segments.
+
+- [`distribution.distribution_items`](#distribution.distribution_items)
+- [`distribution.distribution_segment`](#distribution.distribution_segment)
+- [`distribution.sumtable_for_distribution`](#distribution.sumtable_for_distribution)
+- [`distribution.sumtable_from_portions`](#distribution.sumtable_from_portions)
+- [`distribution.sumtable_total`](#distribution.sumtable_total)
+- [`distribution.sumtable_segments`](#distribution.sumtable_segments)
+- [`distribution.sumtable_items`](#distribution.sumtable_items)
+- [`distribution.sumtable_segment`](#distribution.sumtable_segment)
 
 ## Functions
 
@@ -375,7 +398,7 @@ x == rev_cohort_shuffle(y, 100, seed)
 
 
 
-### `cohort.distribution_portion`
+### `distribution.distribution_items`
 
 
 Parameters:
@@ -390,49 +413,28 @@ Parameters:
   be.
 - `seed` (int): The seed that determines a specific distribution.
 
-Returns (int): the number of items from a distribution that end up
-in the given segment.
+Returns (2-tuple of ints): the number of items from a distribution
+that come before the start of the given segment, and the number of
+items in that segment.
+
+Note: Consider constructing a sumtable and using `sumtable_items`
+instead for faster results at the cost of a bit of memory (see
+`sumtable_for_distribution`).
 
 Given that `total` items are to be distributed evenly among
 `n_segment` segments each with at most `segment_capacity` items and
-we're in segment `segment` of those, computes how many items are in
-this segment. The `roughness` argument must be a number between 0
-and 1 indicating how even the distribution is: 0 indicates a
-perfectly even distribution, while 1 indicates a perfectly random
-distribution. Does work proportional to the log of the number of
-segments.
+we're in segment `segment` of those, computes how many items come
+before this segment and how many are in it. The `roughness` argument
+must be a number between 0 and 1 indicating how even the distribution
+is: 0 indicates a perfectly even distribution, while 1 indicates a
+perfectly random distribution. Does work proportional to the log of
+the number of segments.
 
-Note that segment_capacity * n_segments should be > total.
-
-
-
-### `cohort.distribution_prior_sum`
-
-
-Parameters:
-
-- `segment` (int): Which segment of a distribution we are
-  interested in.
-- `total` (int): The total number of items being distributed.
-- `n_segments` (int): The number of segments to distribute items
-  among.
-- `segment_capacity` (int): The capacity of each segment.
-- `roughness` (float in [0,1]): How rough the distribution should
-  be.
-- `seed` (int): The seed that determines a specific distribution.
-
-Returns (int): the cumulative number of items from a distribution
-that are distributed before the given segment.
-
-Does similar math to the [`distribution_portion`](#cohort.distribution_portion) function above, but
-instead of returning the number of items in the given segment, it
-returns the number of items in all segments before the given
-segment. Only does work proportional to the log of the number of
-segments.
+Note that segment_capacity * n_segments should be >= total.
 
 
 
-### `cohort.distribution_segment`
+### `distribution.distribution_segment`
 
 
 Parameters:
@@ -440,20 +442,129 @@ Parameters:
 - `index` (int): Which item are we asking about.
 - `total` (int): The total number of items being distributed.
 - `n_segments` (int): The number of segments to distribute items
-  among.
+    among.
 - `segment_capacity` (int): The capacity of each segment.
-- `roughness` (float in [0,1]): How rough the distribution should
-  be.
+- `roughness` (float in [0,1]): How rough the distribution should be.
 - `seed` (int): The seed that determines a specific distribution.
 
 Returns (int): the index of the segment that the item of interest is
 distributed into.
 
+Note: Consider constructing a sumtable and using `sumtable_segment`
+instead for faster results at the cost of a bit of memory (see
+`sumtable_for_distribution`).
+
 Computes the segment number in which a certain item appears (one of
 the `total` items distributed between segments; see
-[`distribution_portion`](#cohort.distribution_portion) above). Requires work proportional to the log
+`distribution_portion` above). Requires work proportional to the log
 of the number of segments.
 
 Note that the index should be between 0 and `total - 1`.
+
+
+
+### `distribution.sumtable_for_distribution`
+
+
+Parameters:
+
+- `total` (int): The total number of items being distributed.
+- `n_segments` (int): The number of segments to distribute items
+    among.
+- `segment_capacity` (int): The capacity of each segment.
+- `roughness` (float in [0,1]): How rough the distribution should be.
+- `seed` (int): The seed that determines a specific distribution.
+
+Takes distribution parameters and returns a list containing the
+cumulative sum of items in each segment. The list contains
+`n_segments` entries, and each entry holds the sum of the items from
+the `total` assigned to that segment plus all earlier segments. This
+means that each entry is greater than or equal to the entry to its
+left (and they're only equal if zero items are assigned to that
+segment). The last entry will be equal to the total.
+
+`n_segments` times `segment_capacity` must be >= `total` otherwise a
+`ValueError` will be raised.
+
+
+
+### `distribution.sumtable_from_portions`
+
+
+Parameters:
+
+- `portions` (list of integers): A list where each entry holds the
+    portion of some total that's assigned to a segment at that index.
+
+Returns a sumtable for the same distribution, where entries are the
+cumulative sum of all portions up to an index, rather than just the
+portion at that index. Use functions like `sumtable_total`,
+`sumtable_segments`, `sumtable_portion`, and `sumtable_segment` to
+get information out of the sumtable efficiently.
+
+
+
+### `distribution.sumtable_total`
+
+
+Parameters:
+
+- `sumtable` (list of integers): The table of cumulative sums
+    describing a distribution of items across segments.
+
+Returns the total number of items across all segments in a sumtable,
+which is just the last entry in that table.
+
+
+
+### `distribution.sumtable_segments`
+
+
+Parameters:
+
+- `sumtable` (list of integers): The table of cumulative sums
+    describing a distribution of items across segments.
+
+Returns the number of segments in the given sumtable, which is just
+its length.
+
+
+
+### `distribution.sumtable_items`
+
+
+Parameters:
+
+- `sumtable` (list of integers): The table of cumulative sums
+    describing a distribution of items across segments.
+- `i` (int): The index to compute the items for.
+
+Returns a pair containing the number of items prior to the specified
+segment and then the number of items in that segment, like
+`distribution_items`, but for a sumtable.
+
+
+
+### `distribution.sumtable_segment`
+
+
+Parameters:
+
+- `sumtable` (list of integers): The table of cumulative sums
+    describing a distribution of items across segments.
+- `item` (int): The item index out of the total items that we want to
+    figure out the segment for (starting from 0 for the first item).
+
+Returns (int): The segment index that the given item falls into based
+on the sumtable.
+
+Raises a `ValueError` if the sumtable is empty, and raises an
+`IndexError` if the item index is too large for the sumtable or if
+it's negative.
+
+Uses binary search to find the smallest sum in the given sumtable
+that's larger than the given value breaking ties towards earlier
+entries. Works in time proportional to the logarithm of the sumtable
+size.
 
 
