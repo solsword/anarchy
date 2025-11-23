@@ -5,6 +5,9 @@
 
 "use strict";
 
+// Version number...
+export const version = "1.0";
+
 // Note: anarchy.js operates using 32-bit integer values to remain
 // dependency-free. This breaks full compatibility with the C library, which
 // uses 64-bit integers for obvious reasons. Javascript does not support
