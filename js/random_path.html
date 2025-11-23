@@ -175,18 +175,19 @@ function enable_compare_demo() {
   }
 
   /**
-  * returns a function that will randomly return a value in a specific interval
-  * parameters:
-  *   seed: corresponds to which random set of numbers the function will use
-  * returns a function with a parameter "numOptions" which is the bounds of the 
-  *   interval the function will choose from and return
+  * returns a function that will randomly return a value in a specific
+  * interval parameters:
+  *   seed: corresponds to which random set of numbers the function
+  *   will use returns a function with a parameter "numOptions" which
+  *   is the bounds of the interval the function will choose from and
+  *   return
   */
   function create_decider(seed){
     let val = 0;
     return function(numOptions){
       // randomly determines a value to return
       val = anarchy.prng(val, seed);
-      let u = anarchy.idist(val, 0, numOptions);
+      let u = anarchy.idist(val, 0, numOptions - 1);
       return u;
     }
   }

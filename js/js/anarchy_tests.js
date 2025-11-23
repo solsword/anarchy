@@ -91,31 +91,35 @@ let VALUE_TESTS = {
         [ anarchy.rev_prng(anarchy.prng(1782, 39823), 39823), 1782 ],
     ],
     "lfsr": [
-        // TODO: Verify these!
         [ anarchy.lfsr(489348, 373891), 244674 ],
         [ anarchy.lfsr(1766932808, 373891), 883466404 ],
     ],
     "udist": [
-        // TODO: Verify and/or fix these!
         [ anarchy.udist(0), 0.4741466253923192 ],
+        [ anarchy.udist(8334), 0.6250511524846951, "seed 8334" ],
+        [ anarchy.udist(8335), 0.7437919344838191, "seed 8335" ],
+        [ anarchy.udist(8336), 0.5594712178436185, "seed 8336" ],
+        [ anarchy.udist(8337), 0.6991034156223118, "seed 8337" ],
         [ anarchy.udist(8329801), 0.911844237693452 ],
         [ anarchy.udist(58923), 0.03562796004493369 ],
     ],
     "idist": [
-        // TODO: Verify and/or fix these!
+        [ anarchy.idist(0, 0, 0), 0 ],
+        [ anarchy.idist(8334, 0, 2), 1, "seed 8334" ],
+        [ anarchy.idist(8335, 0, 2), 1, "seed 8335" ],
+        [ anarchy.idist(8336, 0, 2), 1, "seed 8336" ],
+        [ anarchy.idist(8337, 0, 2), 1, "seed 8337" ],
         [ anarchy.idist(0, 0, 1), 0 ],
         [ anarchy.idist(0, 3, 25), 13 ],
         [ anarchy.idist(58923, 3, 25), 3 ],
         [ anarchy.idist(58923, -2, -4), -3 ],
     ],
     "expdist": [
-        // TODO: Verify and/or fix these!
         [ anarchy.expdist(0, 0.5), 1.4924773377018894 ],
         [ anarchy.expdist(8329801, 0.5), 0.18457219099442898 ],
         [ anarchy.expdist(58923, 1.5), 2.2230830365762837 ],
     ],
     "trexpdist": [
-        // TODO: Verify and/or fix these!
         [ anarchy.trexpdist(0, 0.5), 0.4924773377018894 ],
         [ anarchy.trexpdist(8329801, 0.5), 0.18457219099442898 ],
         [ anarchy.trexpdist(58923, 1.5), 0.2230830365762837 ],
@@ -136,6 +140,72 @@ let VALUE_TESTS = {
     "cohort_ops": [
         [ anarchy.cohort_interleave(3, 12), 6 ],
         [ anarchy.cohort_interleave(7, 12), 9 ],
+        [ cohort.cohort_fold(0, 3, 0), 0 ],
+        [ cohort.cohort_fold(1, 3, 0), 2 ],
+        [ cohort.cohort_fold(2, 3, 0), 1 ],
+        [ cohort.rev_cohort_fold(0, 3, 0), 0 ],
+        [ cohort.rev_cohort_fold(1, 3, 0), 2 ],
+        [ cohort.rev_cohort_fold(2, 3, 0), 1 ],
+        [ cohort.cohort_spin(0, 2, 1048239), 1 ],
+        [ cohort.rev_cohort_spin(1, 2, 1048239), 0 ],
+        [ cohort.cohort_flop(0, 32, 3), 5 ],  // size will be 5
+        [ cohort.cohort_flop(1, 32, 3), 6 ],
+        [ cohort.cohort_flop(2, 32, 3), 7 ],
+        [ cohort.cohort_flop(3, 32, 3), 8 ],
+        [ cohort.cohort_flop(4, 32, 3), 9 ],
+        [ cohort.cohort_flop(5, 32, 3), 0 ],
+        [ cohort.cohort_flop(6, 32, 3), 1 ],
+        [ cohort.cohort_flop(7, 32, 3), 2 ],
+        [ cohort.cohort_flop(8, 32, 3), 3 ],
+        [ cohort.cohort_flop(9, 32, 3), 4 ],
+        [ cohort.cohort_flop(10, 32, 3), 15 ],
+        [ cohort.cohort_flop(15, 32, 3), 10 ],
+        [ cohort.cohort_flop(21, 32, 3), 26 ],
+        [ cohort.cohort_flop(30, 32, 3), 30 ],
+        [ cohort.cohort_flop(31, 32, 3), 31 ],
+        [ cohort.cohort_flop(1, 1024, 17), 20 ],
+        [ cohort.cohort_flop(20, 1024, 17), 1 ],
+        [ cohort.cohort_mix(0, 3, 0), 2 ],
+        [ cohort.cohort_mix(1, 3, 0), 1 ],
+        [ cohort.cohort_mix(2, 3, 0), 0 ],
+        [ cohort.rev_cohort_mix(2, 3, 0), 0 ],
+        [ cohort.rev_cohort_mix(1, 3, 0), 1 ],
+        [ cohort.rev_cohort_mix(0, 3, 0), 2 ],
+        [ cohort.cohort_shuffle(0, 3, 17), 0 ],
+        [ cohort.cohort_shuffle(1, 3, 17), 2 ],
+        [ cohort.cohort_shuffle(2, 3, 17), 1 ],
+        [ cohort.rev_cohort_shuffle(0, 3, 17), 0 ],
+        [ cohort.rev_cohort_shuffle(2, 3, 17), 1 ],
+        [ cohort.rev_cohort_shuffle(1, 3, 17), 2 ],
+    ],
+    "max_smaller": [
+        [ anarchy.max_smaller(-3, [3, 4, 4, 6, 10, 12]), -1 ],
+        [ anarchy.max_smaller(0, [3, 4, 4, 6, 10, 12]), -1 ],
+        [ anarchy.max_smaller(3, [3, 4, 4, 6, 10, 12]), -1 ],
+        [ anarchy.max_smaller(4, [3, 4, 4, 6, 10, 12]), 0 ],
+        [ anarchy.max_smaller(5, [3, 4, 4, 6, 10, 12]), 2 ],
+        [ anarchy.max_smaller(6, [3, 4, 4, 6, 10, 12]), 2 ],
+        [ anarchy.max_smaller(7, [3, 4, 4, 6, 10, 12]), 3 ],
+        [ anarchy.max_smaller(9, [3, 4, 4, 6, 10, 12]), 3 ],
+        [ anarchy.max_smaller(11, [3, 4, 4, 6, 10, 12]), 4 ],
+        [ anarchy.max_smaller(12, [3, 4, 4, 6, 10, 12]), 4 ],
+        [ anarchy.max_smaller(13, [3, 4, 4, 6, 10, 12]), 5 ],
+        [ anarchy.max_smaller(100, [3, 4, 4, 6, 10, 12]), 5 ],
+        [ anarchy.max_smaller(10, [100, 1000, 10000, 10001]), -1 ],
+        [ anarchy.max_smaller(101, [100, 1000, 10000, 10001]), 0 ],
+        [ anarchy.max_smaller(10001, [100, 1000, 10000, 10001]), 2 ],
+        [ anarchy.max_smaller(10002, [100, 1000, 10000, 10001]), 3 ],
+        [ anarchy.max_smaller(3, [3, 3, 3, 3]), -1 ],
+        [ anarchy.max_smaller(4, [3, 3, 3, 3]), 3 ],
+        [ anarchy.max_smaller(10, [3, 3, 3, 3]), 3 ],
+        [ anarchy.max_smaller(0, [0, 0, 1, 2, 2, 2, 5]), -1 ],
+        [ anarchy.max_smaller(1, [0, 0, 1, 2, 2, 2, 5]), 1 ],
+        [ anarchy.max_smaller(2, [0, 0, 1, 2, 2, 2, 5]), 2 ],
+        [ anarchy.max_smaller(3, [0, 0, 1, 2, 2, 2, 5]), 5 ],
+        [ anarchy.max_smaller(4, [0, 0, 1, 2, 2, 2, 5]), 5 ],
+        [ anarchy.max_smaller(5, [0, 0, 1, 2, 2, 2, 5]), 5 ],
+        [ anarchy.max_smaller(6, [0, 0, 1, 2, 2, 2, 5]), 6 ],
+        [ anarchy.max_smaller(7, [0, 0, 1, 2, 2, 2, 5]), 6 ],
     ]
 };
 
@@ -923,7 +993,11 @@ function run_value_tests() {
                 if (sub_t[0] == sub_t[1]) {
                     passed += 1;
                 } else {
-                    display_message("Test failed: " + t + "." + index);
+                    let fmsg = "Test failed: " + t + "." + index;
+                    if (sub_t.length > 2) {
+                        fmsg += "(" + sub_t[2] + ")";
+                    }
+                    display_message(fmsg);
                     display_message(
                         "&nbsp;&nbsp;expected: " + sub_t[1] + " got: "
                         + sub_t[0]

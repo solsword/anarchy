@@ -1,5 +1,6 @@
 // anarchy.mjs
 // Reversible chaos library (ES6 module version).
+// version 
 /* jshint esversion: 6 */
 
 "use strict";
@@ -195,14 +196,15 @@ export function pgdist(seed) {
 
 export function flip(p, seed) {
     // Flips a coin with probability p of being True. Using the same seed
-    // always give the same result.
+    // always gives the same result.
     return udist(seed) < p;
 }
 
 export function idist(seed, start, end) {
-    // Even distribution over the given integer range, including the lower end
-    // but excluding the higher end (even if the lower end is given second).
-    // Distribution bias is about one part in (range/2^31).
+    // Even distribution over the given integer range, including the start but
+    // excluding the end (even if the end is smaller).
+    // The value right before the end is about 1/2^31 less-likely to be generated
+    // than the other values.
     return Math.floor(udist(seed) * (end - start)) + start;
 }
 
@@ -220,7 +222,7 @@ export function expdist(seed, lambda) {
 
 export function trexpdist(seed, lambda) {
     // Generates a number from a truncated exponential distribution on
-    // [0, 1], given a particular seed. As with expdist, the lambda
+    // [0, 1), given a particular seed. As with expdist, the lambda
     // parameter controls the shape of the distribution, and a 0.5–1.5
     // range is usually reasonable.
     // For why this method works, see:
@@ -735,7 +737,7 @@ export function max_smaller(value, sumtable) {
     let to = sumtable.length;
     let where = 0;
     while (to - from > 2) {
-        where = Math.floor((to - from)/2);
+        where = from + Math.floor((to - from)/2);
         if (sumtable[where] >= value) {
             to = where;
         } else {
@@ -745,8 +747,11 @@ export function max_smaller(value, sumtable) {
     if (to - from == 1 && sumtable[from] < value) {
         return from;
     } else {
-        for (let i = from; i < to - 1; ++i) {
-            if (sumtable[i] < value && sumtable[i+1] >= value) {
+        for (let i = from; i < to; ++i) {
+            if (
+                sumtable[i] < value
+             && (i + 1 == sumtable.length || sumtable[i+1] >= value)
+            ) {
                 return i;
             }
         }

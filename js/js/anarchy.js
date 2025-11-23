@@ -203,9 +203,10 @@ define([], function() {
     }
 
     function idist(seed, start, end) {
-        // Even distribution over the given integer range, including the lower end
-        // but excluding the higher end (even if the lower end is given second).
-        // Distribution bias is about one part in (range/2^31).
+        // Even distribution over the given integer range, including the start but
+        // excluding the end (even if the end is smaller).
+        // The value right before the end is about 1/2^31 less-likely to be generated
+        // than the other values.
         return Math.floor(udist(seed) * (end - start)) + start;
     }
 
