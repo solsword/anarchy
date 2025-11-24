@@ -149,8 +149,41 @@ def test_cohorts():
 
 
 def test_cohort_interleave():
+    assert cohort.cohort_interleave(0, 4) == 0
+    assert cohort.cohort_interleave(1, 4) == 2
+    assert cohort.cohort_interleave(2, 4) == 3
+    assert cohort.cohort_interleave(3, 4) == 1
+
+    assert cohort.rev_cohort_interleave(0, 4) == 0
+    assert cohort.rev_cohort_interleave(2, 4) == 1
+    assert cohort.rev_cohort_interleave(3, 4) == 2
+    assert cohort.rev_cohort_interleave(1, 4) == 3
+
+    assert cohort.cohort_interleave(0, 12) == 0
+    assert cohort.cohort_interleave(1, 12) == 2
+    assert cohort.cohort_interleave(2, 12) == 4
     assert cohort.cohort_interleave(3, 12) == 6
+    assert cohort.cohort_interleave(4, 12) == 8
+    assert cohort.cohort_interleave(5, 12) == 10
+    assert cohort.cohort_interleave(6, 12) == 11
     assert cohort.cohort_interleave(7, 12) == 9
+    assert cohort.cohort_interleave(8, 12) == 7
+    assert cohort.cohort_interleave(9, 12) == 5
+    assert cohort.cohort_interleave(10, 12) == 3
+    assert cohort.cohort_interleave(11, 12) == 1
+
+    assert cohort.rev_cohort_interleave(0, 12) == 0
+    assert cohort.rev_cohort_interleave(2, 12) == 1
+    assert cohort.rev_cohort_interleave(4, 12) == 2
+    assert cohort.rev_cohort_interleave(6, 12) == 3
+    assert cohort.rev_cohort_interleave(8, 12) == 4
+    assert cohort.rev_cohort_interleave(10, 12) == 5
+    assert cohort.rev_cohort_interleave(11, 12) == 6
+    assert cohort.rev_cohort_interleave(9, 12) == 7
+    assert cohort.rev_cohort_interleave(7, 12) == 8
+    assert cohort.rev_cohort_interleave(5, 12) == 9
+    assert cohort.rev_cohort_interleave(3, 12) == 10
+    assert cohort.rev_cohort_interleave(1, 12) == 11
 
 
 def test_cohort_fold():

@@ -294,8 +294,8 @@ function cdf_points(low, high)
     -- Returns a list of N_CDF_BUCKETS + 1 evenly-distributed test points
     -- starting at low and ending at high.
     local result = {}
-    for i = 0,(N_CDF_BUCKETS - 1) do
-        result[i+1] = low + (i / N_CDF_BUCKETS) * (high - low)
+    for i = 1,N_CDF_BUCKETS do
+        result[i] = low + ((i - 1) / N_CDF_BUCKETS) * (high - low)
     end
     result[#result + 1] = high
     return result
@@ -640,23 +640,35 @@ test_truncated_exponential()
 
 function test_cohorts()
     assert(
-        anarchy.cohort.cohort(17, 3) == 5,
+        anarchy.cohort.cohort(17, 3) == 6,
         "" .. anarchy.cohort.cohort(17, 3)
+    )
+    assert(
+        anarchy.cohort.cohort(-1, 10) == 0,
+        "" .. anarchy.cohort.cohort(-1, 10)
+    )
+    assert(
+        anarchy.cohort.cohort(0, 10) == 0,
+        "" .. anarchy.cohort.cohort(0, 10)
     )
     assert(
         anarchy.cohort.cohort(10, 10) == 1,
         "" .. anarchy.cohort.cohort(10, 10)
     )
     assert(
-        anarchy.cohort.cohort(9, 10) == 0,
+        anarchy.cohort.cohort(9, 10) == 1,
         "" .. anarchy.cohort.cohort(9, 10)
+    )
+    assert(
+        anarchy.cohort.cohort(11, 10) == 2,
+        "" .. anarchy.cohort.cohort(11, 10)
     )
     assert(
         anarchy.cohort.cohort_inner(17, 3) == 2,
         "" .. anarchy.cohort.cohort_inner(17, 3)
     )
     assert(
-        anarchy.cohort.cohort_inner(10, 10) == 0,
+        anarchy.cohort.cohort_inner(10, 10) == 10,
         "" .. anarchy.cohort.cohort_inner(10, 10)
     )
     assert(
@@ -664,94 +676,131 @@ function test_cohorts()
         "" .. anarchy.cohort.cohort_inner(9, 10)
     )
     c, i = anarchy.cohort.cohort_and_inner(9, 10)
-    assert(c == 0, "" .. c)
+    assert(c == 1, "" .. c)
     assert(i == 9, "" .. i)
     assert(
-        anarchy.cohort.cohort_outer(0, 3, 112) == 3,
-        anarchy.cohort.cohort_outer(0, 3, 112)
-    )
-    assert(
-        anarchy.cohort.cohort_outer(1, 3, 112) == 115,
+        anarchy.cohort.cohort_outer(1, 3, 112) == 3,
         anarchy.cohort.cohort_outer(1, 3, 112)
     )
     assert(
-        anarchy.cohort.cohort_outer(-1, 3, 112) == -109,
-        anarchy.cohort.cohort_outer(-1, 3, 112)
+        anarchy.cohort.cohort_outer(2, 3, 112) == 115,
+        anarchy.cohort.cohort_outer(2, 3, 112)
+    )
+    assert(
+        anarchy.cohort.cohort_outer(0, 3, 112) == -109,
+        anarchy.cohort.cohort_outer(0, 3, 112)
     )
 end
 test_cohorts()
 
 
 function test_cohort_interleave()
+    assert(anarchy.cohort.cohort_interleave(1, 3) == 2)
+    assert(anarchy.cohort.cohort_interleave(2, 3) == 3)
+    assert(anarchy.cohort.cohort_interleave(3, 3) == 1)
+    assert(anarchy.cohort.rev_cohort_interleave(1, 3) == 3)
+    assert(anarchy.cohort.rev_cohort_interleave(2, 3) == 1)
+    assert(anarchy.cohort.rev_cohort_interleave(3, 3) == 2)
+
+    assert(anarchy.cohort.cohort_interleave(1, 4) == 2)
+    assert(anarchy.cohort.cohort_interleave(2, 4) == 4)
+    assert(anarchy.cohort.cohort_interleave(3, 4) == 3)
+    assert(anarchy.cohort.cohort_interleave(4, 4) == 1)
+    assert(anarchy.cohort.rev_cohort_interleave(1, 4) == 4)
+    assert(anarchy.cohort.rev_cohort_interleave(2, 4) == 1)
+    assert(anarchy.cohort.rev_cohort_interleave(3, 4) == 3)
+    assert(anarchy.cohort.rev_cohort_interleave(4, 4) == 2)
+
+    assert(anarchy.cohort.cohort_interleave(1, 12) == 2)
+    assert(anarchy.cohort.cohort_interleave(2, 12) == 4)
     assert(anarchy.cohort.cohort_interleave(3, 12) == 6)
-    assert(anarchy.cohort.cohort_interleave(7, 12) == 9)
+    assert(anarchy.cohort.cohort_interleave(4, 12) == 8)
+    assert(anarchy.cohort.cohort_interleave(5, 12) == 10)
+    assert(anarchy.cohort.cohort_interleave(6, 12) == 12)
+    assert(anarchy.cohort.cohort_interleave(7, 12) == 11)
+    assert(anarchy.cohort.cohort_interleave(8, 12) == 9)
+    assert(anarchy.cohort.cohort_interleave(9, 12) == 7)
+    assert(anarchy.cohort.cohort_interleave(10, 12) == 5)
+    assert(anarchy.cohort.cohort_interleave(11, 12) == 3)
+    assert(anarchy.cohort.cohort_interleave(12, 12) == 1)
+
+    assert(anarchy.cohort.rev_cohort_interleave(2, 12) == 1)
+    assert(anarchy.cohort.rev_cohort_interleave(4, 12) == 2)
+    assert(anarchy.cohort.rev_cohort_interleave(6, 12) == 3)
+    assert(anarchy.cohort.rev_cohort_interleave(8, 12) == 4)
+    assert(anarchy.cohort.rev_cohort_interleave(10, 12) == 5)
+    assert(anarchy.cohort.rev_cohort_interleave(12, 12) == 6)
+    assert(anarchy.cohort.rev_cohort_interleave(11, 12) == 7)
+    assert(anarchy.cohort.rev_cohort_interleave(9, 12) == 8)
+    assert(anarchy.cohort.rev_cohort_interleave(7, 12) == 9)
+    assert(anarchy.cohort.rev_cohort_interleave(5, 12) == 10)
+    assert(anarchy.cohort.rev_cohort_interleave(3, 12) == 11)
+    assert(anarchy.cohort.rev_cohort_interleave(1, 12) == 12)
 end
 test_cohort_interleave()
 
 
-function test_cohort_fold()
-    assert(cohort.cohort_fold(0, 3, 0) == 0)
-    assert(cohort.cohort_fold(1, 3, 0) == 2)
-    assert(cohort.cohort_fold(2, 3, 0) == 1)
-    assert(cohort.rev_cohort_fold(0, 3, 0) == 0)
-    assert(cohort.rev_cohort_fold(1, 3, 0) == 2)
-    assert(cohort.rev_cohort_fold(2, 3, 0) == 1)
-end
-test_cohort_fold()
-
 
 function test_cohort_fold()
     assert(
-        anarchy.cohort.cohort_fold(0, 3, 0) == 0,
-        anarchy.cohort.cohort_fold(0, 3, 0)
-    )
-    assert(
-        anarchy.cohort.cohort_fold(1, 3, 0) == 2,
+        anarchy.cohort.cohort_fold(1, 3, 0) == 1,
         anarchy.cohort.cohort_fold(1, 3, 0)
     )
     assert(
-        anarchy.cohort.cohort_fold(2, 3, 0) == 1,
+        anarchy.cohort.cohort_fold(2, 3, 0) == 3,
         anarchy.cohort.cohort_fold(2, 3, 0)
     )
     assert(
-        anarchy.cohort.rev_cohort_fold(0, 3, 0) == 0,
-        anarchy.cohort.rev_cohort_fold(0, 3, 0)
+        anarchy.cohort.cohort_fold(3, 3, 0) == 2,
+        anarchy.cohort.cohort_fold(3, 3, 0)
     )
     assert(
-        anarchy.cohort.rev_cohort_fold(1, 3, 0) == 2,
+        anarchy.cohort.rev_cohort_fold(1, 3, 0) == 1,
         anarchy.cohort.rev_cohort_fold(1, 3, 0)
     )
     assert(
-        anarchy.cohort.rev_cohort_fold(2, 3, 0) == 1,
+        anarchy.cohort.rev_cohort_fold(2, 3, 0) == 3,
         anarchy.cohort.rev_cohort_fold(2, 3, 0)
+    )
+    assert(
+        anarchy.cohort.rev_cohort_fold(3, 3, 0) == 2,
+        anarchy.cohort.rev_cohort_fold(3, 3, 0)
     )
 end
 test_cohort_fold()
 
 
 function test_cohort_spin()
-    assert(anarchy.cohort.cohort_spin(0, 2, 1048239) == 1)
-    assert(anarchy.cohort.rev_cohort_spin(1, 2, 1048239) == 0)
+    assert(anarchy.cohort.cohort_spin(1, 2, 1048239) == 2)
+    assert(anarchy.cohort.rev_cohort_spin(2, 2, 1048239) == 1)
+    assert(anarchy.cohort.cohort_spin(1, 10, 3) == 4)
+    assert(anarchy.cohort.cohort_spin(2, 10, 3) == 5)
+    assert(anarchy.cohort.rev_cohort_spin(5, 10, 3) == 2)
+    assert(anarchy.cohort.cohort_spin(7, 10, 3) == 10)
+    assert(anarchy.cohort.rev_cohort_spin(10, 10, 3) == 7)
+    assert(anarchy.cohort.cohort_spin(8, 10, 3) == 1)
+    assert(anarchy.cohort.rev_cohort_spin(1, 10, 3) == 8)
+    assert(anarchy.cohort.cohort_spin(9, 10, 3) == 2)
+    assert(anarchy.cohort.rev_cohort_spin(2, 10, 3) == 9)
 end
 test_cohort_spin()
 
 
 function test_cohort_flop()
-    assert(cohort.cohort_flop(0, 32, 3) == 5)  -- size will be 5
-    assert(cohort.cohort_flop(1, 32, 3) == 6)
+    assert(cohort.cohort_flop(1, 32, 3) == 6)  -- size will be 5
     assert(cohort.cohort_flop(2, 32, 3) == 7)
     assert(cohort.cohort_flop(3, 32, 3) == 8)
     assert(cohort.cohort_flop(4, 32, 3) == 9)
-    assert(cohort.cohort_flop(5, 32, 3) == 0)
+    assert(cohort.cohort_flop(5, 32, 3) == 10)
     assert(cohort.cohort_flop(6, 32, 3) == 1)
     assert(cohort.cohort_flop(7, 32, 3) == 2)
     assert(cohort.cohort_flop(8, 32, 3) == 3)
     assert(cohort.cohort_flop(9, 32, 3) == 4)
-    assert(cohort.cohort_flop(10, 32, 3) == 15)
-    assert(cohort.cohort_flop(15, 32, 3) == 10)
+    assert(cohort.cohort_flop(10, 32, 3) == 5)
     assert(cohort.cohort_flop(21, 32, 3) == 26)
-    assert(cohort.cohort_flop(30, 32, 3) == 30)
+    assert(cohort.cohort_flop(30, 32, 3) == 25)
     assert(cohort.cohort_flop(31, 32, 3) == 31)
+    assert(cohort.cohort_flop(32, 32, 3) == 32)
     assert(cohort.cohort_flop(1, 1024, 17) == 20)
     assert(cohort.cohort_flop(20, 1024, 17) == 1)
 end
@@ -760,28 +809,28 @@ test_cohort_flop()
 
 function test_cohort_mix()
     assert(
-        anarchy.cohort.cohort_mix(0, 3, 0) == 2,
-        anarchy.cohort.cohort_mix(0, 3, 0)
-    )
-    assert(
-        anarchy.cohort.cohort_mix(1, 3, 0) == 1,
+        anarchy.cohort.cohort_mix(1, 3, 0) == 3,
         anarchy.cohort.cohort_mix(1, 3, 0)
     )
     assert(
-        anarchy.cohort.cohort_mix(2, 3, 0) == 0,
+        anarchy.cohort.cohort_mix(2, 3, 0) == 2,
         anarchy.cohort.cohort_mix(2, 3, 0)
     )
     assert(
-        anarchy.cohort.rev_cohort_mix(2, 3, 0) == 0,
+        anarchy.cohort.cohort_mix(3, 3, 0) == 1,
+        anarchy.cohort.cohort_mix(2, 3, 0)
+    )
+    assert(
+        anarchy.cohort.rev_cohort_mix(2, 3, 0) == 2,
         anarchy.cohort.rev_cohort_mix(2, 3, 0)
     )
     assert(
-        anarchy.cohort.rev_cohort_mix(1, 3, 0) == 1,
+        anarchy.cohort.rev_cohort_mix(1, 3, 0) == 3,
         anarchy.cohort.rev_cohort_mix(1, 3, 0)
     )
     assert(
-        anarchy.cohort.rev_cohort_mix(0, 3, 0) == 2,
-        anarchy.cohort.rev_cohort_mix(0, 3, 0)
+        anarchy.cohort.rev_cohort_mix(3, 3, 0) == 1,
+        anarchy.cohort.rev_cohort_mix(3, 3, 0)
     )
 end
 test_cohort_mix()
@@ -791,118 +840,118 @@ function test_cohort_spread()
     -- Min regions 2, max regions 50, so 2 + 5 = 7 regions
     -- Region size 100 // 7 = 14
     -- 2 leftovers
-    assert(cohort.cohort_spread(0, 100, 5) == 2)
-    assert(cohort.cohort_spread(1, 100, 5) == 16)
-    assert(cohort.cohort_spread(2, 100, 5) == 30)
-    assert(cohort.cohort_spread(3, 100, 5) == 44)
-    assert(cohort.cohort_spread(4, 100, 5) == 58)
-    assert(cohort.cohort_spread(5, 100, 5) == 72)
-    assert(cohort.cohort_spread(6, 100, 5) == 86)
-    assert(cohort.cohort_spread(7, 100, 5) == 3)
-    assert(cohort.cohort_spread(8, 100, 5) == 17)
-    assert(cohort.cohort_spread(9, 100, 5) == 31)
-    assert(cohort.cohort_spread(10, 100, 5) == 45)
+    assert(cohort.cohort_spread(1, 100, 5) == 3)
+    assert(cohort.cohort_spread(2, 100, 5) == 17)
+    assert(cohort.cohort_spread(3, 100, 5) == 31)
+    assert(cohort.cohort_spread(4, 100, 5) == 45)
+    assert(cohort.cohort_spread(5, 100, 5) == 59)
+    assert(cohort.cohort_spread(6, 100, 5) == 73)
+    assert(cohort.cohort_spread(7, 100, 5) == 87)
+    assert(cohort.cohort_spread(8, 100, 5) == 4)
+    assert(cohort.cohort_spread(9, 100, 5) == 18)
+    assert(cohort.cohort_spread(10, 100, 5) == 32)
+    assert(cohort.cohort_spread(11, 100, 5) == 46)
     -- etc.
-    assert(cohort.cohort_spread(14, 100, 5) == 4)
-    assert(cohort.cohort_spread(15, 100, 5) == 18)
+    assert(cohort.cohort_spread(15, 100, 5) == 5)
+    assert(cohort.cohort_spread(16, 100, 5) == 19)
     -- Leftovers
-    assert(cohort.cohort_spread(98, 100, 5) == 0)
     assert(cohort.cohort_spread(99, 100, 5) == 1)
+    assert(cohort.cohort_spread(100, 100, 5) == 2)
 
     -- Same in reverse
-    assert(cohort.rev_cohort_spread(2, 100, 5) == 0)
-    assert(cohort.rev_cohort_spread(16, 100, 5) == 1)
-    assert(cohort.rev_cohort_spread(30, 100, 5) == 2)
-    assert(cohort.rev_cohort_spread(44, 100, 5) == 3)
-    assert(cohort.rev_cohort_spread(58, 100, 5) == 4)
-    assert(cohort.rev_cohort_spread(72, 100, 5) == 5)
-    assert(cohort.rev_cohort_spread(86, 100, 5) == 6)
-    assert(cohort.rev_cohort_spread(3, 100, 5) == 7)
-    assert(cohort.rev_cohort_spread(17, 100, 5) == 8)
-    assert(cohort.rev_cohort_spread(31, 100, 5) == 9)
-    assert(cohort.rev_cohort_spread(45, 100, 5) == 10)
+    assert(cohort.rev_cohort_spread(3, 100, 5) == 1)
+    assert(cohort.rev_cohort_spread(17, 100, 5) == 2)
+    assert(cohort.rev_cohort_spread(31, 100, 5) == 3)
+    assert(cohort.rev_cohort_spread(45, 100, 5) == 4)
+    assert(cohort.rev_cohort_spread(59, 100, 5) == 5)
+    assert(cohort.rev_cohort_spread(73, 100, 5) == 6)
+    assert(cohort.rev_cohort_spread(87, 100, 5) == 7)
+    assert(cohort.rev_cohort_spread(4, 100, 5) == 8)
+    assert(cohort.rev_cohort_spread(18, 100, 5) == 9)
+    assert(cohort.rev_cohort_spread(32, 100, 5) == 10)
+    assert(cohort.rev_cohort_spread(46, 100, 5) == 11)
     -- etc.
-    assert(cohort.rev_cohort_spread(4, 100, 5) == 14)
-    assert(cohort.rev_cohort_spread(18, 100, 5) == 15)
+    assert(cohort.rev_cohort_spread(5, 100, 5) == 15)
+    assert(cohort.rev_cohort_spread(19, 100, 5) == 16)
     -- Leftovers
-    assert(cohort.rev_cohort_spread(0, 100, 5) == 98)
     assert(cohort.rev_cohort_spread(1, 100, 5) == 99)
+    assert(cohort.rev_cohort_spread(2, 100, 5) == 100)
+
+    -- Failed case from shuffle
+    -- assert(cohort.rev_cohort_spread(3, 1024, 3) == 100)
 end
 test_cohort_spread()
 
 
 function test_cohort_upend()
+    -- 1 regions override
+    assert(cohort.cohort_upend(1, 3, 0) == 3)
+    assert(cohort.cohort_upend(2, 3, 0) == 2)
+    assert(cohort.cohort_upend(3, 3, 0) == 1)
+    -- 2 size-2 regions; no leftovers
+    assert(cohort.cohort_upend(1, 4, 0) == 2)
+    assert(cohort.cohort_upend(2, 4, 0) == 1)
+    assert(cohort.cohort_upend(3, 4, 0) == 4)
+    assert(cohort.cohort_upend(4, 4, 0) == 3)
     -- Min regions 2, max regions 50, so (2 + 25 % 16) = 11 regions
     -- Region size 100 // 11 = 9
     -- 1 leftover
-    assert(cohort.cohort_upend(0, 100, 25) == 8)
-    assert(cohort.cohort_upend(1, 100, 25) == 7)
-    assert(cohort.cohort_upend(2, 100, 25) == 6)
-    assert(cohort.cohort_upend(3, 100, 25) == 5)
-    assert(cohort.cohort_upend(4, 100, 25) == 4)
-    assert(cohort.cohort_upend(5, 100, 25) == 3)
-    assert(cohort.cohort_upend(6, 100, 25) == 2)
-    assert(cohort.cohort_upend(7, 100, 25) == 1)
-    assert(cohort.cohort_upend(8, 100, 25) == 0)
-    assert(cohort.cohort_upend(9, 100, 25) == 17)
-    assert(cohort.cohort_upend(10, 100, 25) == 16)
-    assert(cohort.cohort_upend(11, 100, 25) == 15)
-    assert(cohort.cohort_upend(12, 100, 25) == 14)
-    assert(cohort.cohort_upend(13, 100, 25) == 13)
-    assert(cohort.cohort_upend(17, 100, 25) == 9)
+    assert(cohort.cohort_upend(1, 100, 25) == 9)
+    assert(cohort.cohort_upend(2, 100, 25) == 8)
+    assert(cohort.cohort_upend(3, 100, 25) == 7)
+    assert(cohort.cohort_upend(4, 100, 25) == 6)
+    assert(cohort.cohort_upend(5, 100, 25) == 5)
+    assert(cohort.cohort_upend(6, 100, 25) == 4)
+    assert(cohort.cohort_upend(7, 100, 25) == 3)
+    assert(cohort.cohort_upend(8, 100, 25) == 2)
+    assert(cohort.cohort_upend(9, 100, 25) == 1)
+    assert(cohort.cohort_upend(10, 100, 25) == 18)
+    assert(cohort.cohort_upend(11, 100, 25) == 17)
+    assert(cohort.cohort_upend(12, 100, 25) == 16)
+    assert(cohort.cohort_upend(13, 100, 25) == 15)
+    assert(cohort.cohort_upend(14, 100, 25) == 14)
+    assert(cohort.cohort_upend(18, 100, 25) == 10)
     -- etc.
     -- here's the end of the last region + leftovers
-    assert(cohort.cohort_upend(97, 100, 25) == 91)
-    assert(cohort.cohort_upend(98, 100, 25) == 90)
-    assert(cohort.cohort_upend(99, 100, 25) == 99)
-
-    -- Same stuff in reverse
-    assert(cohort.cohort_upend(8, 100, 25) == 0)
-    assert(cohort.cohort_upend(7, 100, 25) == 1)
-    assert(cohort.cohort_upend(6, 100, 25) == 2)
-    assert(cohort.cohort_upend(5, 100, 25) == 3)
-    assert(cohort.cohort_upend(4, 100, 25) == 4)
-    assert(cohort.cohort_upend(3, 100, 25) == 5)
-    assert(cohort.cohort_upend(2, 100, 25) == 6)
-    assert(cohort.cohort_upend(1, 100, 25) == 7)
-    assert(cohort.cohort_upend(0, 100, 25) == 8)
-    assert(cohort.cohort_upend(17, 100, 25) == 9 )
-    assert(cohort.cohort_upend(16, 100, 25) == 10)
-    assert(cohort.cohort_upend(15, 100, 25) == 11)
-    assert(cohort.cohort_upend(14, 100, 25) == 12)
-    assert(cohort.cohort_upend(13, 100, 25) == 13)
-    assert(cohort.cohort_upend(9 , 100, 25) == 17)
-    -- etc.                                       
-    -- here's the end of the last region + leftovers
-    assert(cohort.cohort_upend(91, 100, 25) == 97)
-    assert(cohort.cohort_upend(90, 100, 25) == 98)
-    assert(cohort.cohort_upend(99, 100, 25) == 99)
+    assert(cohort.cohort_upend(91, 100, 25) == 99)
+    assert(cohort.cohort_upend(92, 100, 25) == 98)
+    assert(cohort.cohort_upend(98, 100, 25) == 92)
+    assert(cohort.cohort_upend(99, 100, 25) == 91)
+    assert(cohort.cohort_upend(100, 100, 25) == 100)
 end
 
 
 function test_cohort_shuffle()
     -- size-3 cohorts w/ seed 17, forward/reverse
-    local s0 = anarchy.cohort.cohort_shuffle(0, 3, 17)
     local s1 = anarchy.cohort.cohort_shuffle(1, 3, 17)
     local s2 = anarchy.cohort.cohort_shuffle(2, 3, 17)
-    assert(s0 == 0, "" .. s0)
-    assert(s1 == 2, "" .. s1)
+    local s3 = anarchy.cohort.cohort_shuffle(3, 3, 17)
+    assert(s1 == 3, "" .. s1)
     assert(s2 == 1, "" .. s2)
-    local rs0 = anarchy.cohort.rev_cohort_shuffle(0, 3, 17)
+    assert(s3 == 2, "" .. s3)
     local rs1 = anarchy.cohort.rev_cohort_shuffle(1, 3, 17)
     local rs2 = anarchy.cohort.rev_cohort_shuffle(2, 3, 17)
-    assert(rs0 == 0, "" .. rs0)
+    local rs3 = anarchy.cohort.rev_cohort_shuffle(3, 3, 17)
     assert(rs1 == 2, "" .. rs1)
-    assert(rs2 == 1, "" .. rs2)
+    assert(rs2 == 3, "" .. rs2)
+    assert(rs3 == 1, "" .. rs3)
 
     -- size-1024 cohorts w/ seed 3, forward/reverse
-    local exp = { 811, 617, 985, 795, 421, 112, 731, 303, 709, 109, 563, 180 }
+    local exp = { 487, 468, 146, 445, 297, 20, 375, 361, 70, 889, 37, 427 }
     for i, e in ipairs(exp) do
-        local ix = i - 1
-        local shuf = anarchy.cohort.cohort_shuffle(ix, 1024, 3)
-        assert(shuf == e, "" .. ix .. "→" .. shuf .. " ~= " .. e)
+        local shuf = anarchy.cohort.cohort_shuffle(i, 1024, 3)
+        assert(shuf == e, "" .. i .. "→" .. shuf .. " ~= " .. e)
         local rshuf = anarchy.cohort.rev_cohort_shuffle(e, 1024, 3)
-        assert(rshuf == ix, "" .. e .. "←" .. rshuf .. " ~= " .. ix)
+        assert(rshuf == i, "" .. e .. "←" .. rshuf .. " ~= " .. i)
+    end
+
+    -- Different seed
+    local exp = { 225, 525, 595, 932, 843, 756, 862, 967, 269, 304, 283, 421 }
+    for i, e in ipairs(exp) do
+        local shuf = anarchy.cohort.cohort_shuffle(i, 1024, 2389832)
+        assert(shuf == e, "" .. i .. "→" .. shuf .. " ~= " .. e)
+        local rshuf = anarchy.cohort.rev_cohort_shuffle(e, 1024, 2389832)
+        assert(rshuf == i, "" .. e .. "←" .. rshuf .. " ~= " .. i)
     end
 end
 test_cohort_shuffle()
@@ -1337,7 +1386,7 @@ function test_cohort_ops()
             upend = {},
             shuffle = {},
         }
-        for i = 0,cs-1 do
+        for i = 1,cs do
             -- interleave
             local x = cohort.cohort_interleave(i, cs)
             local rc = cohort.rev_cohort_interleave(x, cs)
@@ -1365,7 +1414,7 @@ function test_cohort_ops()
             observed["spread"][js] = {}
             observed["upend"][js] = {}
             observed["shuffle"][js] = {}
-            for i = 0,cs-1 do
+            for i = 1,cs do
                 -- fold
                 x = cohort.cohort_fold(i, cs, seed)
                 rc = cohort.rev_cohort_fold(x, cs, seed)
@@ -1483,7 +1532,7 @@ function test_cohort_ops()
 
         for _, prp in ipairs(observed) do
             if prp == "interleave" then
-                for i = 0,cs-1 do
+                for i = 1,cs do
                     v = tostring(i)
                     if observed[prp][v] ~= nil then
                         count = observed[prp][v]
@@ -1502,7 +1551,7 @@ function test_cohort_ops()
             else
                 for j, seed in ipairs(TEST_VALUES) do
                     k = tostring(j)
-                    for i = 0,cs-1 do
+                    for i = 1,cs do
                         v = tostring(i)
                         count = observed[prp][k][v] or 0
                         assert(
@@ -1700,8 +1749,8 @@ function test_distributions()
         for i = 1,10 do
             seed = 123948 + 2398*i
             local sofar = 0
-            for s = 0,segments-1 do
-                local prior, portion = distribution.distribution_items(
+            for s = 1,segments do
+                local start, portion = distribution.distribution_items(
                     s,
                     total,
                     segments,
@@ -1709,6 +1758,7 @@ function test_distributions()
                     0,
                     seed
                 )
+                local prior = start - 1
                 assert(
                     prior == sofar,
                     string.format(
@@ -1758,8 +1808,8 @@ function test_distributions()
         for i = 1,10 do
             seed = 3748 + 273*i
             sofar = 0
-            for s = 0,segments-1 do
-                prior, portion = distribution.distribution_items(
+            for s = 1,segments do
+                start, portion = distribution.distribution_items(
                     s,
                     total,
                     segments,
@@ -1767,6 +1817,7 @@ function test_distributions()
                     roughness,
                     seed
                 )
+                local prior = start - 1
                 assert(
                     prior == sofar,
                     string.format(
@@ -1820,6 +1871,21 @@ function test_sumtables()
     local t = {2, 4, 6, 8, 10}
     local total = 10
     local n_segments = 5
+
+    -- Error on empty sum table
+    local status, res = pcall(distribution.sumtable_segment, {}, 0)
+    assert(status == false)
+
+    -- Error on negative index
+    local status, res = pcall(distribution.sumtable_segment, t, -3)
+    assert(status == false)
+
+    -- Error on too-large index
+    local status, res = pcall(distribution.sumtable_segment, t, 11)
+    assert(status == false)
+    local status, res = pcall(distribution.sumtable_segment, t, 100)
+    assert(status == false)
+
     for _, seed in ipairs(TEST_VALUES) do
         local nt = distribution.sumtable_for_distribution(
             total,
@@ -1880,37 +1946,38 @@ function test_sumtables()
             total, n_segments, cap, rough, seed
         )
         assert(#t == n_segments)
-        for i = 0,#t-1 do
+        for i = 1,#t do
+            local dstart, dhere = distribution.distribution_items(
+                i,
+                total, n_segments, cap, rough, seed
+            )
+            local tstart, there = distribution.sumtable_items(t, i) 
             assert(
-                distribution_items(
-                    i,
-                    total, n_segments, cap, rough, seed
-                ) == sumtable_items(t, i)
+                dstart == tstart,
+                (
+                    "Segment " .. i .. " starts at " .. dstart
+                 .. " according to distribution but " .. tstart
+                 .. " according to table."
+                )
+            )
+            assert(
+                dhere == there,
+                (
+                    "Segment " .. i .. " contains " .. dhere
+                 .. " according to distribution but " .. there
+                 .. " according to table."
+                )
             )
         end
-        for item = 0,total-1 do
+        for item = 1,total do
             assert(
-                distribution_segment(
+                distribution.distribution_segment(
                     item,
                     total, n_segments, cap, rough, seed
-                ) == sumtable_segment(t, item)
+                ) == distribution.sumtable_segment(t, item)
             )
         end
     end
-
-    -- Error on empty sum table
-    local status, res = pcall(distribution.sumtable_segment, {}, 0)
-    assert(status == false)
-
-    -- Error on negative index
-    local status, res = pcall(distribution.sumtable_segment, t, -3)
-    assert(status == false)
-
-    -- Error on too-large index
-    local status, res = pcall(distribution.sumtable_segment, t, 12)
-    assert(status == false)
-    local status, res = pcall(distribution.sumtable_segment, t, 100)
-    assert(status == false)
 
     -- Sumtables from portions for a few different hand-crafted examples
     for _, pair in ipairs({
@@ -1937,17 +2004,18 @@ function test_sumtables()
         for i = 1,#p do
             -- Check portion + items here
             assert(distribution.sumtable_portion(t, i) == p[i])
-            local nprior, nhere = distribution.sumtable_items(t, i)
+            local start, nhere = distribution.sumtable_items(t, i)
+            local nprior = start - 1
             assert(nprior == sofar)
             assert(nhere == p[i])
-            for j = 1,p[i] do
-                imap[sofar] = i
-                sofar = sofar + 1
+            for j = start, start + p[i] - 1 do
+                imap[j] = i
             end
+            sofar = sofar + p[i]
         end
 
         -- Check empirical map of item -> index
-        for item, in_segment in pairs(imap.items()) do
+        for item, in_segment in pairs(imap) do
             assert(distribution.sumtable_segment(t, item) == in_segment)
         end
     end

@@ -25,6 +25,7 @@ local ror = bit.ror
 local min = math.min
 local log = math.log
 local floor = math.floor
+local ceil = math.ceil
 
 local ID_BITS = 32;
 local ID_BYTES = 4;
@@ -332,37 +333,40 @@ anarchy.rng.truncated_exponential = truncated_exponential
 
 
 --- Computes cohort number for the given outer index and cohort size.
--- @paramt number outer An index into a sequence to be chopped into cohorts.
+-- @paramt number outer An index into a sequence to be chopped into
+--     cohorts, starting with the beginning of the first cohort at index 1.
 -- @paramt number cohort_size The size of each cohort to divide the
 --     sequence into.
 -- @returnt number The index of the cohort that the outer index falls
---     into.
+--     into. The first cohort (starting at index 1 of the outer sequence)
+--     has index 1.
 --
 -- For example, if outer index is 54 and cohort_size is 10, the return
--- value will be 5, since 54 falls into the 6th group of 10 (at index 5
--- counting from 0).
+-- value will be 6, since 54 falls into the 6th group of 10.
 local cohort = function(outer, cohort_size)
-    return floor(outer / cohort_size)
+    return floor((outer - 1) / cohort_size) + 1
 end
 anarchy.cohort.cohort = cohort
 
 --- Computes within-cohort index for the given outer index and cohorts of
 -- the given size.
--- @paramt number outer An index into a sequence to be chopped into cohorts.
+-- @paramt number outer An index into a sequence to be chopped into
+--     cohorts, starting with the beginning of the first cohort at index 1.
 -- @paramt number cohort_size The size of each cohort to divide the
 --     sequence into.
--- @returnt number The index of the given outer index within its cohort.
+-- @returnt number The index of the given outer index within its cohort,
+--     starting from 1 in the first position.
 --
 -- For example, if the outer index is 54 and the cohort_size is 10, the
--- result will be 4, since 54 falls at index 4 within its group of 10.
+-- result will be 4, since 54 falls at index 4 within its group of 10
+-- (starting at index 1 at 51).
 local cohort_inner = function(outer, cohort_size)
-    return outer % cohort_size
+    return 1 + ((outer - 1) % cohort_size)
 end
 anarchy.cohort.cohort_inner = cohort_inner
 
---- Returns a table containing both the cohort number and inner index for
--- the given outer index and cohort size. The cohort number is under key
--- "cohort" while the inner index is under key "inner".
+--- Returns two results: the cohort number and inner index for the given
+-- outer index and cohort size.
 -- @paramt number outer An index into a sequence to be chopped into cohorts.
 -- @paramt number cohort_size The size of each cohort to divide the
 --     sequence into.
@@ -370,43 +374,47 @@ anarchy.cohort.cohort_inner = cohort_inner
 --     inner index within that cohort (also an integer).
 --
 -- For example, if the outer index is 29 and the cohort_size is 10, this will
--- return a table { cohort = 2, inner = 9 }
-anarchy.cohort.cohort_and_inner = function(outer, cohort_size)
+-- return 3, 9
+local cohort_and_inner = function(outer, cohort_size)
     return cohort(outer, cohort_size), cohort_inner(outer, cohort_size)
 end
+anarchy.cohort.cohort_and_inner = cohort_and_inner
 
 --- Inverse of cohort_and_inner; computes the outer index from a cohort
 -- number and inner index.
 -- @paramt number cohort The cohort index determining which group a position
 --     belongs to.
 -- @paramt number inner The index of the position within that group.
+--     Should be between 1 and the cohort size, inclusive.
 -- @paramt number cohort_size The size of each group to divide the total
 --     sequence of positions into.
 -- @returnt number The index of that position within the total sequence of
---     positions.
+--     positions, starting from index 1.
 --
 -- For example, if cohort is 3, inner is 1, and cohort_size is 5, then
--- we're at index 1 (2nd item) within the 4th group of 5 things, putting
--- us at total index 5*3 + 1 = 16 outside of the groups.
+-- we're at index 1 (1st item) within the 3th group of 5 things, putting
+-- us at total index 5*2 + 1 = 11 outside of the groups.
 --
 -- Note: Negative cohort and/or inner indices may result in negative
 -- outer indices. The inner index value is not constrained to be smaller
 -- than the cohort size.
 local cohort_outer = function(cohort, inner, cohort_size)
-    return cohort_size * cohort + inner
+    return cohort_size * (cohort - 1) + inner
 end
 anarchy.cohort.cohort_outer = cohort_outer
 
---- Interleaves cohort members by folding the top half into the bottom half.
+--- Interleaves cohort members by folding the top half into the bottom
+-- half. The bottom half get even indices while the top half are assigned
+-- backwards to the odd indices.
 -- @paramt number inner The index of an item within a cohort.
 -- @paramt number cohort_size The size of each cohort.
 -- @returnt number The new within-cohort index for the same item after
 --     interleaving the top and bottom parts of the cohort.
 local cohort_interleave = function(inner, cohort_size)
-    if inner < floor((cohort_size+1)/2) then
-        return (inner * 2)
+    if inner <= floor(cohort_size/2) then
+        return inner * 2  -- even and never > cohort_size
     else
-        return ((cohort_size - 1 - inner) * 2) + 1
+        return ((cohort_size - inner) * 2) + 1
     end
 end
 anarchy.cohort.cohort_interleave = cohort_interleave
@@ -419,9 +427,9 @@ anarchy.cohort.cohort_interleave = cohort_interleave
 --     would have been at prior to interleaving things.
 local rev_cohort_interleave = function(inner, cohort_size)
     if inner % 2 ~= 0 then
-        return cohort_size - 1 - floor(inner/2)
+        return cohort_size - floor(inner/2)
     else
-        return floor(inner/2)
+        return floor(inner / 2)
     end
 end
 anarchy.cohort.rev_cohort_interleave = rev_cohort_interleave
@@ -435,24 +443,24 @@ anarchy.cohort.rev_cohort_interleave = rev_cohort_interleave
 -- @paramt number seed The seed that determines where the fold happens.
 -- @returnt number The new index of the item within the cohort after folding.
 local cohort_fold = function(inner, cohort_size, seed)
-    local half = floor(cohort_size / 2)
-    local quarter = floor(cohort_size / 4)
-    local split = half;
+    local half = ceil(cohort_size / 2)
+    local quarter = ceil(cohort_size / 4)
+    local split = half
     if quarter > 0 then
-        split = split + posmod(seed, quarter);
+        split = split + seed % quarter
     end
     local after = cohort_size - split
-    split = split + ((after + 1) % 2)  -- force an odd split point
+    split = split + ((after + 1) % 2)  -- force odd leftovers
     after = cohort_size - split
 
     local fold_to = half - floor(after / 2)
 
     if inner < fold_to then  -- first region
         return inner
-    elseif inner < split then  -- second region
+    elseif inner <= split then  -- second region
         return inner + after  -- push out past fold region
     else  -- fold region
-        return inner - split + fold_to
+        return (inner - split) + fold_to - 1
     end
 end
 anarchy.cohort.cohort_fold = cohort_fold
@@ -464,8 +472,8 @@ anarchy.cohort.cohort_fold = cohort_fold
 -- @returnt number The original index that would have been folded into
 --     the given position if cohort_fold were used with the same seed..
 local rev_cohort_fold = function(inner, cohort_size, seed)
-    local half = floor(cohort_size / 2)
-    local quarter = floor(cohort_size / 4)
+    local half = ceil(cohort_size / 2)
+    local quarter = ceil(cohort_size / 4)
     local split = half
     if quarter > 0 then
         split = split + seed % quarter
@@ -479,7 +487,7 @@ local rev_cohort_fold = function(inner, cohort_size, seed)
     if inner < fold_to then  -- first region
         return inner
     elseif (inner < fold_to + after) then  -- second region
-        return inner - fold_to + split
+        return inner - (fold_to - 1) + split
     else
         return inner - after
     end
@@ -492,7 +500,7 @@ anarchy.cohort.rev_cohort_fold = rev_cohort_fold
 -- @paramt number seed The seed that determines how far to spin.
 -- @returnt number The index of the item after spinning.
 local cohort_spin = function(inner, cohort_size, seed)
-    return (inner + (seed % cohort_size)) % cohort_size
+    return ((inner - 1) + (seed % cohort_size)) % cohort_size + 1
 end
 anarchy.cohort.cohort_spin = cohort_spin
 
@@ -503,8 +511,8 @@ anarchy.cohort.cohort_spin = cohort_spin
 -- @returnt number The original index of the item before spinning.
 local rev_cohort_spin = function(inner, cohort_size, seed)
     return (
-        inner + (cohort_size - (seed % cohort_size))
-    ) % cohort_size
+        (inner - 1) + (cohort_size - (seed % cohort_size))
+    ) % cohort_size + 1
 end
 anarchy.cohort.rev_cohort_spin = rev_cohort_spin
 
@@ -521,17 +529,17 @@ local cohort_flop = function(inner, cohort_size, seed)
         limit = limit + 4
     end
     local size = (seed % limit) + 2
-    local which = floor(inner / size)
-    local in_part = inner % size
+    local which = floor((inner - 1) / size)
+    local in_part = (inner - 1) % size
 
     local result = 0
     if which % 2 ~= 0 then
-        result = (which - 1) * size + in_part;
+        result = (which - 1) * size + in_part + 1
     else
-        result = (which + 1) * size + in_part;
+        result = (which + 1) * size + in_part + 1
     end
 
-    if result >= cohort_size then  -- don't flop out of the cohort
+    if result > cohort_size then  -- don't flop out of the cohort
         return inner
     else
         return result
@@ -548,18 +556,18 @@ anarchy.cohort.cohort_flop = cohort_flop
 --     among themselves with different (derived) seeds.
 local cohort_mix = function(inner, cohort_size, seed)
     local even = inner - inner % 2
-    local target = 0
+    local target
     if inner % 2 ~= 0 then
         target = cohort_spin(
-            floor(even / 2),
-            floor(cohort_size / 2),
+            1 + floor(even / 2),
+            cohort_size - floor(cohort_size / 2),
             seed + 464185
         )
-        return 2 * target + 1
+        return 2 * target - 1
     else
         target = cohort_spin(
             floor(even / 2),
-            floor((cohort_size + 1) / 2),
+            floor(cohort_size / 2),
             seed + 1048239
         )
         return 2 * target
@@ -578,15 +586,15 @@ local rev_cohort_mix = function(inner, cohort_size, seed)
     local target = 0
     if inner % 2 ~= 0 then
         target = rev_cohort_spin(
-            floor(even / 2),
-            floor(cohort_size / 2),
+            1 + floor(even / 2),
+            cohort_size - floor(cohort_size / 2),
             seed + 464185
         )
-        return 2 * target + 1
+        return 2 * target - 1
     else
         target = rev_cohort_spin(
             floor(even / 2),
-            floor((cohort_size + 1) / 2),
+            floor(cohort_size / 2),
             seed + 1048239
         );
         return 2 * target
@@ -623,12 +631,12 @@ local cohort_spread = function(inner, cohort_size, seed)
     local region_size = floor(cohort_size / regions)
     local leftovers = cohort_size - (regions * region_size)
 
-    local region = inner % regions
-    local index = floor(inner / regions)
-    if index < region_size then  -- non-leftovers
+    local region = (inner - 1) % regions
+    local index = floor((inner - 1) / regions) + 1
+    if index <= region_size then  -- non-leftovers
         return region * region_size + index + leftovers
     else  -- leftovers go at the front:
-        return inner - regions * region_size
+        return (inner - 1) - regions * region_size + 1
     end
 end
 anarchy.cohort.cohort_spread = cohort_spread
@@ -655,13 +663,13 @@ local rev_cohort_spread = function(inner, cohort_size, seed)
     local region_size = floor(cohort_size / regions);
     local leftovers = cohort_size - (regions * region_size);
 
-    local index = floor((inner - leftovers) / region_size)
-    local region = (inner - leftovers) % region_size
+    local index = floor(((inner - 1) - leftovers) / region_size)
+    local region = ((inner - 1) - leftovers) % region_size
 
-    if inner < leftovers then  -- leftovers back to the end:
+    if inner <= leftovers then  -- leftovers back to the end:
         return regions * region_size + inner
     else
-        return region * regions + index
+        return region * regions + 1 + index
     end
 end
 anarchy.cohort.rev_cohort_spread = rev_cohort_spread
@@ -685,12 +693,12 @@ local cohort_upend = function(inner, cohort_size, seed)
     )
     local region_size = floor(cohort_size / regions)
 
-    local region = floor(inner / region_size)
-    local index = inner % region_size
+    local region = floor((inner - 1) / region_size)
+    local index = ((inner - 1) % region_size) + 1
 
-    local result = (region * region_size) + (region_size - 1 - index)
+    local result = (region * region_size) + (region_size + 1 - index)
 
-    if result < cohort_size then
+    if result <= cohort_size then
         return result
     else
         return inner
@@ -711,21 +719,41 @@ anarchy.cohort.cohort_upend = cohort_upend
 local cohort_shuffle = function(inner, cohort_size, seed)
     local r = inner
     seed = bxor(seed, cohort_size)
+    -- print("\ncs", inner, cohort_size)
     r = cohort_spread(r, cohort_size, seed + 457)  -- prime
+    -- io.write(" spread " .. r)
     r = cohort_mix(r, cohort_size, seed + 2897)  -- prime
+    -- io.write(" mix " .. r)
     r = cohort_interleave(r, cohort_size)
+    -- io.write(" interleave " .. r)
+    -- io.write("\n")
     r = cohort_spin(r, cohort_size, seed + 1987)  -- prime
+    -- io.write(" spin " .. r)
     r = cohort_upend(r, cohort_size, seed + 47)  -- prime
+    -- io.write(" upend " .. r)
     r = cohort_fold(r, cohort_size, seed + 839)  -- prime
+    -- io.write(" fold " .. r)
     r = cohort_interleave(r, cohort_size)
+    -- io.write(" interleave " .. r)
+    -- io.write("\n")
     r = cohort_flop(r, cohort_size, seed + 53)  -- prime
+    -- io.write(" flop " .. r)
     r = cohort_fold(r, cohort_size, seed + 211)  -- prime
+    -- io.write(" fold " .. r)
     r = cohort_mix(r, cohort_size, seed + 733)  -- prime
+    -- io.write(" mix " .. r)
     r = cohort_spread(r, cohort_size, seed + 881)  -- prime
+    -- io.write(" spread " .. r)
     r = cohort_interleave(r, cohort_size)
+    -- io.write(" interleave " .. r)
+    -- io.write("\n")
     r = cohort_flop(r, cohort_size, seed + 193)  -- prime
+    -- io.write(" flop " .. r)
     r = cohort_upend(r, cohort_size, seed + 794641)  -- prime
+    -- io.write(" upend " .. r)
     r = cohort_spin(r, cohort_size, seed + 19)  -- prime
+    -- io.write(" spin " .. r)
+    -- io.write("\n")
     return r
 end
 anarchy.cohort.cohort_shuffle = cohort_shuffle
@@ -739,21 +767,41 @@ anarchy.cohort.cohort_shuffle = cohort_shuffle
 local rev_cohort_shuffle = function(inner, cohort_size, seed)
     local r = inner
     seed = bxor(seed, cohort_size)
+    -- print("\nrcs", inner, cohort_size)
     r = rev_cohort_spin(r, cohort_size, seed + 19)  -- prime
+    -- io.write(" spin " .. r)
     r = cohort_upend(r, cohort_size, seed + 794641)  -- prime
+    -- io.write(" upend " .. r)
     r = cohort_flop(r, cohort_size, seed + 193)  -- prime
+    -- io.write(" flop " .. r)
     r = rev_cohort_interleave(r, cohort_size)
+    -- io.write("\n")
+    -- io.write(" interleave " .. r)
     r = rev_cohort_spread(r, cohort_size, seed + 881)  -- prime
+    -- io.write(" spread " .. r)
     r = rev_cohort_mix(r, cohort_size, seed + 733)  -- prime
+    -- io.write(" mix " .. r)
     r = rev_cohort_fold(r, cohort_size, seed + 211)  -- prime
+    -- io.write(" fold " .. r)
     r = cohort_flop(r, cohort_size, seed + 53)  -- prime
+    -- io.write(" flop " .. r)
     r = rev_cohort_interleave(r, cohort_size)
+    -- io.write("\n")
+    -- io.write(" interleave " .. r)
     r = rev_cohort_fold(r, cohort_size, seed + 839)  -- prime
+    -- io.write(" fold " .. r)
     r = cohort_upend(r, cohort_size, seed + 47)  -- prime
+    -- io.write(" upend " .. r)
     r = rev_cohort_spin(r, cohort_size, seed + 1987)  -- prime
+    -- io.write(" spin " .. r)
     r = rev_cohort_interleave(r, cohort_size);
+    -- io.write("\n")
+    -- io.write(" interleave " .. r)
     r = rev_cohort_mix(r, cohort_size, seed + 2897)  -- prime
+    -- io.write(" mix " .. r)
     r = rev_cohort_spread(r, cohort_size, seed + 457)  -- prime
+    -- io.write(" spread " .. r)
+    -- io.write("\n")
     return r
 end
 anarchy.cohort.rev_cohort_shuffle = rev_cohort_shuffle
@@ -763,6 +811,10 @@ anarchy.cohort.rev_cohort_shuffle = rev_cohort_shuffle
 -- count, a segment count and per-segment capacity, and a roughness value
 -- and seed, computes the split point for the items as well as the
 -- halfway index for the segments.
+--
+-- Note that per the normal Lua convention, indices for both total items
+-- and segments start from 1!
+--
 -- @paramt number total The total number of items that will be
 --     distributed among segments.
 -- @paramt number n_segments The number of segments to distribute the
@@ -781,9 +833,9 @@ anarchy.cohort.rev_cohort_shuffle = rev_cohort_shuffle
 --     distributions.
 -- @return Multiple results: two numbers. The first is the split point
 --     for the distribution: the number out of the total items which end
---     up in the first half of the segments. The second at index 2 is the
---     number of segments in that first half of the segments, which is
---     half of n_segments, rounded down.
+--     up in the first half of the segments. The second is the number of
+--     segments in that first half of the segments, which is half of
+--     n_segments, rounded down.
 local distribution_spilt_point
 distribution_spilt_point = function(
     total,
@@ -827,17 +879,18 @@ anarchy.distribution.distribution_spilt_point = distribution_spilt_point
 
 --- Given that 'total' items are to be distributed evenly among
 -- 'n_segment' segments each with at most 'segment_capacity' items and
--- we're in segment 'segment' of those, computes the start index among
--- the total of the first item in this segment, and how many items are in
--- this segment. The 'roughness' argument should be a number between 0
--- and 1 indicating how even the distribution is: 0 indicates a perfectly
--- even distribution, while 1 indicates a perfectly random distribution.
--- Does work proportional to the log of the number of segments.
+-- we're in segment 'segment' of those (indexed from 1), computes the
+-- start index (from 1) among the total of the first item in this
+-- segment, and how many items are in this segment. The 'roughness'
+-- argument should be a number between 0 and 1 indicating how even the
+-- distribution is: 0 indicates a perfectly even distribution, while 1
+-- indicates a perfectly random distribution. Does work proportional to
+-- the log of the number of segments.
 --
 -- Note that segment_capacity * n_segments should be > total.
 --
 -- @paramt number segment Which segment we want to know the portion for,
---     as an index starting from 0.
+--     as an index starting from 1.
 -- @paramt number total The total number of items that will be
 --     distributed among segments.
 -- @paramt number n_segments The number of segments to distribute the
@@ -854,7 +907,7 @@ anarchy.distribution.distribution_spilt_point = distribution_spilt_point
 -- @paramt number seed The seed that determines how the total gets
 --     distributed among the segments when roughness allows different
 --     distributions.
--- @return Multiple values: the start index (from 0) of the first item in
+-- @return Multiple values: the start index (from 1) of the first item in
 --     this segment and the number of the total items that get
 --     distributed into the specified segment, for the given seed. The
 --     number of items May be as low as 0 when roughness is 1; it will be
@@ -875,7 +928,7 @@ distribution_items = function(
 )
     -- base case
     if n_segments == 1 then
-        return 0, total
+        return 1, total
     end
 
     -- compute split point:
@@ -888,7 +941,7 @@ distribution_items = function(
     );
 
     -- call ourselves recursively:
-    if segment < half then
+    if segment <= half then
         return distribution_items(
             segment,
             split,
@@ -917,7 +970,7 @@ anarchy.distribution.distribution_items = distribution_items
 -- segments.
 --
 -- @paramt number index Which item among the total we want to know the
---     fate of, starting from 0. Must be strictly less than total.
+--     fate of, starting from 1. Must be less than or equal to the total.
 -- @paramt number total The total number of items that will be
 --     distributed among segments.
 -- @paramt number n_segments The number of segments to distribute the
@@ -934,10 +987,11 @@ anarchy.distribution.distribution_items = distribution_items
 -- @paramt number seed The seed that determines how the total gets
 --     distributed among the segments when roughness allows different
 --     distributions.
--- @return Multiple values: the segment index (starting from 0) within
+-- @return Multiple values: the segment index (starting from 1) within
 --     which the indicated item appears, and then the index within that
---     segment (starting from 0) at which it is placed.
-local distribution_segment = function(
+--     segment (starting from 1) at which it is placed.
+local distribution_segment
+distribution_segment = function(
     index,
     total,
     n_segments,
@@ -947,7 +1001,7 @@ local distribution_segment = function(
 )
     -- base case
     if n_segments == 1 then
-        return 0, index  -- we are in the only segment there is
+        return 1, index  -- we are in the only segment there is
     end
 
     -- compute split point:
@@ -960,7 +1014,7 @@ local distribution_segment = function(
     )
 
     -- call ourselves recursively:
-    if index < split then
+    if index <= split then
         return distribution_segment(
             index,
             split,
@@ -989,12 +1043,13 @@ local fill_sumtable_for_distribution
 
 
 --- Takes distribution parameters and returns a table containing the
--- cumulative sum of items in each segment. The list contains
--- `n_segments` entries, and each entry holds the sum of the items from
--- the `total` assigned to that segment plus all earlier segments. This
--- means that each entry is greater than or equal to the entry to its
--- left (and they're only equal if zero items are assigned to that
--- segment). The last entry will be equal to the total.
+-- cumulative sum of items in each segment (The table indices will start
+-- at 1, just like the segment indices). The list contains `n_segments`
+-- entries, and each entry holds the sum of the items from the `total`
+-- assigned to that segment plus all earlier segments. This means that
+-- each entry is greater than or equal to the entry before it (and
+-- they're only equal if zero items are assigned to that segment). The
+-- last entry will be equal to the total.
 --
 -- @paramt number total The total number of items being distributed.
 -- @paramt number n_segments The number of segments to distribute items
@@ -1003,7 +1058,8 @@ local fill_sumtable_for_distribution
 -- @paramt number roughness How rough the distribution should be (0-1).
 -- @paramt number seed The seed that determines a specific distribution.
 --
--- @returnt table An array table holding cumulative sums.
+-- @returnt table An array table holding cumulative sums, starting at
+--     index 1 with the number of items in the first segment.
 --
 -- `n_segments` times `segment_capacity` must be >= `total` otherwise an
 -- error will be raised.
@@ -1027,7 +1083,7 @@ local sumtable_for_distribution = function(
     result = {}
     fill_sumtable_for_distribution(
         result,
-        0,
+        1,
         0,
         total,
         n_segments,
@@ -1055,8 +1111,10 @@ anarchy.distribution.sumtable_for_distribution = sumtable_for_distribution
 -- Parameters are the same as for `sumtable_for_distribution` but with:
 --
 -- @paramt table ledger The table to fill in. Values will be
---     added/overwritten between `start` and `start + `n_segments`.
--- @paramt number start The index at which to start overwriting values.
+--     added/overwritten between `start` and `start` + `n_segments` - 1
+--     (inclusive).
+-- @paramt number start The index at which to start overwriting values
+--     (counting from index 1).
 -- @paramt number  prior The number of items distributed prior to the start
 --     index.
 --
@@ -1118,13 +1176,16 @@ anarchy.distribution.fill_sumtable_for_distribution = (
 -- `sumtable_segments`, `sumtable_portion`, and `sumtable_segment` to get
 -- information out of the sumtable efficiently.
 --
--- @paramt table portions The array of per-segment item counts.
+-- @paramt table portions The array of per-segment item counts, indexed
+--     starting at 1.
 --
--- @returnt table The sumtable that encodes the same distribution.
+-- @returnt table The sumtable that encodes the same distribution (also
+--     indexed from 1, like all normal Lua tables. Hahaha why would we
+--     even mention this?).
 local sumtable_from_portions = function(portions)
     sofar = 0
     result = {}
-    for _, p in ipairs(portions) do
+    for i, p in ipairs(portions) do
         sofar = sofar + p
         result[#result + 1] = sofar
     end
@@ -1161,7 +1222,7 @@ anarchy.distribution.sumtable_segments = sumtable_segments
 
 
 --- Returns the portion of the total items which is distributed into the
--- segment with the given index (starting from 0). Just needs to subtract
+-- segment with the given index (starting from 1). Just needs to subtract
 -- the entry to the left to figure this out. Raises an error if the index
 -- is invalid.
 --
@@ -1191,16 +1252,16 @@ end
 anarchy.distribution.sumtable_portion = sumtable_portion
 
 
---- Returns a pair containing the number of items prior to the specified
--- segment and then the number of items in that segment, like
+--- Returns a pair containing the index of the first item in the segment 
+-- and then the number of items in that segment, like
 -- `distribution_items`, but for a sumtable. Parameters:
 --
 -- @paramt table sumtable The table of sums describing the distribution
 --     in question.
 -- @paramt number i The segment to compute the portion for (from 1).
 --
--- @return Two numbers: The sum of items distributed before the indicated
---     segment, then the number o items in the indicated segment.
+-- @return Two numbers: The index of the first item in the segment (from
+--     1), then the number o items in the indicated segment.
 local sumtable_items = function(sumtable, i)
     local portion = sumtable_portion(sumtable, i)  -- error here if bad i
 
@@ -1211,15 +1272,16 @@ local sumtable_items = function(sumtable, i)
         prior = sumtable[i - 1]
     end
 
-    return prior, portion
+    return prior + 1, portion
 end
 anarchy.distribution.sumtable_items = sumtable_items
 
 
---- Uses binary search to find the smallest sum in the given sumtable
--- that's larger than the given value breaking ties towards earlier
--- entries. Works in time proportional to the logarithm of the sumtable
--- size.
+--- Uses binary search to find the index of the smallest sum in the given
+-- sumtable that's greater than or equal to the given value breaking ties
+-- towards earlier entries. Works in time proportional to the logarithm
+-- of the sumtable size. This will be the segment which the given item
+-- (out of the total) falls into.
 --
 -- Raises an error if the sumtable is empty, or if the item index is too
 -- large for the sumtable or is zero or negative.
@@ -1234,12 +1296,12 @@ anarchy.distribution.sumtable_items = sumtable_items
 local sumtable_segment = function(sumtable, item)
     if #sumtable == 0 then
         error("Empty sumtable in sumtable_segment.")
-    elseif item < 0 then
+    elseif item < 1 then
         error(
-            "Negative item index " .. item .. " not permitted in"
+            "Zero or negative item index " .. item .. " not permitted in"
          .. " sumtable_segment."
         )
-    elseif item >= sumtable[#sumtable] then
+    elseif item > sumtable[#sumtable] then
         error(
             "Item index " .. item .. " is too large in sumtable_segment."
          .. " The sumtable only contains " .. sumtable[#sumtable]
@@ -1253,7 +1315,7 @@ local sumtable_segment = function(sumtable, item)
     -- Keep splitting until we narrow it down to a single position (or none)
     while to - fr > 0 do
         where = fr + floor((to - fr) / 2)  -- halfway between
-        if sumtable[where] <= item then  -- definitely not here; it's farther
+        if sumtable[where] < item then  -- definitely not here; it's farther
             fr = where + 1
         else  -- could be here
             to = where
@@ -1274,7 +1336,7 @@ local sumtable_segment = function(sumtable, item)
 
     assert(to == fr)
     -- Check the single remaining entry & return
-    if sumtable[fr] <= item then
+    if sumtable[fr] < item then
         -- Shouldn't be possible with a valid sumtable given checks above
         -- that the index is in range of the total
         error(

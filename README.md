@@ -6,10 +6,10 @@ reversible and incremental manner.
 
 Capabilities include:
 
-- Reversible PRNG
-- Convenience functions for pseudo-normal, exponential, etc. distributons
+- Reversible pseudo-random number generator
+- Convenience functions for pseudo-normal, exponential, etc. distributions
 - Reversible & incremental shuffling
-- Reversible & incremental random distribution (items among segments)
+- Reversible & incremental random distribution of items among segments
 
 The core API is available in C, Python, Javascript, and Unity/C#, and
 includes:
