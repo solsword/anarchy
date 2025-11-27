@@ -1,7 +1,7 @@
 package = 'Anarchy'
 version = '1.0-1'
 source = {
-    url = "https://cs.wellesley.edu/~pmwh/anarchy/lua/"
+    url = "https://cs.wellesley.edu/~pmwh/anarchy/lua/anarchy.lua"
 }
 description = {
     summary = "A module for incremental & reversible chaos.",

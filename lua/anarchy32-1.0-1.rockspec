@@ -1,7 +1,7 @@
 package = 'Anarchy32'
 version = '1.0-1'
 source = {
-    url = "https://cs.wellesley.edu/~pmwh/anarchy/lua/"
+    url = "https://cs.wellesley.edu/~pmwh/anarchy/lua/anarchy32.lua"
 }
 description = {
     summary = "A module for incremental & reversible chaos.",
@@ -34,6 +34,6 @@ dependencies = {
 build = {
     type = "builtin",
     modules = {
-        anarchy = "anarchy32.lua"
+        anarchy32 = "anarchy32.lua"
     }
 }
