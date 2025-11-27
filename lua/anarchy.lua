@@ -251,6 +251,7 @@ local prng = function(x, seed)
 
     -- value scrambling:
     x = x ~ seed
+    x = scramble(x)
     x = fold(x, seed + 17) -- prime
     x = flop(x)
     x = swirl(x, seed + 37) -- prime
@@ -277,6 +278,7 @@ local rev_prng = function(x, seed)
     x = rev_swirl(x, seed + 37)  -- prime
     x = flop(x)
     x = fold(x, seed + 17)  -- prime
+    x = rev_scramble(x)
     x = x ~ seed
     return x
 end

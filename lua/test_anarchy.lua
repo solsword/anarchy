@@ -714,8 +714,8 @@ function test_flip_distribution()
     local test_with = { 0.5, 0.2, 0.005, 0.9, 0.99 }
     start_progress(
         "flip::managed",
-        (#test_with - 1) * #TEST_VALUES * N_SAMPLES
-      + #TEST_VALUES * N_SAMPLES * 8
+        (#test_with - 2) * #TEST_VALUES * N_SAMPLES
+      + 2 * #TEST_VALUES * N_SAMPLES * 2
     )
     for _, p in ipairs(test_with) do
         for _, seed in ipairs(TEST_VALUES) do
@@ -724,8 +724,8 @@ function test_flip_distribution()
             local n_samples = N_SAMPLES
             local tol = binomial_tolerance(n_samples)
             if p < 0.015 or (1 - p) < 0.015 then
-                tol = tol * 3
-                n_samples = n_samples * 6
+                -- tol = tol * 3
+                n_samples = n_samples * 2
                 -- we increase both tolerance and number of samples
                 -- (making it easier to hit that tolerance) for low and
                 -- high probability trials
