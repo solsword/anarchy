@@ -278,6 +278,8 @@ local rev_prng = function(x, seed)
     x = rev_swirl(x, seed + 37)  -- prime
     x = flop(x)
     x = fold(x, seed + 17)  -- prime
+    -- TODO: This extra scramble helps pass flip tests but makes cycle
+    -- tests worse...
     x = rev_scramble(x)
     x = x ~ seed
     return x

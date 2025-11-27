@@ -531,7 +531,7 @@ function cdf_test(
                 string.format(
                     (
                         "Suspicious CDF bucket count difference from %.2f"
-                     .. "for %s bucket %.5f-%.5f: %d -> %.2f%% > %.2f%%"
+                     .. " for %s bucket %.5f-%.5f: %d -> %.2f%% > %.2f%%"
                     ),
                     prev_bucket_exp,
                     label,
@@ -614,7 +614,7 @@ print(
         (
             "\nUsing %d samples, the default tolerance will be"
          .. " %0.2f%%.\nTolerances for CDF buckets would be:\n"
-         .. "  %d -> %.2f%%\n  %d -> %.2f%%\n"
+         .. "  %d -> %.2f%%\n  %d -> %.2f%%"
         ),
         N_SAMPLES,
         100 * tolerance(N_SAMPLES),
@@ -624,6 +624,954 @@ print(
         100 * tolerance(N_SAMPLES / 100)
     )
 )
+
+
+function test_distributions()
+    -- Tests the distribution operations.
+    dist_setups = {
+        -- items, segments, capacity
+        {10, 5, 4},  -- 10 items across 5 buckets of 4 items each
+        {100, 5, 20},  -- 100 items across 5 buckets of 20 items each
+        {100, 1000, 1},  -- 100 items across 1000 1-item buckets
+        {100, 1000, 2},  -- 100 items across 1000 2-item buckets
+        {100, 100, 10},  -- 100 items across 100 10-item buckets
+        {100, 3, 50},  -- 100 items across 3 50-item buckets
+        {100, 4, 25},  -- 100 items across 4 25-item buckets
+    }
+    start_progress(
+        "smooth_dist_split_points",
+        3 * #dist_setups
+    )
+    for _, setup in ipairs(dist_setups) do
+        local total, segments, capacity = table.unpack(setup)
+        for _, seed in ipairs({8349, 0, 1029104024}) do
+            local split, half = distribution.distribution_spilt_point(
+                total,
+                segments,
+                capacity,
+                0,
+                seed
+            )
+            assert(
+                half == floor(segments / 2),
+                string.format(
+                    (
+                        "bad half %d ~= %d for seed %d setup"
+                     .. " %d total across %d size-%d segments"
+                    ),
+                    half, floor(segments / 2), seed,
+                    total, segments, capacity
+                )
+            )
+            local exp_split = floor(total * floor(segments / 2) / segments)
+            assert(
+                split == exp_split,
+                string.format(
+                    (
+                        "bad split %d ~= %d for seed %d setup"
+                     .. " %d total across %d size-%d segments"
+                    ),
+                    split, exp_split, seed,
+                    total, segments, capacity
+                )
+            )
+            progress()
+        end
+    end
+
+    start_progress(
+        "rough_dist_split_points",
+        1000 * #dist_setups
+    )
+    local roughness = 0.75
+    for _, setup in ipairs(dist_setups) do
+        local total, segments, capacity = table.unpack(setup)
+        local splits = {}
+        local first_half = floor(segments / 2)
+        -- Natural portion for first half of segments
+        local nat = floor(total * first_half / segments)
+        -- Min pre-split and max post-split capacities given the total
+        local pre_cap = first_half * capacity
+        local post_cap = (segments - first_half) * capacity
+
+        -- Min portion given roughness
+        local min_portion = floor((1 - roughness) * nat)
+        if min_portion < total - post_cap then
+            min_portion = total - post_cap
+        end
+        -- Max portion given roughness
+        local max_portion = floor(nat + (total - nat) * roughness)
+        if max_portion > pre_cap then
+            max_portion = pre_cap
+        end
+        for i = 0,1000 do
+            local seed = 74932 + i * 398
+            split, half = distribution.distribution_spilt_point(
+                total,
+                segments,
+                capacity,
+                roughness,
+                seed
+            )
+            assert(
+                half == first_half,
+                string.format(
+                    (
+                        "bad half %d ~= %d for seed %d setup"
+                     .. " %d total across %d size-%d segments"
+                    ),
+                    half, first_half, seed,
+                    total, segments, capacity
+                )
+            )
+            assert(
+                min_portion <= split and split <= max_portion,
+                string.format(
+                    (
+                        "bad split BROKE %d <= %d <= %d for seed %d setup"
+                     .. " %d total across %d size-%d segments"
+                    ),
+                    min_portion, split, max_portion, seed,
+                    total, segments, capacity
+                )
+            )
+            splits[#splits+1] = split
+            progress()
+        end
+
+        -- Test for variability & coverage of splits
+        if min_portion < max_portion then
+            local fd = false
+            local fs = splits[1]
+            local fmin = fs
+            local fmax = fs
+            for _, s in ipairs(splits) do
+                if s ~= fs then
+                    fd = true
+                end
+                if s < fmin then
+                    fmin = s
+                end
+                if s > fmax then
+                    fmax = s
+                end
+            end
+            assert(
+                fd,
+                string.format(
+                    (
+                        "NO split variability (all %d) despite min"
+                     .. " %d and max %d) for setup"
+                     .. " %d total across %d size-%d segments"
+                    ),
+                    fs,
+                    min_portion, max_portion,
+                    total, segments, capacity
+                )
+            )
+
+            local coverage = (fmax - fmin) / (max_portion - min_portion)
+            assert(
+                coverage > 0.5,
+                string.format(
+                    (
+                        "SUSPICIOUSLY small coverage of available"
+                     .. " splits: %.3f < 0.5 over 1000 seeds. Limits"
+                     .. " %d to %d but only covered %d to %d for setup"
+                     .. " %d total across %d size-%d segments"
+                    ),
+                    coverage,
+                    min_portion, max_portion, fmin, fmax,
+                    total, segments, capacity
+                )
+            )
+        end
+    end
+
+    local total_segments = 0
+    for _, setup in ipairs(dist_setups) do
+        local total, segments, capacity = table.unpack(setup)
+        total_segments = total_segments + segments
+    end
+    start_progress(
+        "dist_portions",
+        20 * total_segments
+    )
+    for _, setup in ipairs(dist_setups) do
+        local total, segments, capacity = table.unpack(setup)
+        splits = {}
+        -- Natural portion for each segment with 0 roughness
+        local per_segment = floor(total / segments)
+        -- Few seeds w/ 0 roughness
+        for i = 1,10 do
+            seed = 123948 + 2398*i
+            local sofar = 0
+            for s = 1,segments do
+                local start, portion = distribution.distribution_items(
+                    s,
+                    total,
+                    segments,
+                    capacity,
+                    0,
+                    seed
+                )
+                local prior = start - 1
+                assert(
+                    prior == sofar,
+                    string.format(
+                        (
+                            "Prior sum mismatch for segment %d: counted"
+                         .. " %d but computed %d for seed %d and setup"
+                         .. " %d total across %d size-%d segments"
+                        ),
+                        s,
+                        sofar, prior, seed,
+                        total, segments, capacity
+                    )
+                )
+                assert(
+                    portion == per_segment or portion == per_segment + 1,
+                    string.format(
+                        (
+                            "Invalid portion %d for segment %d with 0"
+                         .. "roughness; should have been either %d or %d"
+                         .. " for each segment. Seed %d and setup"
+                         .. " %d total across %d size-%d segments."
+                        ),
+                        portion, s,
+                        per_segment, per_segment + 1,
+                        seed,
+                        total, segments, capacity
+                    )
+                )
+                sofar = sofar + portion
+                progress()
+            end
+            assert(
+                sofar == total,
+                string.format(
+                    (
+                        "Total sum mismatch: counted %d but total was %d"
+                     .. " for seed %d and setup %d total across %d size-%d"
+                     .. " segments."
+                    ),
+                    sofar, total,
+                    seed, total, segments, capacity
+                )
+            )
+        end
+            
+        -- Once more with roughness
+        for i = 1,10 do
+            seed = 3748 + 273*i
+            sofar = 0
+            for s = 1,segments do
+                start, portion = distribution.distribution_items(
+                    s,
+                    total,
+                    segments,
+                    capacity,
+                    roughness,
+                    seed
+                )
+                local prior = start - 1
+                assert(
+                    prior == sofar,
+                    string.format(
+                        (
+                            "Prior sum mismatch for segment %d: counted"
+                         .. " %d but computed %d for seed %d and setup"
+                         .. " %d total across %d size-%d rough segments"
+                        ),
+                        s,
+                        sofar, prior, seed,
+                        total, segments, capacity
+                    )
+                )
+                assert(
+                    portion <= capacity,
+                    string.format(
+                        (
+                            "Portion %d too large for segment %d with %.2f"
+                         .. "roughness. Seed %d and setup"
+                         .. " %d total across %d size-%d segments."
+                        ),
+                        portion, s, roughness,
+                        seed,
+                        total, segments, capacity
+                    )
+                )
+                sofar = sofar + portion
+                progress()
+            end
+            assert(
+                sofar == total,
+                string.format(
+                    (
+                        "Total sum mismatch: counted %d but total was %d"
+                     .. " for seed %d and setup %d total across %d size-%d"
+                     .. " segments with %.2f roughness."
+                    ),
+                    sofar, total,
+                    seed, total, segments, capacity, roughness
+                )
+            )
+        end
+    end
+end
+test_distributions()
+
+
+function test_sumtables()
+    -- Tests sumtable functions from `anarchy.distribution`.
+    local p = {2, 2, 2, 2, 2}
+    local t = {2, 4, 6, 8, 10}
+    local total = 10
+    local n_segments = 5
+
+    -- Error on empty sum table
+    local status, res = pcall(distribution.sumtable_segment, {}, 0)
+    assert(status == false)
+
+    -- Error on negative index
+    local status, res = pcall(distribution.sumtable_segment, t, -3)
+    assert(status == false)
+
+    -- Error on too-large index
+    local status, res = pcall(distribution.sumtable_segment, t, 11)
+    assert(status == false)
+    local status, res = pcall(distribution.sumtable_segment, t, 100)
+    assert(status == false)
+
+    for _, seed in ipairs(TEST_VALUES) do
+        local nt = distribution.sumtable_for_distribution(
+            total,
+            n_segments,
+            10,  -- not limiting
+            0,  -- distribution should be even
+            seed  -- shouldn't matter
+        )
+        for i, e in ipairs(nt) do
+            assert(e == t[i], "smooth @" .. i .. " " .. e .. " ~= " .. t[i])
+        end
+        local ntr = distribution.sumtable_for_distribution(
+            total,
+            n_segments,
+            2,
+            1,  -- doesn't matter since it's limited by capacity
+            seed  -- shouldn't matter
+        )
+        for i, e in ipairs(ntr) do
+            assert(e == t[i], "rough @" .. i .. " " .. e .. " ~= " .. t[i])
+        end
+        -- Shorter by 1 should still work
+        snt = distribution.sumtable_for_distribution(
+            total - 2,
+            n_segments - 1,
+            10,  -- not limiting
+            0,  -- distribution should be even
+            seed  -- shouldn't matter
+        )
+        for i, e in ipairs(snt) do
+            assert(
+                e == t[i],
+                "short smooth @" .. i .. " " .. e .. " ~= " .. t[i]
+            )
+        end
+        sntr = distribution.sumtable_for_distribution(
+            total - 2,
+            n_segments - 1,
+            2,
+            1,  -- doesn't matter since it's limited by capacity
+            seed  -- shouldn't matter
+        )
+        for i, e in ipairs(sntr) do
+            assert(
+                e == t[i],
+                "short rough @" .. i .. " " .. e .. " ~= " .. t[i]
+            )
+        end
+    end
+
+    -- Check integrity of two distribution tables
+    for _, seed in ipairs({2938, 823974}) do
+        total = 384 + seed % 423
+        n_segments = 10 + seed % 100
+        cap = floor((total * 1.5) / n_segments)
+        rough = rng.uniform(seed)
+        t = distribution.sumtable_for_distribution(
+            total, n_segments, cap, rough, seed
+        )
+        assert(#t == n_segments)
+        for i = 1,#t do
+            local dstart, dhere = distribution.distribution_items(
+                i,
+                total, n_segments, cap, rough, seed
+            )
+            local tstart, there = distribution.sumtable_items(t, i) 
+            assert(
+                dstart == tstart,
+                (
+                    "Segment " .. i .. " starts at " .. dstart
+                 .. " according to distribution but " .. tstart
+                 .. " according to table."
+                )
+            )
+            assert(
+                dhere == there,
+                (
+                    "Segment " .. i .. " contains " .. dhere
+                 .. " according to distribution but " .. there
+                 .. " according to table."
+                )
+            )
+        end
+        for item = 1,total do
+            assert(
+                distribution.distribution_segment(
+                    item,
+                    total, n_segments, cap, rough, seed
+                ) == distribution.sumtable_segment(t, item)
+            )
+        end
+    end
+
+    -- Sumtables from portions for a few different hand-crafted examples
+    for _, pair in ipairs({
+        {{3, 1, 0, 2, 4, 2}, {3, 4, 4, 6, 10, 12}},
+        {{100, 900, 9000, 1}, {100, 1000, 10000, 10001}},
+        {{3, 0, 0, 0}, {3, 3, 3, 3}},
+        {{0, 0, 1, 1, 0, 0, 3}, {0, 0, 1, 2, 2, 2, 5}},
+    }) do
+        local p, t = table.unpack(pair)
+        local ct = 0
+        for _, n in ipairs(p) do
+            ct = ct + n
+        end
+        -- Check table properties
+        nt = distribution.sumtable_from_portions(p)
+        for i, e in ipairs(nt) do
+            assert(e == t[i], "SFP @" .. i .. ": " .. e .. " ~= " .. t[i])
+        end
+        assert(distribution.sumtable_total(t) == ct)
+        assert(distribution.sumtable_segments(t) == #p)
+        -- Figure out item -> index mapping empirically
+        imap = {}
+        sofar = 0
+        for i = 1,#p do
+            -- Check portion + items here
+            assert(distribution.sumtable_portion(t, i) == p[i])
+            local start, nhere = distribution.sumtable_items(t, i)
+            local nprior = start - 1
+            assert(nprior == sofar)
+            assert(nhere == p[i])
+            for j = start, start + p[i] - 1 do
+                imap[j] = i
+            end
+            sofar = sofar + p[i]
+        end
+
+        -- Check empirical map of item -> index
+        for item, in_segment in pairs(imap) do
+            assert(distribution.sumtable_segment(t, item) == in_segment)
+        end
+    end
+end
+test_sumtables()
+
+
+-- This is a long test so we save it for last
+function test_prng_cycles()
+    -- Test lots of different seeds/starts looking for too-short cycles
+    start_progress("prng cycles", 292 * 2839 * 50)
+    for s = 1,292 do
+        -- local seed = 2983 + 849843 * s  (length-32 cycle here!)
+        local seed = 893822983 + 849845 * s
+        for st = 1,2839 do
+            local start = 4 + st * 29839
+            local n = start
+            for i = 1,50 do
+                n = rng.prng(n, seed)
+                assert(
+                    n ~= start,
+                    (
+                        "Found cycle of length " .. i .. " for seed " .. seed
+                     .. " starting from " .. start
+                    )
+                )
+                progress()
+            end
+        end
+    end
+
+    -- Compute full cycle lengths (up to a limit) for fewer seeds/starts
+    start_progress("prng cycle lengths", 8 * 100 * 50)
+    for s = 1,8 do
+        local seed = rng.scramble_seed(s)
+        for st = 1,100 do
+            local start = rng.rev_prng(st, seed + 8238)
+            local n = start
+            local clen = nil
+            for i = 1,10000 do
+                n = rng.prng(n, seed)
+                if n == start then
+                    clen = i
+                    break
+                end
+            end
+            -- Print analysis
+            if clen == nil then
+                print(
+                    "Cycle length for seed " .. seed .. " starting from "
+                 .. start .. " is at least 10000."
+                )
+            else
+                print(
+                    "Cycle length for seed " .. seed .. " starting from "
+                 .. start .. " is " .. clen
+                )
+            end
+        end
+    end
+end
+test_prng_cycles()
+
+
+--=======--
+-- Tests --
+--=======--
+
+-- Straightforward value tests...
+
+function test_posmod()
+    assert(util.posmod(-1, 7) == 6)
+    assert(util.posmod(0, 11) == 0)
+    assert(util.posmod(3, 11) == 3)
+    assert(util.posmod(-13, 11) == 9)
+    assert(util.posmod(15, 11) == 4)
+    assert(util.posmod(115, 10) == 5)
+    assert(util.posmod(115, 100) == 15)
+end
+test_posmod()
+
+
+function test_mask()
+    assert(util.mask(0) == 0)
+    assert(util.mask(1) == 1)
+    assert(util.mask(2) == 3)
+    assert(util.mask(4) == 15)
+    assert(util.mask(10) == 1023)
+end
+test_mask()
+
+
+function test_byte_mask()
+    assert(util.byte_mask(0) == 255)
+    assert(util.byte_mask(1) == 65280)
+    assert(util.byte_mask(2) == 16711680)
+end
+test_byte_mask()
+
+
+function test_unit_ops()
+    local seed = 129873918231
+    start_progress("ops", 5 * bit.lshift(1, 12) * #TEST_VALUES)
+    for _, o in ipairs{0, 12, 24, 36, 48} do
+        for i = 0,bit.lshift(1, 12) do
+            local x = bit.lshift(i, o)
+            assert(x == rng.flop(rng.flop(x)))
+            assert(x == rng.rev_scramble(rng.scramble(x)))
+            assert(x == rng.prng(rng.rev_prng(x, seed), seed))
+            local r = x
+            local p = x
+            for j, y in ipairs(TEST_VALUES) do
+                assert(x == rng.rev_swirl(rng.swirl(x, y), y))
+                assert(x == rng.fold(rng.fold(x, y), y))
+                assert(r == rng.scramble(rng.rev_scramble(r)))
+                local r = rng.rev_scramble(r)
+                assert(p == rng.rev_prng(rng.prng(p, seed), seed))
+                local p = rng.prng(p, seed)
+                progress()
+            end
+        end
+    end
+end
+
+
+function test_swirl()
+    assert(rng.swirl(2, 1) == 1)
+    assert(rng.swirl(4, 1) == 2)
+    assert(rng.swirl(8, 2) == 2)
+    assert(rng.swirl(1, 1) == 0x8000000000000000)
+    assert(rng.swirl(2, 2) == 0x8000000000000000)
+    assert(rng.swirl(1, 2) == 0x4000000000000000)
+    assert(rng.rev_swirl(1, 2) == 4)
+    assert(rng.rev_swirl(1, 3) == 8)
+    assert(rng.rev_swirl(2, 2) == 8)
+    assert(rng.rev_swirl(0x8000000000000000, 1) == 1)
+    assert(rng.rev_swirl(0x8000000000000000, 2) == 2)
+    assert(rng.rev_swirl(0x8000000000000000, 3) == 4)
+    assert(rng.rev_swirl(0x4000000000000000, 3) == 2)
+    assert(rng.rev_swirl(0x0010000000001030, 1) == 0x0020000000002060)
+    assert(rng.rev_swirl(rng.swirl(1098301, 17), 17) == 1098301)
+end
+test_swirl()
+
+
+function test_fold()
+    local f
+    -- Test that it's its own inverse
+    f = rng.fold(rng.fold(18201, 18), 18)
+    assert(f == 18201, f)
+    f = rng.fold(rng.fold(89348393, 1289), 1289)
+    assert(f == 89348393, f)
+
+    if anarchy.ID_BYTES == 4 then
+        -- Should fold 10 bits (8-16 range w/ 2 index)
+        -- 0x747 (minus initial 01) ->
+        -- 11 01 00 01 11
+        -- Folding onto upper 10 bits, which are:
+        -- 00 01 00 11 00
+        -- So we get:
+        -- 11 00 00 10 11
+        -- Which is (along with extra 0x01): 0xc2d
+        f = rng.fold(0x13134747, 2)
+        assert(f == 0xc2d34747, f)
+
+        -- Random values checked & locked in
+        f = rng.fold(22908, 7)
+        assert(f == 3002620284, f)
+        f = rng.fold(18201, 18)
+        assert(f == 3326101273, f)
+    else
+        -- Should fold 18 bits (16-32 range w/ 2 index)
+        -- 0x34747 (minus two initial zeroes) ->
+        -- 11 01 00 01 11 01 00 01 11
+        -- Folding onto upper 18 bits, which are:
+        -- 00 01 00 11 00 01 00 11 00
+        -- So we get:
+        -- 11 00 00 10 11 00 00 10 11
+        -- Which is (along with extra 0x01): 0xc2c2d
+        f = rng.fold(0x1313131313134747, 2)
+        assert(f == 0xc2c2d31313134747, f)
+
+        -- Random values checked & locked in
+        f = rng.fold(22908, 7)
+        assert(f == 50375224738208124, f)
+        f = rng.fold(18201, 18)
+        assert(f == 1280781512777680665, f)
+
+        -- 8-byte inverse tests
+        f = rng.fold(rng.fold(0x0000f37d1ac247eb, 23982), 23982)
+        assert(f == 0x0000f37d1ac247eb, f)
+        f = rng.fold(rng.fold(0xfff4422ffff4422, 0), 0)
+        assert(f == 0xfff4422ffff4422, f)
+    end
+end
+test_fold()
+
+
+function test_flop()
+    assert(rng.flop(0xf0f0f0f0) == 0x0f0f0f0f)
+    assert(rng.flop(0x0a0a0a0a) == 0xa0a0a0a0)
+    assert(rng.flop(22908) == 38343)
+    assert(rng.flop(18201) == 29841)
+    assert(rng.flop(rng.flop(3892389)) == 3892389)
+    assert(rng.flop(rng.flop(489248448)) == 489248448)
+    if anarchy.ID_BYTES == 8 then
+        assert(rng.flop(0x7070707070707070) == 0x0707070707070707)
+        assert(rng.flop(0x0e0e0e0e0e0e0e0e) == 0xe0e0e0e0e0e0e0e0)
+    end
+end
+test_flop()
+
+
+function test_scramble()
+    local t, s
+    -- Test value that has no overlap with the scramble set bits, but
+    -- which will trigger scrambling even when shifted left by 1
+    t = 0x40004001
+    assert(
+        (t & rng.SCRAMBLE_SET) == 0,
+        string.format(
+            "%x overlaps with %x: %x",
+            t,
+            rng.SCRAMBLE_SET,
+            (t & rng.SCRAMBLE_SET)
+        )
+    )
+    -- OR-in scramble set bits, shift left, and scramble
+    -- Scramble bits should knock themselves out leaving the t value
+    -- alone
+    s = rng.scramble(rng.rev_swirl(rng.SCRAMBLE_SET | t, 1))
+    assert(s == 0x40004001, s)
+    s = rng.rev_scramble(0x40004001)
+    assert(s == rng.rev_swirl(rng.SCRAMBLE_SET | 0x40004001, 1), s)
+    s = rng.rev_scramble(rng.scramble(17))
+    assert(s == 17, s)
+    s = rng.rev_scramble(rng.scramble(8493489))
+    assert(s == 8493489, s)
+    s = rng.scramble(rng.rev_scramble(8493489))
+    assert(s == 8493489, s)
+    if anarchy.ID_BYTES == 8 then
+        local s = rng.scramble(rng.rev_scramble(0x378294ef7ab3301))
+        assert(s == 0x378294ef7ab3301, s)
+    end
+    s = rng.scramble(rng.rev_scramble(0))
+    assert(s == 0, s)
+    s = rng.rev_scramble(rng.scramble(0))
+    assert(s == 0, s)
+end
+test_scramble()
+
+
+function test_prng()
+    local seed, start, expect, result
+    local test_values
+    assert(rng.prng(rng.rev_prng(1782, 39823), 39823) == 1782)
+    assert(rng.rev_prng(rng.prng(1782, 39823), 39823) == 1782)
+    test_values = {
+        {373891, 489348, 1541976216},
+        {0, 0, -1409750063},
+        {28983, 389, 0},
+    }
+    if anarchy.ID_BYTES == 8 then
+        seed = 4938433849834
+        start = 98349833984983
+        result = rng.prng(rng.rev_prng(start, seed), seed) 
+        assert(result == start, "" .. result .. " </> " .. start)
+        seed = 0x803451657483efa7
+        start = 0x0493f3a8dec4d4aa
+        result = rng.prng(rng.rev_prng(start, seed), seed) 
+        assert(result == start, "" .. result .. " </> " .. start)
+        assert(rng.rev_prng(rng.prng(0, 483984), 483984) == 0)
+        assert(rng.prng(rng.rev_prng(0, 483984), 483984) == 0)
+        test_values = {
+            {373891, 489348, 551087505414692243},
+            {0, 0, -8688235251450932066},
+            {28983, 389, -642637474697008621},
+            {483984, 2489308509186683412, 0},
+        }
+    end
+
+    for _, tvs in ipairs(test_values) do
+        seed = tvs[1]
+        start = tvs[2]
+        expect = tvs[3]
+        result = rng.prng(start, seed)
+        assert(
+            result == expect,
+            string.format("%d: %d ? %d", seed, result, expect)
+        )
+        assert(rng.rev_prng(result, seed) == start)
+    end
+
+    local n = 298398
+    for s = 34878374,34878374 + 100 do
+        local nx = rng.prng(n, s)
+        assert(rng.rev_prng(nx, s) == n)
+    end
+
+    for s = 1,30 do
+        local sd = 18373 + 3289832*s
+        for i = 1,100 do
+            nx = rng.prng(n, sd)
+            assert(rng.rev_prng(nx, sd) == n)
+            n = nx  -- continue
+        end
+    end
+end
+test_prng()
+
+
+function test_lfsr()
+    -- TODO: Verify these!
+    assert(rng.lfsr(489348) == 244674)
+    assert(rng.lfsr(1766932808) == 883466404)
+end
+test_lfsr()
+
+
+function test_uniform()
+    if anarchy.ID_BYTES == 4 then
+        assert(
+            rng.uniform(0)
+         == 0.16982559633064941984059714741306379437446594238281250,
+            string.format("%.53f", rng.uniform(0))
+        )
+        assert(
+            rng.uniform(8329801)
+         == 0.57223131074824162833891705304267816245555877685546875,
+            string.format("%.53f", rng.uniform(8329801))
+        )
+        assert(
+            rng.uniform(58923)
+         == 0.26524206860099791560614335139689501374959945678710938,
+            string.format("%.53f", rng.uniform(58923))
+        )
+    elseif anarchy.ID_BYTES == 8 then
+        assert(
+            rng.uniform(0)
+         == 0.04599702893213721693888018648976867552846670150756836,
+            string.format("%.53f", rng.uniform(0))
+        )
+        assert(
+            rng.uniform(8329801)
+         == 0.49844389090779273043807506837765686213970184326171875,
+            string.format("%.53f", rng.uniform(8329801))
+        )
+        assert(
+            rng.uniform(58923)
+         == 0.63333069116827955813420203412533737719058990478515625,
+            string.format("%.53f", rng.uniform(58923))
+        )
+    else
+        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
+    end
+end
+test_uniform()
+
+
+function test_normalish()
+    if anarchy.ID_BYTES == 4 then
+        assert(
+            rng.normalish(0)
+         ==  0.48090422481456157610679724712099414318799972534179688,
+            string.format("%.53f", rng.normalish(0))
+        )
+        assert(
+            rng.normalish(8329801)
+         == 0.99183482023694691243065335584105923771858215332031250,
+            string.format("%.53f", rng.normalish(8329801))
+        )
+        assert(
+            rng.normalish(58923)
+         == 0.46549958295476212555286110728047788143157958984375000,
+            string.format("%.53f", rng.normalish(58923))
+        )
+    elseif anarchy.ID_BYTES == 8 then
+        assert(
+            rng.normalish(0)
+         == 0.77504625323806219938660433399491012096405029296875000,
+            string.format("%.53f", rng.normalish(0))
+        )
+        assert(
+            rng.normalish(8329801)
+         == 0.62720428240061787406034454761538654565811157226562500,
+            string.format("%.53f", rng.normalish(8329801))
+        )
+        assert(
+            rng.normalish(58923)
+         == 0.52374085612340393058872223264188505709171295166015625,
+            string.format("%.53f", rng.normalish(58923))
+        )
+    else
+        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
+    end
+end
+test_normalish()
+
+
+function test_integer()
+    local r
+    if anarchy.ID_BYTES == 4 then
+        r = rng.integer(0, 0, 1)
+        assert(r == 0, r)
+        r = rng.integer(0, 3, 25)
+        assert(r == 6, r)
+        r = rng.integer(1, 3, 25)
+        assert(r == 20, r)
+        r = rng.integer(2, 3, 25)
+        assert(r == 17, r)
+        r = rng.integer(58923, 3, 25)
+        assert(r == 8, r)
+        r = rng.integer(58923, -2, -4)
+        assert(r == -3, r)
+        r = rng.integer(58923, -20, -40)
+        assert(r == -26, r)
+    elseif anarchy.ID_BYTES == 8 then
+        r = rng.integer(0, 0, 1)
+        assert(r == 0, r)
+        r = rng.integer(0, 3, 25)
+        assert(r == 4, r)
+        r = rng.integer(1, 3, 25)
+        assert(r == 14, r)
+        r = rng.integer(2, 3, 25)
+        assert(r == 21, r)
+        r = rng.integer(58923, 3, 25)
+        assert(r == 16, r)
+        r = rng.integer(58923, -2, -4)
+        assert(r == -4, r)
+        r = rng.integer(58923, -20, -40)
+        assert(r == -33, r)
+    else
+        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
+    end
+end
+test_integer()
+
+
+function test_exponential()
+    if anarchy.ID_BYTES == 4 then
+        assert(
+            rng.exponential(0, 0.5)
+         == 3.54596654493773444372095582366455346345901489257812500,
+            string.format("%.53f", rng.exponential(0, 0.5))
+        )
+        assert(
+            rng.exponential(8329801, 0.5)
+         == 1.11642395985140230330046051676617935299873352050781250,
+            string.format("%.53f", rng.exponential(8329801, 0.5))
+        )
+        assert(
+            rng.exponential(58923, 1.5)
+         == 0.88474160235573739985426300336257554590702056884765625,
+            string.format("%.53f", rng.exponential(58923, 1.5))
+        )
+    elseif anarchy.ID_BYTES == 8 then
+    else
+        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
+    end
+end
+test_exponential()
+
+
+function test_truncated_exponential()
+    if anarchy.ID_BYTES == 4 then
+        assert(
+            rng.truncated_exponential(0, 0.5)
+         == 0.54596654493773444372095582366455346345901489257812500,
+            string.format("%.53f", rng.truncated_exponential(0, 0.5))
+        )
+        assert(
+            rng.truncated_exponential(8329801, 1.5)
+         == 0.37214131995046745293720391600800212472677230834960938,
+            string.format("%.53f", rng.truncated_exponential(8329801, 1.5))
+        )
+        assert(
+            rng.truncated_exponential(58923, 2.5)
+         == 0.53084496141344250652593927952693775296211242675781250,
+            string.format("%.53f", rng.truncated_exponential(58923, 2.5))
+        )
+    elseif anarchy.ID_BYTES == 8 then
+        assert(
+            rng.truncated_exponential(0, 0.5)
+         == 0.15835694602152816656825962127186357975006103515625000,
+            string.format("%.53f", rng.truncated_exponential(0, 0.5))
+        )
+        assert(
+            rng.truncated_exponential(8329801, 1.5)
+         == 0.46417616784473314517356357100652530789375305175781250,
+            string.format("%.53f", rng.truncated_exponential(8329801, 1.5))
+        )
+        assert(
+            rng.truncated_exponential(58923, 2.5)
+         == 0.18270502973759025766575803118030307814478874206542969,
+            string.format("%.53f", rng.truncated_exponential(58923, 2.5))
+        )
+    end
+end
+test_truncated_exponential()
 
 
 function test_uniform_distribution()
@@ -927,7 +1875,8 @@ function test_exponential_distribution()
                 samples,
                 function (x) return 1 - exp(-shape * x) end,
                 exp_cdf,
-                "exponential(:" .. seed .. ":, " .. shape .. ")"
+                "exponential(:" .. seed .. ":, " .. shape .. ")",
+                true  -- skip bucket tests
             )
         end
     end
@@ -958,7 +1907,8 @@ function test_exponential_distribution()
         samples,
         function(x) return 1 - exp(-shape * x) end,
         cdf,
-        "exponential(:sequential:, " .. shape .. ")"
+        "exponential(:sequential:, " .. shape .. ")",
+        true  -- skip bucket tests
     )
 end
 test_exponential_distribution()
@@ -1038,443 +1988,6 @@ function test_truncated_exponential_distribution()
     )
 end
 test_truncated_exponential_distribution()
-
-
---=======--
--- Tests --
---=======--
-
--- Straightforward value tests...
-
-function test_posmod()
-    assert(util.posmod(-1, 7) == 6)
-    assert(util.posmod(0, 11) == 0)
-    assert(util.posmod(3, 11) == 3)
-    assert(util.posmod(-13, 11) == 9)
-    assert(util.posmod(15, 11) == 4)
-    assert(util.posmod(115, 10) == 5)
-    assert(util.posmod(115, 100) == 15)
-end
-test_posmod()
-
-
-function test_mask()
-    assert(util.mask(0) == 0)
-    assert(util.mask(1) == 1)
-    assert(util.mask(2) == 3)
-    assert(util.mask(4) == 15)
-    assert(util.mask(10) == 1023)
-end
-test_mask()
-
-
-function test_byte_mask()
-    assert(util.byte_mask(0) == 255)
-    assert(util.byte_mask(1) == 65280)
-    assert(util.byte_mask(2) == 16711680)
-end
-test_byte_mask()
-
-
-function test_unit_ops()
-    local seed = 129873918231
-    start_progress("ops", 5 * bit.lshift(1, 12) * #TEST_VALUES)
-    for _, o in ipairs{0, 12, 24, 36, 48} do
-        for i = 0,bit.lshift(1, 12) do
-            local x = bit.lshift(i, o)
-            assert(x == rng.flop(rng.flop(x)))
-            assert(x == rng.rev_scramble(rng.scramble(x)))
-            assert(x == rng.prng(rng.rev_prng(x, seed), seed))
-            local r = x
-            local p = x
-            for j, y in ipairs(TEST_VALUES) do
-                assert(x == rng.rev_swirl(rng.swirl(x, y), y))
-                assert(x == rng.fold(rng.fold(x, y), y))
-                assert(r == rng.scramble(rng.rev_scramble(r)))
-                local r = rng.rev_scramble(r)
-                assert(p == rng.rev_prng(rng.prng(p, seed), seed))
-                local p = rng.prng(p, seed)
-                progress()
-            end
-        end
-    end
-end
-
-
-function test_swirl()
-    assert(rng.swirl(2, 1) == 1)
-    assert(rng.swirl(4, 1) == 2)
-    assert(rng.swirl(8, 2) == 2)
-    assert(rng.swirl(1, 1) == 0x8000000000000000)
-    assert(rng.swirl(2, 2) == 0x8000000000000000)
-    assert(rng.swirl(1, 2) == 0x4000000000000000)
-    assert(rng.rev_swirl(1, 2) == 4)
-    assert(rng.rev_swirl(1, 3) == 8)
-    assert(rng.rev_swirl(2, 2) == 8)
-    assert(rng.rev_swirl(0x8000000000000000, 1) == 1)
-    assert(rng.rev_swirl(0x8000000000000000, 2) == 2)
-    assert(rng.rev_swirl(0x8000000000000000, 3) == 4)
-    assert(rng.rev_swirl(0x4000000000000000, 3) == 2)
-    assert(rng.rev_swirl(0x0010000000001030, 1) == 0x0020000000002060)
-    assert(rng.rev_swirl(rng.swirl(1098301, 17), 17) == 1098301)
-end
-test_swirl()
-
-
-function test_fold()
-    local f
-    -- Test that it's its own inverse
-    f = rng.fold(rng.fold(18201, 18), 18)
-    assert(f == 18201, f)
-    f = rng.fold(rng.fold(89348393, 1289), 1289)
-    assert(f == 89348393, f)
-
-    if anarchy.ID_BYTES == 4 then
-        -- Should fold 10 bits (8-16 range w/ 2 index)
-        -- 0x747 (minus initial 01) ->
-        -- 11 01 00 01 11
-        -- Folding onto upper 10 bits, which are:
-        -- 00 01 00 11 00
-        -- So we get:
-        -- 11 00 00 10 11
-        -- Which is (along with extra 0x01): 0xc2d
-        f = rng.fold(0x13134747, 2)
-        assert(f == 0xc2d34747, f)
-
-        -- Random values checked & locked in
-        f = rng.fold(22908, 7)
-        assert(f == 3002620284, f)
-        f = rng.fold(18201, 18)
-        assert(f == 3326101273, f)
-    else
-        -- Should fold 18 bits (16-32 range w/ 2 index)
-        -- 0x34747 (minus two initial zeroes) ->
-        -- 11 01 00 01 11 01 00 01 11
-        -- Folding onto upper 18 bits, which are:
-        -- 00 01 00 11 00 01 00 11 00
-        -- So we get:
-        -- 11 00 00 10 11 00 00 10 11
-        -- Which is (along with extra 0x01): 0xc2c2d
-        f = rng.fold(0x1313131313134747, 2)
-        assert(f == 0xc2c2d31313134747, f)
-
-        -- Random values checked & locked in
-        f = rng.fold(22908, 7)
-        assert(f == 50375224738208124, f)
-        f = rng.fold(18201, 18)
-        assert(f == 1280781512777680665, f)
-
-        -- 8-byte inverse tests
-        f = rng.fold(rng.fold(0x0000f37d1ac247eb, 23982), 23982)
-        assert(f == 0x0000f37d1ac247eb, f)
-        f = rng.fold(rng.fold(0xfff4422ffff4422, 0), 0)
-        assert(f == 0xfff4422ffff4422, f)
-    end
-end
-test_fold()
-
-
-function test_flop()
-    assert(rng.flop(0xf0f0f0f0) == 0x0f0f0f0f)
-    assert(rng.flop(0x0a0a0a0a) == 0xa0a0a0a0)
-    assert(rng.flop(22908) == 38343)
-    assert(rng.flop(18201) == 29841)
-    assert(rng.flop(rng.flop(3892389)) == 3892389)
-    assert(rng.flop(rng.flop(489248448)) == 489248448)
-    if anarchy.ID_BYTES == 8 then
-        assert(rng.flop(0x7070707070707070) == 0x0707070707070707)
-        assert(rng.flop(0x0e0e0e0e0e0e0e0e) == 0xe0e0e0e0e0e0e0e0)
-    end
-end
-test_flop()
-
-
-function test_scramble()
-    local t, s
-    -- Test value that has no overlap with the scramble set bits, but
-    -- which will trigger scrambling even when shifted left by 1
-    t = 0x40004001
-    assert(
-        (t & rng.SCRAMBLE_SET) == 0,
-        string.format(
-            "%x overlaps with %x: %x",
-            t,
-            rng.SCRAMBLE_SET,
-            (t & rng.SCRAMBLE_SET)
-        )
-    )
-    -- OR-in scramble set bits, shift left, and scramble
-    -- Scramble bits should knock themselves out leaving the t value
-    -- alone
-    s = rng.scramble(rng.rev_swirl(rng.SCRAMBLE_SET | t, 1))
-    assert(s == 0x40004001, s)
-    s = rng.rev_scramble(0x40004001)
-    assert(s == rng.rev_swirl(rng.SCRAMBLE_SET | 0x40004001, 1), s)
-    s = rng.rev_scramble(rng.scramble(17))
-    assert(s == 17, s)
-    s = rng.rev_scramble(rng.scramble(8493489))
-    assert(s == 8493489, s)
-    s = rng.scramble(rng.rev_scramble(8493489))
-    assert(s == 8493489, s)
-    if anarchy.ID_BYTES == 8 then
-        local s = rng.scramble(rng.rev_scramble(0x378294ef7ab3301))
-        assert(s == 0x378294ef7ab3301, s)
-    end
-    s = rng.scramble(rng.rev_scramble(0))
-    assert(s == 0, s)
-    s = rng.rev_scramble(rng.scramble(0))
-    assert(s == 0, s)
-end
-test_scramble()
-
-
-function test_prng()
-    local seed, start, expect, result
-    local test_values
-    assert(rng.prng(rng.rev_prng(1782, 39823), 39823) == 1782)
-    assert(rng.rev_prng(rng.prng(1782, 39823), 39823) == 1782)
-    test_values = {
-        {373891, 489348, 1541976216},
-        {0, 0, -1409750063},
-        {28983, 389, 0},
-    }
-    if anarchy.ID_BYTES == 8 then
-        seed = 4938433849834
-        start = 98349833984983
-        result = rng.prng(rng.rev_prng(start, seed), seed) 
-        assert(result == start, "" .. result .. " </> " .. start)
-        seed = 0x803451657483efa7
-        start = 0x0493f3a8dec4d4aa
-        result = rng.prng(rng.rev_prng(start, seed), seed) 
-        assert(result == start, "" .. result .. " </> " .. start)
-        assert(rng.rev_prng(rng.prng(0, 483984), 483984) == 0)
-        assert(rng.prng(rng.rev_prng(0, 483984), 483984) == 0)
-        test_values = {
-            {373891, 489348, 7811360407439714725},
-            {0, 0, 131877779694904891},
-            {28983, 389, -1691726202175399180},
-            {483984, 2489308509186683412, 0},
-        }
-    end
-
-    for _, tvs in ipairs(test_values) do
-        seed = tvs[1]
-        start = tvs[2]
-        expect = tvs[3]
-        result = rng.prng(start, seed)
-        assert(
-            result == expect,
-            string.format("%d: %d ? %d", seed, result, expect)
-        )
-        assert(rng.rev_prng(result, seed) == start)
-    end
-
-    local n = 298398
-    for s = 34878374,34878374 + 100 do
-        local nx = rng.prng(n, s)
-        assert(rng.rev_prng(nx, s) == n)
-    end
-
-    for s = 1,30 do
-        local sd = 18373 + 3289832*s
-        for i = 1,100 do
-            nx = rng.prng(n, sd)
-            assert(rng.rev_prng(nx, sd) == n)
-            n = nx  -- continue
-        end
-    end
-end
-test_prng()
-
-
-function test_lfsr()
-    -- TODO: Verify these!
-    assert(rng.lfsr(489348) == 244674)
-    assert(rng.lfsr(1766932808) == 883466404)
-end
-test_lfsr()
-
-
-function test_uniform()
-    if anarchy.ID_BYTES == 4 then
-        assert(
-            rng.uniform(0)
-         ==  0.16982559633064941984059714741306379437446594238281250,
-            string.format("%.53f", rng.uniform(0))
-        )
-        assert(
-            rng.uniform(8329801)
-         ==  0.57223131074824162833891705304267816245555877685546875,
-            string.format("%.53f", rng.uniform(8329801))
-        )
-        assert(
-            rng.uniform(58923)
-         ==  0.26524206860099791560614335139689501374959945678710938,
-            string.format("%.53f", rng.uniform(58923))
-        )
-    elseif anarchy.ID_BYTES == 8 then
-        assert(
-            rng.uniform(0)
-         ==   0.41885797171245592318555850397387985140085220336914062,
-            string.format("%.53f", rng.uniform(0))
-        )
-        assert(
-            rng.uniform(8329801)
-         == 0.99183482023694691243065335584105923771858215332031250,
-            string.format("%.53f", rng.uniform(8329801))
-        )
-        assert(
-            rng.uniform(58923)
-         == 0.68184228287304127213985793787287548184394836425781250,
-            string.format("%.53f", rng.uniform(58923))
-        )
-    else
-        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
-    end
-end
-test_uniform()
-
-
-function test_normalish()
-    if anarchy.ID_BYTES == 4 then
-        assert(
-            rng.normalish(0)
-         ==  0.48090422481456157610679724712099414318799972534179688,
-            string.format("%.53f", rng.normalish(0))
-        )
-        assert(
-            rng.normalish(8329801)
-         == 0.99183482023694691243065335584105923771858215332031250,
-            string.format("%.53f", rng.normalish(8329801))
-        )
-        assert(
-            rng.normalish(58923)
-         == 0.46549958295476212555286110728047788143157958984375000,
-            string.format("%.53f", rng.normalish(58923))
-        )
-    elseif anarchy.ID_BYTES == 8 then
-        assert(
-            rng.normalish(0)
-         == 0.62947778336024839962448140795459039509296417236328125,
-            string.format("%.53f", rng.normalish(0))
-        )
-        assert(
-            rng.normalish(8329801)
-         == 0.28449636259630423085198458466038573533296585083007812,
-            string.format("%.53f", rng.normalish(8329801))
-        )
-        assert(
-            rng.normalish(58923)
-         == 0.56064914785989483636541308442247100174427032470703125,
-            string.format("%.53f", rng.normalish(58923))
-        )
-    else
-        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
-    end
-end
-test_normalish()
-
-
-function test_integer()
-    local r
-    if anarchy.ID_BYTES == 4 then
-        r = rng.integer(0, 0, 1)
-        assert(r == 0, r)
-        r = rng.integer(0, 3, 25)
-        assert(r == 6, r)
-        r = rng.integer(1, 3, 25)
-        assert(r == 20, r)
-        r = rng.integer(2, 3, 25)
-        assert(r == 17, r)
-        r = rng.integer(58923, 3, 25)
-        assert(r == 8, r)
-        r = rng.integer(58923, -2, -4)
-        assert(r == -3, r)
-        r = rng.integer(58923, -20, -40)
-        assert(r == -26, r)
-    elseif anarchy.ID_BYTES == 8 then
-        r = rng.integer(0, 0, 1)
-        assert(r == 0, r)
-        r = rng.integer(0, 3, 25)
-        assert(r == 12, r)
-        r = rng.integer(1, 3, 25)
-        assert(r == 11, r)
-        r = rng.integer(2, 3, 25)
-        assert(r == 23, r)
-        r = rng.integer(58923, 3, 25)
-        assert(r == 18, r)
-        r = rng.integer(58923, -2, -4)
-        assert(r == -4, r)
-        r = rng.integer(58923, -20, -40)
-        assert(r == -34, r)
-    else
-        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
-    end
-end
-test_integer()
-
-
-function test_exponential()
-    if anarchy.ID_BYTES == 4 then
-        assert(
-            rng.exponential(0, 0.5)
-         == 3.54596654493773444372095582366455346345901489257812500,
-            string.format("%.53f", rng.exponential(0, 0.5))
-        )
-        assert(
-            rng.exponential(8329801, 0.5)
-         == 1.11642395985140230330046051676617935299873352050781250,
-            string.format("%.53f", rng.exponential(8329801, 0.5))
-        )
-        assert(
-            rng.exponential(58923, 1.5)
-         == 0.88474160235573739985426300336257554590702056884765625,
-            string.format("%.53f", rng.exponential(58923, 1.5))
-        )
-    elseif anarchy.ID_BYTES == 8 then
-    else
-        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
-    end
-end
-test_exponential()
-
-
-function test_truncated_exponential()
-    if anarchy.ID_BYTES == 4 then
-        assert(
-            rng.truncated_exponential(0, 0.5)
-         == 0.54596654493773444372095582366455346345901489257812500,
-            string.format("%.53f", rng.truncated_exponential(0, 0.5))
-        )
-        assert(
-            rng.truncated_exponential(8329801, 1.5)
-         == 0.37214131995046745293720391600800212472677230834960938,
-            string.format("%.53f", rng.truncated_exponential(8329801, 1.5))
-        )
-        assert(
-            rng.truncated_exponential(58923, 2.5)
-         == 0.53084496141344250652593927952693775296211242675781250,
-            string.format("%.53f", rng.truncated_exponential(58923, 2.5))
-        )
-    elseif anarchy.ID_BYTES == 8 then
-        assert(
-            rng.truncated_exponential(0, 0.5)
-         == 0.74044677236642031381563811009982600808143615722656250,
-            string.format("%.53f", rng.truncated_exponential(0, 0.5))
-        )
-        assert(
-            rng.truncated_exponential(8329801, 1.5)
-         == 0.00546579827987946423317744404357654275372624397277832,
-            string.format("%.53f", rng.truncated_exponential(8329801, 1.5))
-        )
-        assert(
-            rng.truncated_exponential(58923, 2.5)
-         == 0.15318276186681811790180063326261006295680999755859375,
-            string.format("%.53f", rng.truncated_exponential(58923, 2.5))
-        )
-    end
-end
-test_truncated_exponential()
 
 
 function test_cohorts()
@@ -2000,513 +2513,3 @@ function test_cohort_ops()
     end
 end
 test_cohort_ops()
-
-
-function test_distributions()
-    -- Tests the distribution operations.
-    dist_setups = {
-        -- items, segments, capacity
-        {10, 5, 4},  -- 10 items across 5 buckets of 4 items each
-        {100, 5, 20},  -- 100 items across 5 buckets of 20 items each
-        {100, 1000, 1},  -- 100 items across 1000 1-item buckets
-        {100, 1000, 2},  -- 100 items across 1000 2-item buckets
-        {100, 100, 10},  -- 100 items across 100 10-item buckets
-        {100, 3, 50},  -- 100 items across 3 50-item buckets
-        {100, 4, 25},  -- 100 items across 4 25-item buckets
-    }
-    start_progress(
-        "smooth_dist_split_points",
-        3 * #dist_setups
-    )
-    for _, setup in ipairs(dist_setups) do
-        local total, segments, capacity = unpack(setup)
-        for _, seed in ipairs({8349, 0, 1029104024}) do
-            local split, half = distribution.distribution_spilt_point(
-                total,
-                segments,
-                capacity,
-                0,
-                seed
-            )
-            assert(
-                half == floor(segments / 2),
-                string.format(
-                    (
-                        "bad half %d ~= %d for seed %d setup"
-                     .. " %d total across %d size-%d segments"
-                    ),
-                    half, floor(segments / 2), seed,
-                    total, segments, capacity
-                )
-            )
-            local exp_split = floor(total * floor(segments / 2) / segments)
-            assert(
-                split == exp_split,
-                string.format(
-                    (
-                        "bad split %d ~= %d for seed %d setup"
-                     .. " %d total across %d size-%d segments"
-                    ),
-                    split, exp_split, seed,
-                    total, segments, capacity
-                )
-            )
-            progress()
-        end
-    end
-
-    start_progress(
-        "rough_dist_split_points",
-        1000 * #dist_setups
-    )
-    local roughness = 0.75
-    for _, setup in ipairs(dist_setups) do
-        local total, segments, capacity = unpack(setup)
-        local splits = {}
-        local first_half = floor(segments / 2)
-        -- Natural portion for first half of segments
-        local nat = floor(total * first_half / segments)
-        -- Min pre-split and max post-split capacities given the total
-        local pre_cap = first_half * capacity
-        local post_cap = (segments - first_half) * capacity
-
-        -- Min portion given roughness
-        local min_portion = floor((1 - roughness) * nat)
-        if min_portion < total - post_cap then
-            min_portion = total - post_cap
-        end
-        -- Max portion given roughness
-        local max_portion = floor(nat + (total - nat) * roughness)
-        if max_portion > pre_cap then
-            max_portion = pre_cap
-        end
-        for i = 0,1000 do
-            local seed = 74932 + i * 398
-            split, half = distribution.distribution_spilt_point(
-                total,
-                segments,
-                capacity,
-                roughness,
-                seed
-            )
-            assert(
-                half == first_half,
-                string.format(
-                    (
-                        "bad half %d ~= %d for seed %d setup"
-                     .. " %d total across %d size-%d segments"
-                    ),
-                    half, first_half, seed,
-                    total, segments, capacity
-                )
-            )
-            assert(
-                min_portion <= split and split <= max_portion,
-                string.format(
-                    (
-                        "bad split BROKE %d <= %d <= %d for seed %d setup"
-                     .. " %d total across %d size-%d segments"
-                    ),
-                    min_portion, split, max_portion, seed,
-                    total, segments, capacity
-                )
-            )
-            splits[#splits+1] = split
-            progress()
-        end
-
-        -- Test for variability & coverage of splits
-        if min_portion < max_portion then
-            local fd = false
-            local fs = splits[1]
-            local fmin = fs
-            local fmax = fs
-            for _, s in ipairs(splits) do
-                if s ~= fs then
-                    fd = true
-                end
-                if s < fmin then
-                    fmin = s
-                end
-                if s > fmax then
-                    fmax = s
-                end
-            end
-            assert(
-                fd,
-                string.format(
-                    (
-                        "NO split variability (all %d) despite min"
-                     .. " %d and max %d) for setup"
-                     .. " %d total across %d size-%d segments"
-                    ),
-                    fs,
-                    min_portion, max_portion,
-                    total, segments, capacity
-                )
-            )
-
-            local coverage = (fmax - fmin) / (max_portion - min_portion)
-            assert(
-                coverage > 0.5,
-                string.format(
-                    (
-                        "SUSPICIOUSLY small coverage of available"
-                     .. " splits: %.3f < 0.5 over 1000 seeds. Limits"
-                     .. " %d to %d but only covered %d to %d for setup"
-                     .. " %d total across %d size-%d segments"
-                    ),
-                    coverage,
-                    min_portion, max_portion, fmin, fmax,
-                    total, segments, capacity
-                )
-            )
-        end
-    end
-
-    local total_segments = 0
-    for _, setup in ipairs(dist_setups) do
-        local total, segments, capacity = unpack(setup)
-        total_segments = total_segments + segments
-    end
-    start_progress(
-        "dist_portions",
-        20 * total_segments
-    )
-    for _, setup in ipairs(dist_setups) do
-        local total, segments, capacity = unpack(setup)
-        splits = {}
-        -- Natural portion for each segment with 0 roughness
-        local per_segment = floor(total / segments)
-        -- Few seeds w/ 0 roughness
-        for i = 1,10 do
-            seed = 123948 + 2398*i
-            local sofar = 0
-            for s = 1,segments do
-                local start, portion = distribution.distribution_items(
-                    s,
-                    total,
-                    segments,
-                    capacity,
-                    0,
-                    seed
-                )
-                local prior = start - 1
-                assert(
-                    prior == sofar,
-                    string.format(
-                        (
-                            "Prior sum mismatch for segment %d: counted"
-                         .. " %d but computed %d for seed %d and setup"
-                         .. " %d total across %d size-%d segments"
-                        ),
-                        s,
-                        sofar, prior, seed,
-                        total, segments, capacity
-                    )
-                )
-                assert(
-                    portion == per_segment or portion == per_segment + 1,
-                    string.format(
-                        (
-                            "Invalid portion %d for segment %d with 0"
-                         .. "roughness; should have been either %d or %d"
-                         .. " for each segment. Seed %d and setup"
-                         .. " %d total across %d size-%d segments."
-                        ),
-                        portion, s,
-                        per_segment, per_segment + 1,
-                        seed,
-                        total, segments, capacity
-                    )
-                )
-                sofar = sofar + portion
-                progress()
-            end
-            assert(
-                sofar == total,
-                string.format(
-                    (
-                        "Total sum mismatch: counted %d but total was %d"
-                     .. " for seed %d and setup %d total across %d size-%d"
-                     .. " segments."
-                    ),
-                    sofar, total,
-                    seed, total, segments, capacity
-                )
-            )
-        end
-            
-        -- Once more with roughness
-        for i = 1,10 do
-            seed = 3748 + 273*i
-            sofar = 0
-            for s = 1,segments do
-                start, portion = distribution.distribution_items(
-                    s,
-                    total,
-                    segments,
-                    capacity,
-                    roughness,
-                    seed
-                )
-                local prior = start - 1
-                assert(
-                    prior == sofar,
-                    string.format(
-                        (
-                            "Prior sum mismatch for segment %d: counted"
-                         .. " %d but computed %d for seed %d and setup"
-                         .. " %d total across %d size-%d rough segments"
-                        ),
-                        s,
-                        sofar, prior, seed,
-                        total, segments, capacity
-                    )
-                )
-                assert(
-                    portion <= capacity,
-                    string.format(
-                        (
-                            "Portion %d too large for segment %d with %.2f"
-                         .. "roughness. Seed %d and setup"
-                         .. " %d total across %d size-%d segments."
-                        ),
-                        portion, s, roughness,
-                        seed,
-                        total, segments, capacity
-                    )
-                )
-                sofar = sofar + portion
-                progress()
-            end
-            assert(
-                sofar == total,
-                string.format(
-                    (
-                        "Total sum mismatch: counted %d but total was %d"
-                     .. " for seed %d and setup %d total across %d size-%d"
-                     .. " segments with %.2f roughness."
-                    ),
-                    sofar, total,
-                    seed, total, segments, capacity, roughness
-                )
-            )
-        end
-    end
-end
-test_distributions()
-
-
-function test_sumtables()
-    -- Tests sumtable functions from `anarchy.distribution`.
-    local p = {2, 2, 2, 2, 2}
-    local t = {2, 4, 6, 8, 10}
-    local total = 10
-    local n_segments = 5
-
-    -- Error on empty sum table
-    local status, res = pcall(distribution.sumtable_segment, {}, 0)
-    assert(status == false)
-
-    -- Error on negative index
-    local status, res = pcall(distribution.sumtable_segment, t, -3)
-    assert(status == false)
-
-    -- Error on too-large index
-    local status, res = pcall(distribution.sumtable_segment, t, 11)
-    assert(status == false)
-    local status, res = pcall(distribution.sumtable_segment, t, 100)
-    assert(status == false)
-
-    for _, seed in ipairs(TEST_VALUES) do
-        local nt = distribution.sumtable_for_distribution(
-            total,
-            n_segments,
-            10,  -- not limiting
-            0,  -- distribution should be even
-            seed  -- shouldn't matter
-        )
-        for i, e in ipairs(nt) do
-            assert(e == t[i], "smooth @" .. i .. " " .. e .. " ~= " .. t[i])
-        end
-        local ntr = distribution.sumtable_for_distribution(
-            total,
-            n_segments,
-            2,
-            1,  -- doesn't matter since it's limited by capacity
-            seed  -- shouldn't matter
-        )
-        for i, e in ipairs(ntr) do
-            assert(e == t[i], "rough @" .. i .. " " .. e .. " ~= " .. t[i])
-        end
-        -- Shorter by 1 should still work
-        snt = distribution.sumtable_for_distribution(
-            total - 2,
-            n_segments - 1,
-            10,  -- not limiting
-            0,  -- distribution should be even
-            seed  -- shouldn't matter
-        )
-        for i, e in ipairs(snt) do
-            assert(
-                e == t[i],
-                "short smooth @" .. i .. " " .. e .. " ~= " .. t[i]
-            )
-        end
-        sntr = distribution.sumtable_for_distribution(
-            total - 2,
-            n_segments - 1,
-            2,
-            1,  -- doesn't matter since it's limited by capacity
-            seed  -- shouldn't matter
-        )
-        for i, e in ipairs(sntr) do
-            assert(
-                e == t[i],
-                "short rough @" .. i .. " " .. e .. " ~= " .. t[i]
-            )
-        end
-    end
-
-    -- Check integrity of two distribution tables
-    for _, seed in ipairs({2938, 823974}) do
-        total = 384 + seed % 423
-        n_segments = 10 + seed % 100
-        cap = floor((total * 1.5) / n_segments)
-        rough = rng.uniform(seed)
-        t = distribution.sumtable_for_distribution(
-            total, n_segments, cap, rough, seed
-        )
-        assert(#t == n_segments)
-        for i = 1,#t do
-            local dstart, dhere = distribution.distribution_items(
-                i,
-                total, n_segments, cap, rough, seed
-            )
-            local tstart, there = distribution.sumtable_items(t, i) 
-            assert(
-                dstart == tstart,
-                (
-                    "Segment " .. i .. " starts at " .. dstart
-                 .. " according to distribution but " .. tstart
-                 .. " according to table."
-                )
-            )
-            assert(
-                dhere == there,
-                (
-                    "Segment " .. i .. " contains " .. dhere
-                 .. " according to distribution but " .. there
-                 .. " according to table."
-                )
-            )
-        end
-        for item = 1,total do
-            assert(
-                distribution.distribution_segment(
-                    item,
-                    total, n_segments, cap, rough, seed
-                ) == distribution.sumtable_segment(t, item)
-            )
-        end
-    end
-
-    -- Sumtables from portions for a few different hand-crafted examples
-    for _, pair in ipairs({
-        {{3, 1, 0, 2, 4, 2}, {3, 4, 4, 6, 10, 12}},
-        {{100, 900, 9000, 1}, {100, 1000, 10000, 10001}},
-        {{3, 0, 0, 0}, {3, 3, 3, 3}},
-        {{0, 0, 1, 1, 0, 0, 3}, {0, 0, 1, 2, 2, 2, 5}},
-    }) do
-        local p, t = unpack(pair)
-        local ct = 0
-        for _, n in ipairs(p) do
-            ct = ct + n
-        end
-        -- Check table properties
-        nt = distribution.sumtable_from_portions(p)
-        for i, e in ipairs(nt) do
-            assert(e == t[i], "SFP @" .. i .. ": " .. e .. " ~= " .. t[i])
-        end
-        assert(distribution.sumtable_total(t) == ct)
-        assert(distribution.sumtable_segments(t) == #p)
-        -- Figure out item -> index mapping empirically
-        imap = {}
-        sofar = 0
-        for i = 1,#p do
-            -- Check portion + items here
-            assert(distribution.sumtable_portion(t, i) == p[i])
-            local start, nhere = distribution.sumtable_items(t, i)
-            local nprior = start - 1
-            assert(nprior == sofar)
-            assert(nhere == p[i])
-            for j = start, start + p[i] - 1 do
-                imap[j] = i
-            end
-            sofar = sofar + p[i]
-        end
-
-        -- Check empirical map of item -> index
-        for item, in_segment in pairs(imap) do
-            assert(distribution.sumtable_segment(t, item) == in_segment)
-        end
-    end
-end
-test_sumtables()
-
-
--- This is a long test so we save it for last
-function test_prng_cycles()
-    -- Test lots of different seeds/starts looking for too-short cycles
-    start_progress("prng cycles", 292 * 2839 * 50)
-    for s = 1,292 do
-        local seed = 2983 + 849843 * s
-        for st = 1,2839 do
-            local start = 4 + st * 29839
-            local n = start
-            for i = 1,50 do
-                n = rng.prng(n, seed)
-                assert(
-                    n ~= start,
-                    (
-                        "Found cycle of length " .. i .. " for seed " .. seed
-                     .. " starting from " .. start
-                    )
-                )
-                progress()
-            end
-        end
-    end
-
-    -- Compute full cycle lengths (up to a limit) for fewer seeds/starts
-    start_progress("prng cycle lengths", 8 * 100 * 50)
-    for s = 1,8 do
-        local seed = rng.scramble_seed(s)
-        for st = 1,100 do
-            local start = rng.rev_prng(st, seed + 8238)
-            local n = start
-            local clen = nil
-            for i = 1,10000 do
-                n = rng.prng(n, seed)
-                if n == start then
-                    clen = i
-                    break
-                end
-            end
-            -- Print analysis
-            if clen == nil then
-                print(
-                    "Cycle length for seed " .. seed .. " starting from "
-                 .. start .. " is at least 10000."
-                )
-            else
-                print(
-                    "Cycle length for seed " .. seed .. " starting from "
-                 .. start .. " is " .. clen
-                )
-            end
-        end
-    end
-end
-test_prng_cycles()
