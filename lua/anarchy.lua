@@ -1,25 +1,17 @@
 --- anarchy.lua
 -- @module anarchy
--- Reversible chaos library (Lua version).
--- This version effectively uses 32-bit integers via the 'bit' library,
--- since Lua's internal number representation is a 64-bit double by
--- default and the 'bit' library uses 32 bits accordingly.
+-- Reversible chaos library (version for Lua 5.3+).
 -- @author Peter Mawhorter
 -- @copyright 2025 Peter Mawhorter
--- @release 1.0
-
--- Import 'bit' library for bitwise operators
-local bit = require("bit")
-local tobit = bit.tobit
-local band = bit.band
-local bor = bit.bor
-local bnot = bit.bnot
-local bxor = bit.bxor
-local lshift = bit.lshift
-local rshift = bit.rshift
-local arshift = bit.arshift
-local rol = bit.rol
-local ror = bit.ror
+-- @release 1.0-1
+--
+-- This version uses the native integers available in Lua versions 5.3+,
+-- which are 64-bit integers by default or 32-bit integers if your Lua
+-- was compiled with only 32-bit integer support.
+--
+--  If you want to use Lua 5.1, 5.2 or LuaJIT, use the 'anarchy32'
+--  library instead, although performance and probably quality will be
+--  worse.
 
 -- Local refs for math functions
 local min = math.min
@@ -27,15 +19,18 @@ local log = math.log
 local floor = math.floor
 local ceil = math.ceil
 
-local ID_BITS = 32;
-local ID_BYTES = 4;
-
+-- Determine number of ID bytes by packing a single integer and measuring
+-- the number of bytes in the result.
+local ID_BYTES = #string.pack("J", 0)
+local ID_BITS = ID_BYTES * 8
+local LEFTMOST_BIT = 1 << (ID_BITS - 1)
 
 -- Set up module table
 local anarchy = {
     version = 1.0,
     ID_BITS = ID_BITS,
     ID_BYTES = ID_BYTES,
+    LEFTMOST_BIT = LEFTMOST_BIT,
     util = {},
     rng = {},
     cohort = {},
@@ -66,31 +61,31 @@ local hash_string = function(s)
         return hash
     end
     for i = 1,#s do
-        chr = s.byte(i)
+        chr = s:byte(i)
         hash = (hash * 31) + chr
     end
     return hash
 end
 anarchy.util.hash_string = hash_string
 
---- Creates a mask with the given number of 1 bits.
--- Avoids shift operator because of 32-bit limit, but watch out for
--- floating point behavior for bit amounts greater than ~52
+--- Creates a mask with the given number of 1 bits, up to
+-- `anarchy.ID_BITS` maximum (any larger value gives all-1s, same as if
+-- you had given `anarchy.ID_BITS`).
 -- @tparam number bits The number of 1 bits to put in the mask.
 -- @treturn number A value with that many 1 bits starting from the
---     least significant place. Won't work for large numbers of bits.
+--     least significant place.
 local mask = function(bits)
-    return (2 ^ bits) - 1
+    return (1 << bits) - 1
 end
 anarchy.util.mask = mask
 
 --- Returns a mask that covers just the nth byte (zero-indexed), starting
 -- from the least-significant digits.
--- Starts to break down when it exceeds ~52 bits (byte 6 or so).
+-- Returns 0 if n is >= `anarchy.ID_BYTES`.
 -- @tparam number n The byte index (starting from 0)
 -- @treturn number The mask with 1s in that byte and 0s elsewhere
 local byte_mask = function(n)
-    return (2 ^ (n*8)) * 255
+    return (1 << (n*8)) * 255
 end
 anarchy.util.byte_mask = byte_mask
 
@@ -101,7 +96,13 @@ anarchy.util.byte_mask = byte_mask
 -- @returnt number The swirled number.
 local swirl = function(x, distance)
     distance = distance % floor(3 * ID_BITS / 4)
-    return ror(x, distance)
+    local m = mask(distance)
+    local fall_off = x & m
+    local shift_by = (ID_BITS - distance)
+    return (
+        (x >> distance)
+      | (fall_off << shift_by)
+    )
 end
 anarchy.rng.swirl = swirl
 
@@ -112,7 +113,10 @@ anarchy.rng.swirl = swirl
 -- @returnt number The unswirled number.
 local rev_swirl = function(x, distance)
     distance = distance % floor(3 * ID_BITS / 4)
-    return rol(x, distance)
+    local rest = ID_BITS - distance
+    local edge = mask(distance) << rest
+    local around = (x & edge) >> rest
+    return x << distance | around
 end
 anarchy.rng.rev_swirl = rev_swirl
 
@@ -125,34 +129,75 @@ local fold = function(x, where)
     local quarter = floor(ID_BITS / 4);
     where = where % quarter + quarter
     local m = mask(where)
-    local lower = band(x, m)
+    local lower = x & m
     local shift_by = ID_BITS - where
-    return bxor(x, lshift(lower, shift_by))
+    return x ~ (lower << shift_by)
 end
 anarchy.rng.fold = fold
 
-local FLOP_MASK = 0xf0f0f0f0
+
+-- Left half of each byte; used for flopping by swapping these bits with
+-- the right half of each byte.
+local FLOP_MASK = 0xf0
+-- Extend byte-by-byte until we hit max # of bytes (detected when a 1
+-- shows up in the leftmost bit).
+while (FLOP_MASK & LEFTMOST_BIT) == 0 do
+    FLOP_MASK = (FLOP_MASK << 8) | FLOP_MASK
+end
 anarchy.rng.FLOP_MASK = FLOP_MASK
+
 
 --- Flops each 1/2 byte with the adjacent 1/2 byte.
 -- flop is its own inverse.
 -- @paramt number x the number to flop
 -- @returnt number The flopped number
 local flop = function(x)
-    local left = band(x, FLOP_MASK)
-    local right = band(x, bnot(FLOP_MASK))
-    return bor(lshift(right, 4), rshift(left, 4))
+    local left = x & FLOP_MASK
+    local right = x & ~FLOP_MASK
+    return (left >> 4) | (right << 4)
 end
 anarchy.rng.flop = flop
+
+
+-- Note that none of the bits in the SCRAMBLE_TRIGGER is adjacent to a
+-- bit in the SCRAMBLE_SET. This allows us to check even after
+-- scrambling whether the trigger would have activated beforehand.
+local SCRAMBLE_TRIGGER = 0x80200003
+local SCRAMBLE_SET = 0x03040610
+-- Extend one byte at a time to fill available bit width by copying 4th
+-- byte into 1st position. So for 8 bytes we'll get 2 copies of this
+-- pattern. This may fail i
+if ID_BITS % 8 == 0 then
+    while SCRAMBLE_TRIGGER & LEFTMOST_BIT == 0 do
+        SCRAMBLE_TRIGGER = (
+            ((SCRAMBLE_TRIGGER >> 24) & 0xff)
+          | (SCRAMBLE_TRIGGER << 8)
+        )
+        SCRAMBLE_SET = (
+            ((SCRAMBLE_SET >> 24) & 0xff)
+          | (SCRAMBLE_SET << 8)
+        )
+    end
+end
+anarchy.rng.SCRAMBLE_TRIGGER = SCRAMBLE_TRIGGER
+anarchy.rng.SCRAMBLE_SET = SCRAMBLE_SET
 
 --- Implements a reversible linear-feedback-shift-register-like operation.
 -- @paramt number x the number to scramble.
 -- @returnt number the scrambled number
 local scramble = function(x)
-    local trigger = band(x, 0x80200003)
-    local r = ror(x, 1)
-    if trigger ~= 0 then
-        r = bxor(r, 0x03040610)
+    -- trigger if we have a 1 in one of several specific bits
+    local trigger = ((x & SCRAMBLE_TRIGGER) ~= 0)
+    -- circular shift right
+    local fall = x & 1
+    local r = (x >> 1) | (fall << (ID_BITS - 1))
+    -- XOR with constant if we hit a trigger bit, adding/changing bits
+    if trigger then
+        -- Note: This constant has no bits set next to bits of our
+        -- trigger mask, so that even after this operation, if we
+        -- left-shift by 1, the trigger boolean will get the same value.
+        -- This is key to reversibility.
+        r = r ~ SCRAMBLE_SET
     end
     return r
 end
@@ -162,11 +207,13 @@ anarchy.rng.scramble = scramble
 -- @paramt number x the number to unscramble
 -- @returnt number the unscrambled number
 local rev_scramble = function(x)
-    local pr = rol(x, 1)
-    local trigger = band(pr, 0x80200003)
-    if trigger ~= 0 then
-        -- pr = bxor(pr, rol(0x03040610, 1));
-        pr = bxor(pr, 0x06080c20)
+    local around = (x & LEFTMOST_BIT) >> (ID_BITS - 1)
+    local pr = x << 1 | around
+    -- Same trigger mask as in scramble, because we know that scramble
+    -- didn't mess with any of the bits the trigger relies on.
+    local trigger = ((pr & SCRAMBLE_TRIGGER) ~= 0)
+    if trigger then
+        pr = pr ~ (SCRAMBLE_SET << 1)
     end
     return pr
 end
@@ -178,12 +225,12 @@ anarchy.rng.rev_scramble = rev_scramble
 -- @paramt number s the seed to scramble
 -- @returnt number the scrambled seed
 local scramble_seed = function(s)
-    s = tobit((s + 1) * (3 + s % 23))
+    s = (s + 1) * (3 + s % 23)
     s = fold(s, 11) -- prime
     s = scramble(s)
     s = swirl(s, s + 23) -- prime
     s = scramble(s)
-    s = bxor(s, (s % 153) * scramble(s))
+    s = s ~ ((s % 153) * scramble(s))
 
     return s;
 end
@@ -203,7 +250,7 @@ local prng = function(x, seed)
     seed = scramble_seed(seed)
 
     -- value scrambling:
-    x = bxor(x, seed)
+    x = x ~ seed
     x = fold(x, seed + 17) -- prime
     x = flop(x)
     x = swirl(x, seed + 37) -- prime
@@ -230,10 +277,23 @@ local rev_prng = function(x, seed)
     x = rev_swirl(x, seed + 37)  -- prime
     x = flop(x)
     x = fold(x, seed + 17)  -- prime
-    x = bxor(x, seed)
+    x = x ~ seed
     return x
 end
 anarchy.rng.rev_prng = rev_prng
+
+-- For 32-bit version, same as the scramble trigger we use bits 32, 22,
+-- 2, and 1. See this PDF table of max-length LFSR parameters:
+-- http://courses.cse.tamu.edu/walker/csce680/lfsr_table.pdf
+local LFSR_BITS = 0x80200003
+if ID_BYTES == 8 then
+    -- For 64-bit version, we use bits 64, 63, 61, and 60.
+    LFSR_BITS = 0xe800000000000000
+end
+-- We won't worry here about bit widths other than 32 or 64, which should
+-- be the only two ones we'll see. Other bit widths might not be
+-- maximum-length cycles given these values.
+anarchy.rng.LFSR_BITS = LFSR_BITS
 
 
 --- Implements a max-cycle-length 32-bit linear feedback shift register.
@@ -245,17 +305,30 @@ anarchy.rng.rev_prng = rev_prng
 -- @paramt number x the current number
 -- @returnt number the next number in the LFSR sequence
 local lfsr = function(x)
-    return bxor(rshift(x, 1), (0x80200003 * (x % 2)))  -- 32, 22, 2, 1
+    -- Note: the SCRAMBLE_TRIGGER has bits 32, 22, 2, 1 set, or if we're
+    -- using 64-bit integers, bits 64, 54, 34, 33, 32, 22, 2, and 1.
+    return (x >> 1) ~ (LFSR_BITS * (x & 1))
 end
 anarchy.rng.lfsr = lfsr
+
+
+-- Note: We set the sign bit for U_DIVISOR in both cases to 0 to avoid
+-- any unexpected surprises about signed vs. unsigned values.
+local U_DIVISOR = 0x7fffffff  -- largest prime below 2^31 is 2^31 - 1
+local U_SHIFT = 16  -- half the bits
+if ID_BYTES == 8 then
+    U_DIVISOR = 0x7fffffffffffffe7 -- largest prime below 2^63
+    U_SHIFT = 32
+end
+anarchy.rng.U_DIVISOR = U_DIVISOR
 
 --- Generates a random number between 0 and 1 given a seed value.
 -- @paramt number seed The seed that determines the result.
 -- @returnt number A number between 0 (inclusive) and 1 (exclusive)
 local uniform = function(seed)
-    local sc = bxor(seed, lshift(seed, 16))
+    local sc = seed ~ (seed << U_SHIFT)
     local ux = prng(prng(prng(sc, 53), sc), seed)
-    return (ux % 2147483659) / 2147483659  -- prime near 2^31
+    return (ux % U_DIVISOR) / U_DIVISOR
 end
 anarchy.rng.uniform = uniform
 
@@ -288,8 +361,16 @@ anarchy.rng.flip = flip
 
 --- Even distribution over the given integer range, including the start
 -- but excluding the cap (even if the cap is lower than the start).
--- The last number before the cap is about 1/2^31 less likely to be generated
--- than the other numbers.
+-- The last number before the cap is about 1/`anarchy.rng.U_DIVISOR` less
+-- likely to be generated than the other numbers.
+--
+-- Note: Why route integer stuff through uniform instead of just using a
+-- modulus which would be faster? Because we have little idea how
+-- selective biased lfsr and/or prng values might be for an arbitrary
+-- modulus. Our prng is almost certainly NOT capable of producing every
+-- 64-bit number, for example, and might even have some short cycles out
+-- there somewhere.
+--
 -- @paramt number seed The seed that determines the result.
 -- @paramt number start The minimum allowed result value.
 -- @paramt number cap The result limit (will NOT ever be generated itself).
@@ -718,7 +799,7 @@ anarchy.cohort.cohort_upend = cohort_upend
 --     the original index.
 local cohort_shuffle = function(inner, cohort_size, seed)
     local r = inner
-    seed = bxor(seed, cohort_size)
+    seed = seed ~ cohort_size
     -- print("\ncs", inner, cohort_size)
     r = cohort_spread(r, cohort_size, seed + 457)  -- prime
     -- io.write(" spread " .. r)
@@ -766,7 +847,7 @@ anarchy.cohort.cohort_shuffle = cohort_shuffle
 --     shuffled into the specified position.
 local rev_cohort_shuffle = function(inner, cohort_size, seed)
     local r = inner
-    seed = bxor(seed, cohort_size)
+    seed = seed ~ cohort_size
     -- print("\nrcs", inner, cohort_size)
     r = rev_cohort_spin(r, cohort_size, seed + 19)  -- prime
     -- io.write(" spin " .. r)

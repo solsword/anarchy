@@ -95,7 +95,6 @@ def rev_swirl(x, distance):
     """
     distance %= (3 * ID_BITS) // 4
     m = mask(distance)
-    m = mask(distance)
     fall_off = x & (m << (ID_BITS - distance))
     shift_by = (ID_BITS - distance)
     return (

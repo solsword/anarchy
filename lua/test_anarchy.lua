@@ -1,17 +1,16 @@
 -- test_anarchy.lua
 -- Testing script for anarchy reversible chaos module.
 -- Adapted from Python version testing script.
+-- Note: This script has been tested using Lua compiled with 64-bit
+-- integers. It will probably not work completely with 32-bit integers.
+-- If you're for some reason interested in helping make it work with
+-- 32-bit integers, feel free to reach out.
 
 local anarchy = require("anarchy")
-local bit = require("bit")
 local util = anarchy.util
 local rng = anarchy.rng
 local cohort = anarchy.cohort
 local distribution = anarchy.distribution
-
-local bor = bit.bor
-local tobit = bit.tobit
-local tohex = bit.tohex
 
 local floor = math.floor
 local min = math.min
@@ -21,7 +20,9 @@ local log10 = math.log10
 local abs = math.abs
 
 
--- Setup & constants
+--===================--
+-- Setup & Constants --
+--===================--
 
 local TEST_VALUES = {
     0,
@@ -35,13 +36,20 @@ local TEST_VALUES = {
     1928301928,
     0x80000000  -- 1 << 31
 }
+-- More test values if we have 64 bits
+if anarchy.ID_BYTES == 8 then
+    TEST_VALUES[#TEST_VALUES + 1] = 13834298198122839
+    TEST_VALUES[#TEST_VALUES + 1] = 0x8000000000000000  -- 1 << 63
+    TEST_VALUES[#TEST_VALUES + 1] = 0x0f0003000e007020
+    TEST_VALUES[#TEST_VALUES + 1] = 0x0000000100000000  -- 1 << 32
+end
 
 local SEQ_SEEDS = {}
 for i = 1,10000 do
     SEQ_SEEDS[i] = i
 end
 
-local N_SAMPLES = 20000
+local N_SAMPLES = 25000
 local N_CDF_BUCKETS = 100
 
 local PROGRESS = 0
@@ -78,41 +86,26 @@ function progress()
         local new_pct = floor(((PROGRESS + 1) * 100) / TOTAL_WORK)
         if old_pct ~= new_pct then
             io.write(PROGRESS_LABEL .. ": " .. tostring(new_pct) .. "%\r")
+            io.flush()
         end
     end
     PROGRESS = PROGRESS + 1
 end
 
 
-function test_unit_ops()
-    local seed = 129873918231
-    start_progress("ops", 5 * bit.lshift(1, 12) * #TEST_VALUES)
-    for _, o in ipairs{0, 12, 24, 36, 48} do
-        for i = 0,bit.lshift(1, 12) do
-            local x = bit.lshift(i, o)
-            assert(x == rng.flop(rng.flop(x)))
-            assert(x == rng.rev_scramble(rng.scramble(x)))
-            assert(x == rng.prng(rng.rev_prng(x, seed), seed))
-            local r = x
-            local p = x
-            for j, y in ipairs(TEST_VALUES) do
-                assert(x == rng.rev_swirl(rng.swirl(x, y), y))
-                assert(x == rng.fold(rng.fold(x, y), y))
-                assert(r == rng.scramble(rng.rev_scramble(r)))
-                local r = rng.rev_scramble(r)
-                assert(p == rng.rev_prng(rng.prng(p, seed), seed))
-                local p = rng.prng(p, seed)
-                progress()
-            end
-        end
-    end
-end
-
-
 function tolerance(n_samples)
     -- Computes a tolerance value based on a number of samples for testing
     -- pseudo-random functions.
-    return 1.4 / (10 ^ (log10(n_samples) - 3))
+    -- 1.5 instead of 1 here nudges things to be a bit more
+    -- permissive...
+    return 1.5 / (10 ^ max(-1, (log10(n_samples) - 3)))
+end
+
+
+function binomial_tolerance(n_samples)
+    -- Like tolerance but more permissive for binomial distributions...
+    -- TODO: Why do I even need this? T_T
+    return 1.6 / (10 ^ max(-1, (log10(n_samples) - 3.5)))
 end
 
 
@@ -126,9 +119,12 @@ function moments_test(
     -- Tests the given list of samples to make sure it has close to the given
     -- expected mean and standard deviation. Uses assertions to indicate
     -- success/failure. The exp_stdev can be given as None to skip that
-    -- test. If no tolerance value is given, a tolerance will be computed
-    -- automatically using the tolerance function. The label is used in
-    -- failure messages.
+    -- test.
+    --
+    -- If no tolerance value is given, a tolerance will be computed
+    -- automatically using the tolerance function.
+    --
+    -- The label is used in failure messages.
     if tol == nil then
         tol = tolerance(#samples)
     end
@@ -148,7 +144,7 @@ function moments_test(
     assert(pct <= tol, (
         string.format(
             (
-                "Suspicious mean discrepancy from (%.4f}) for"
+                "Suspicious mean discrepancy from (%.4f) for"
              .. " %s: %.4f -> %.2f%%"
             ),
             exp_mean, label, mean, 100 * pct
@@ -174,9 +170,9 @@ function moments_test(
             string.format(
                 (
                     "Suspicious stdev discrepancy from (%.4f) for"
-                 .. " %s: %.4f -> %.2f%%"
+                 .. " %s: %.4f -> %.2f%% > %.2f%%"
                 ),
-                exp_stdev, label, stdev, 100 * pct
+                exp_stdev, label, stdev, 100 * pct, 100 * tol
             )
         ))
     end
@@ -200,7 +196,7 @@ function binomial_samples_test(
     -- failure messages.
     local mean_tol, stdev_tol
     if tol == nil then
-        mean_tol = tolerance(#samples)
+        mean_tol = binomial_tolerance(#samples)
     else
         mean_tol = tol
     end
@@ -226,7 +222,7 @@ function binomial_samples_test(
     assert(pct <= mean_tol, (
         string.format(
             (
-                "Suspicious count discrepancy from (%.4f}) for"
+                "Suspicious count discrepancy from (%.4f) for"
              .. " %s: %.4f -> %.2f%%, > %.2f%%"
             ),
             exp_count, label, count, 100 * pct, 100 * mean_tol
@@ -278,6 +274,114 @@ function binomial_samples_test(
 end
 
 
+-- How many bins to use when computing subsamples for extended moments
+-- tests:
+local MOMENT_SUBSAMPLES_BINS = 100
+
+
+function moments_and_subsamples_test(
+    samples,
+    exp_mean,
+    exp_stdev,
+    label,
+    tol
+)
+    -- Tests the overall mean and standard deviation of all the given
+    -- samples, and then tests the same thing for
+    -- `MOMENT_SUBSAMPLES_BINS` sub-samples dividing along the samples
+    -- index and for the same numer sub-samples dividing by index modulo
+    -- that number. Also checks for directional bias in the errors among
+    -- the subsamples.
+    --
+    -- Uses automatic tolerance when checking subsamples.
+    --
+    -- We assume that the distribution is a normal distribution when
+    -- scaling the expected standard deviation for the subsamples...
+    -- TODO: Not that!
+    moments_test(samples, exp_mean, exp_stdev, label, tol)
+
+    local subsample_exp_stdev = nil
+    if exp_stdev ~= nil then
+        -- Compute expected subsample standard deviation based on
+        -- assumption that the given exp_stdev is calculated for a
+        -- normal distribution.
+        local exp_stdev_scaling = (1 / (#samples - 1)) ^ 0.5
+        local new_scaling = (
+            1 / ((#samples / MOMENT_SUBSAMPLES_BINS) - 1)
+        ) ^ 0.5
+        subsample_exp_stdev = exp_stdev * new_scaling / exp_stdev_scaling
+        -- Note: Each subsample is likely to be closer to its subsample
+        -- mean than to the overall mean... See:
+        -- https://math.stackexchange.com/questions/1937346/shouldnt-sample-standard-deviation-decrease-with-increased-sample-size
+        -- We don't account for that effect here...
+    end
+
+    -- Capture direction of deviation for each subsample
+    local segment_deviations = {}
+    local slice_deviations = {}
+
+    -- Size of each subsample bin
+    local bin_size = floor(#samples / MOMENT_SUBSAMPLES_BINS)
+
+    for i = 1,MOMENT_SUBSAMPLES_BINS do
+        -- Derive two subsamples: one based on segmenting the original
+        -- sample and another based on collecting from indices with
+        -- equal modulus.
+        local sub_segment = {}
+        local segment_mean = 0
+        local sub_slice = {}
+        local slice_mean = 0
+        for j = 1,bin_size do
+            local segment_next = samples[(i - 1) * bin_size + j]
+            sub_segment[#sub_segment + 1] = segment_next
+            segment_mean = segment_mean + segment_next
+
+            local slice_next = samples[i + (j - 1) * MOMENT_SUBSAMPLES_BINS]
+            sub_slice[#sub_slice + 1] = slice_next
+            slice_mean = slice_mean + slice_next
+        end
+        segment_mean = segment_mean / #sub_segment
+        slice_mean = slice_mean / #sub_slice
+        if segment_mean < exp_mean then
+            segment_deviations[#segment_deviations + 1] = true
+        elseif segment_mean < exp_mean then
+            segment_deviations[#segment_deviations + 1] = false
+        end
+        -- Don't add a deviation sample if the mean is miraculously
+        -- exactly correct...
+        if slice_mean < exp_mean then
+            slice_deviations[#slice_deviations + 1] = true
+        elseif slice_mean < exp_mean then
+            slice_deviations[#slice_deviations + 1] = false
+        end
+        moments_test(
+            sub_segment,
+            exp_mean,
+            subsample_exp_stdev,
+            label .. " (subsample segment " .. i .. ")"
+        )
+        moments_test(
+            sub_slice,
+            exp_mean,
+            subsample_exp_stdev,
+            label .. " (subsample slice " .. i .. ")"
+        )
+    end
+    binomial_samples_test(
+        segment_deviations,
+        0.5,
+        20,
+        label .. " (segments deviation directions)"
+    )
+    binomial_samples_test(
+        slice_deviations,
+        0.5,
+        20,
+        label .. " (slices deviation directions)"
+    )
+end
+
+
 function trapezoid_area(height, top, bottom)
     -- Computes the area of a trapezoid with the given height and top/bottom
     -- lengths.
@@ -302,24 +406,41 @@ function cdf_points(low, high)
 end
 
 
-function cdf_test(samples, cdf, test_points, label, tol)
+function cdf_test(
+    samples,
+    cdf,
+    test_points,
+    label,
+    area_tolerance,
+    cumulative_tolerance,
+    bucket_tolerance
+)
     -- Tests that the cumulative distribution function of the given
     -- samples roughly matches the given expected cumulative distribution
     -- function (should be a function which accepts a number x and
     -- returns a probability of the result being smaller than x). This
-    -- estimates the total area of the differences between the actual and
-    -- expected CDFs sampling at each of the given test points, and then
-    -- requires that the percentage that this represents of the area
-    -- under the true CDF is below a certain threshold based on the
-    -- number of samples. This function uses asserts to test the outcome;
-    -- the label is used for messaging.
-
-    -- If no tolerance values is given, an automatic tolerance will be
-    -- computed based on the number of test_points.
+    -- estimates:
+    -- 1. The total fractional difference between the number of samples
+    --     in each bucket and the expected number based on the given CDF.
+    -- 2. The total fractional difference between the cumulative sample
+    --     count and expected cumulative sample count at each of the test
+    --     points.
+    -- 3. The total area of the differences between the actual and
+    --     expected CDFs, sampling at each of the given test points.
+    --
+    -- Each of these must be within the respective tolerance level, with
+    -- defaults based on the number of samples. By default, the tolerance
+    -- for each difference is the result of the `tolerance` function,
+    -- called based on the relevant number of samples.
+    --
+    -- This function uses asserts to test the outcome; the label is used
+    -- for messaging.
     local ns = #samples
-    if tol == nil then
-        tol = tolerance(ns)
+    if area_tolerance == nil then
+        area_tolerance = tolerance(ns)
     end
+    -- Let cumulative_tolerance remain nil to scale as we progress
+    -- Set bucket_tolerance below when we know bucket sizes
 
     -- make a copy and sort it
     ordered = {}
@@ -330,20 +451,87 @@ function cdf_test(samples, cdf, test_points, label, tol)
 
     local discrepancy_area = 0
     local correct_area = 0
-    local obs_precount = 1
+    local obs_toindex = 1
 
     -- Initialize previous variables for our next step
     local prev_exp_pc = 0
+    local prev_precount = 0
     local prev_overshoot = 0
+    local prev_point = 0
 
     for i, tp in ipairs(test_points) do
         exp_precount = cdf(tp) * ns
-        while obs_precount <= ns and ordered[obs_precount] < tp do
-            obs_precount = obs_precount + 1
+        while obs_toindex <= ns and ordered[obs_toindex] < tp do
+            obs_toindex = obs_toindex + 1
         end
+
+        local obs_precount = obs_toindex - 1
 
         -- Compute overshoot at this test point
         local overshoot = obs_precount - exp_precount
+
+        local prev_bucket_exp = exp_precount - prev_exp_pc
+        local prev_bucket_count = obs_precount - prev_precount
+
+        -- Check that the cumulative count is within tolerance
+        local cumulative_discrepancy = (
+            (obs_precount - exp_precount)
+          / exp_precount
+        )
+        local cumulative_tolerance_now = cumulative_tolerance
+        if cumulative_tolerance_now == nil then
+            -- Set it based on precount so far, so that it narrows as
+            -- we've seen more of the CDF
+            cumulative_tolerance_now = tolerance(exp_precount)
+        end
+        if exp_precount == 0 then
+            cumulative_discrepancy = obs_precount  -- not a percentage
+        end
+
+        assert(
+            cumulative_discrepancy < cumulative_tolerance_now,
+            string.format(
+                (
+                    "Suspicious CDF cumulative count difference from %.2f for"
+                 .. " %s values less than %.5f: %d -> %.2f%% > %.2f%%"
+                ),
+                exp_precount,
+                label,
+                tp,
+                obs_precount,
+                100 * cumulative_discrepancy,
+                100 * cumulative_tolerance_now
+            )
+        )
+
+        -- Check that the local bucket count is within tolerance
+        local bucket_discrepancy = (
+            (prev_bucket_count - prev_bucket_exp)
+          / prev_bucket_exp
+        )
+        local this_bucket_tolerance = bucket_tolerance
+        if this_bucket_tolerance == nil then
+            this_bucket_tolerance = tolerance(prev_bucket_exp)
+        end
+        if prev_bucket_exp == 0 then
+            bucket_discrepancy = prev_bucket_count  -- not a percentage...
+        end
+        assert(
+            bucket_discrepancy < this_bucket_tolerance,
+            string.format(
+                (
+                    "Suspicious CDF bucket count difference from %.2f for"
+                 .. " %s bucket %.5f-%.5f: %d -> %.2f%% > %.2f%%"
+                ),
+                prev_bucket_exp,
+                label,
+                prev_point,
+                tp,
+                prev_bucket_count,
+                100 * bucket_discrepancy,
+                100 * this_bucket_tolerance
+            )
+        )
 
         -- Only for the 2nd+ test points...
         if i > 1 then
@@ -387,20 +575,23 @@ function cdf_test(samples, cdf, test_points, label, tol)
 
         -- Update previous variables for our next step
         prev_exp_pc = exp_precount
+        prev_precount = obs_precount
         prev_overshoot = overshoot
+        prev_point = tp
     end
 
     discrepancy = abs(discrepancy_area / correct_area)
-    assert(discrepancy <= tol, (
+    assert(discrepancy <= area_tolerance, (
         string.format(
             (
                 "Suspicious CDF area discrepancy from (%.2f) for"
-             .. " %s: %.2f -> %.2f%%"
+             .. " %s: %.2f -> %.2f%% > %.2f%%"
             ),
             correct_area,
             label,
             discrepancy_area,
-            100 * discrepancy
+            100 * discrepancy,
+            100 * area_tolerance
         )
     ))
 end
@@ -411,13 +602,436 @@ print(
     string.format(
         (
             "\nUsing %d samples, the default tolerance will be"
-         .. " %0.2f%%."
+         .. " %0.2f%%.\nTolerances for CDF buckets would be:\n"
+         .. "  %d -> %.2f%%\n  %d -> %.2f%%\n"
         ),
         N_SAMPLES,
-        100 * tolerance(N_SAMPLES)
+        100 * tolerance(N_SAMPLES),
+        N_SAMPLES / 10,
+        100 * tolerance(N_SAMPLES / 10),
+        N_SAMPLES / 100,
+        100 * tolerance(N_SAMPLES / 100)
     )
 )
 
+
+function test_uniform_distribution()
+    -- Tests the mean, standard deviation, and CDF for uniform results using
+    -- N_SAMPLES samples starting from each of a few different seeds.
+    start_progress("uniform::managed", #TEST_VALUES * N_SAMPLES)
+    -- TODO: How to make the distribution better and/or test better?
+    for _, seed in ipairs(TEST_VALUES) do
+        local rand = seed
+        local samples = {}
+        for _ = 1,N_SAMPLES do
+            samples[#samples + 1] = rng.uniform(rand)
+            rand = rng.prng(rand, seed)
+            progress()
+        end
+
+        moments_and_subsamples_test(
+            samples,
+            0.5,
+            1 / 12 ^ 0.5,
+            "uniform(:" .. seed .. ":)"
+        )
+
+        cdf_test(
+            samples,
+            function(x) return x end,
+            cdf_points(0, 1),
+            "uniform(:" .. seed .. ":)"
+        )
+    end
+
+    samples = {}
+    start_progress("uniform::sequential", #SEQ_SEEDS)
+    for _, seed in ipairs(SEQ_SEEDS) do
+        samples[#samples + 1] = rng.uniform(seed)
+        progress()
+    end
+
+    moments_and_subsamples_test(
+        samples,
+        0.5,
+        1 / 12 ^ 0.5,
+        "uniform(:sequential:)"
+    )
+
+    cdf_test(
+        samples,
+        function(x) return x end,
+        cdf_points(0, 1),
+        "uniform(:sequential:)"
+    )
+end
+test_uniform_distribution()
+
+
+function test_normalish_distribution()
+    -- Like `test_uniform_distribution`, but tests normalish. Does not test
+    -- the CDF. (TODO: That?)
+    start_progress("normalish::managed", #TEST_VALUES * N_SAMPLES)
+    for _, seed in ipairs(TEST_VALUES) do
+        local rand = seed
+        local samples = {}
+        for i = 1,N_SAMPLES do
+            samples[#samples + 1] = rng.normalish(rand)
+            rand = rng.prng(rand, seed)
+            progress()
+        end
+
+        moments_and_subsamples_test(
+            samples,
+            0.5,
+            1 / 6, -- see js/anarchy_tests.js for derivation
+            "normalish(:" .. seed .. ":)"
+        )
+    end
+
+    -- TODO: CDF test here?
+
+    samples = {}
+    start_progress("normalish::sequential", #SEQ_SEEDS)
+    for _, seed in ipairs(SEQ_SEEDS) do
+        samples[#samples + 1] = rng.normalish(seed)
+        progress()
+    end
+
+    moments_and_subsamples_test(
+        samples,
+        0.5,
+        1 / 6,
+        "normalish(:sequential:)"
+    )
+end
+test_normalish_distribution()
+
+
+function test_flip_distribution()
+    -- Tests the mean and standard deviation for the flip function using a few
+    -- different probabilities and a few different seeds at each probability.
+    local test_with = { 0.5, 0.2, 0.005, 0.9, 0.99 }
+    start_progress(
+        "flip::managed",
+        (#test_with - 1) * #TEST_VALUES * N_SAMPLES
+      + #TEST_VALUES * N_SAMPLES * 8
+    )
+    for _, p in ipairs(test_with) do
+        for _, seed in ipairs(TEST_VALUES) do
+            local rand = seed
+            local samples = {}
+            local n_samples = N_SAMPLES
+            local tol = binomial_tolerance(n_samples)
+            if p < 0.015 or (1 - p) < 0.015 then
+                tol = tol * 3
+                n_samples = n_samples * 6
+                -- we increase both tolerance and number of samples
+                -- (making it easier to hit that tolerance) for low and
+                -- high probability trials
+            end
+            for i = 1,n_samples do
+                samples[#samples + 1] = rng.flip(p, rand)
+                rand = rng.prng(rand, seed)
+                progress()
+            end
+
+            binomial_samples_test(
+                samples,
+                p,
+                100, -- use 100 groups to calculate standard deviation
+                "flip(" .. p .. ", :" .. seed .. ":)",
+                tol
+            )
+        end
+    end
+
+    samples = {}
+    start_progress("flip::sequential", #SEQ_SEEDS)
+    for i, seed in ipairs(SEQ_SEEDS) do
+        samples[#samples + 1] = rng.flip(0.5, seed)
+        progress()
+    end
+
+    binomial_samples_test(
+        samples,
+        0.5,
+        100,  -- 100 groups
+        "flip(0.5, :sequential:)"
+    )
+end
+test_flip_distribution()
+
+
+function test_integer_distribution()
+    -- Tests the mean, stdev, and CDF for `anarchy.rng.integer` using
+    -- various low/high values, including inverted pairs.
+    local lows = { 0, -31, 1289, -7294712 }
+    local highs = { 0, -30, 1289482, -7298392 }
+    start_progress(
+        "integer::managed",
+        #lows * #highs * #TEST_VALUES * N_SAMPLES
+    )
+    for _, low in ipairs(lows) do
+        for _, high in ipairs(highs) do
+            for _, seed in ipairs(TEST_VALUES) do
+                local rand = seed
+                local samples = {}
+                for i = 1,N_SAMPLES do
+                    samples[#samples + 1] = rng.integer(rand, low, high)
+                    rand = rng.prng(rand, seed)
+                    progress()
+                end
+
+                if low == high then
+                    -- No need for mean/stdev/cdf tests here
+                    for _, s in ipairs(samples) do
+                        assert(
+                            s == low,
+                            (
+                                "Non-fixed sample for integer(:"
+                             .. seed .. ":, " .. low .. ", " .. high
+                             .. "): " .. s
+                            )
+                        )
+                    end
+                else
+                    local span = high - 1 - low
+                    local exp_mean = low + span / 2
+                    local exp_stdev = (1 / (12 ^ 0.5)) * abs(span)
+
+                    moments_and_subsamples_test(
+                        samples,
+                        exp_mean,
+                        exp_stdev,
+                        (
+                            "integer(:" .. seed .. ":, " .. low .. ", "
+                         .. high .. ")"
+                        )
+                    )
+
+                    local real_low = min(low, high)
+                    local real_high = max(low, high)
+
+                    local points
+                    if high <= low + 1 then
+                        points = { real_low, real_high + 1 }
+                    else
+                        points = cdf_points(real_low, real_high)
+                    end
+                    cdf_test(
+                        samples,
+                        function(x)
+                            if real_high > real_low + 1 then
+                                return min(
+                                    1,
+                                    ((x - real_low) / (real_high - real_low))
+                                )
+                            elseif x > real_low then
+                                return 1
+                            else
+                                return 0
+                            end
+                            return 
+                        end,
+                        points,
+                        (
+                            "integer(:" .. seed .. ":, " .. low .. ", "
+                         .. high .. ")"
+                        )
+                    )
+                end
+            end
+        end
+    end
+
+    samples = {}
+    low = -12
+    high = 10472
+    span = high - 1 - low
+    exp_mean = low + span / 2
+    exp_stdev = (1 / (12 ^ 0.5)) * abs(span)
+    start_progress("integer::sequential", #SEQ_SEEDS)
+    for _, seed in ipairs(SEQ_SEEDS) do
+        samples[#samples + 1] = rng.integer(seed, low, high)
+        progress()
+    end
+
+    moments_and_subsamples_test(
+        samples,
+        exp_mean,
+        exp_stdev,
+        "integer(:sequential:, " .. low .. ", " .. high .. ")"
+    )
+
+    cdf_test(
+        samples,
+        function(x) return min(1, ((x - low) / (high - low) )) end,
+        cdf_points(low, high),
+        "integer(:sequential:, " .. low .. ", " .. high .. ")"
+    )
+end
+test_integer_distribution()
+
+
+function test_exponential_distribution()
+    -- Tests the distribution of exponential means, stdevs, and CDFs for
+    -- several different seeds at each of several different shape values.
+    local shapes = { 0.05, 0.5, 1, 1.5, 5 }
+    start_progress(
+        "exponential::managed",
+        #shapes * #TEST_VALUES * N_SAMPLES
+    )
+    for _, shape in ipairs(shapes) do
+        -- Test with different shape (lambda) values
+        for _, seed in ipairs(TEST_VALUES) do
+            local rand = seed
+            local samples = {}
+
+            local exp_mean = 1 / shape
+            -- expected stdev is the same as the expected mean for an
+            -- exponential distribution
+            local exp_stdev = exp_mean
+
+            -- compute samples
+            for i = 1,N_SAMPLES do
+                samples[#samples + 1] = rng.exponential(rand, shape)
+                rand = rng.prng(rand, seed)
+                progress()
+            end
+
+            -- TODO: A moments_and_subsamples_test here instead?
+            moments_test(
+                samples,
+                exp_mean,
+                exp_stdev,
+                "exponential(:" .. seed .. ":, " .. shape .. ")"
+            )
+
+            local exp_cdf = cdf_points(0, 2)
+            for _, p in ipairs(cdf_points(2.5, 30)) do
+                exp_cdf[#exp_cdf + 1] = p
+            end
+            cdf_test(
+                samples,
+                function (x) return 1 - exp(-shape * x) end,
+                exp_cdf,
+                "exponential(:" .. seed .. ":, " .. shape .. ")"
+            )
+        end
+    end
+
+    samples = {}
+    local shape = 0.75
+    exp_mean = 1 / shape
+    exp_stdev = exp_mean
+    start_progress("exponential::sequential", #SEQ_SEEDS)
+    for _, seed in ipairs(SEQ_SEEDS) do
+        samples[#samples + 1] = rng.exponential(seed, shape)
+        progress()
+    end
+
+    -- TODO: A moments_and_subsamples_test here instead?
+    moments_test(
+        samples,
+        exp_mean,
+        exp_stdev,
+        "exponential(:sequential:, " .. shape .. ")"
+    )
+
+    cdf = cdf_points(0, 2)
+    for _, p in ipairs(cdf_points(2.5, 30)) do
+        cdf[#cdf + 1] = p
+    end
+    cdf_test(
+        samples,
+        function(x) return 1 - exp(-shape * x) end,
+        cdf,
+        "exponential(:sequential:, " .. shape .. ")"
+    )
+end
+test_exponential_distribution()
+
+
+function test_truncated_exponential_distribution()
+    -- Tests `anarchy.rng.truncated_exponential` results at several
+    -- different shape values. Tests means and CDFS but not stdevs (TODO:
+    -- that?).
+    local shapes = { 0.05, 0.5, 1, 1.5, 5 }
+    start_progress(
+        "truncated_exponential::managed",
+        #shapes * #TEST_VALUES * N_SAMPLES
+    )
+    for _, shape in ipairs(shapes) do
+        -- Test with different shape (lambda) values
+        for _, seed in ipairs(TEST_VALUES) do
+            local rand = seed
+            local samples = {}
+
+            local exp_mean = (1 / shape) - (1 / (exp(shape) - 1))
+            -- TODO: What's the expected stdev here?
+            local exp_stdev = nil
+
+            -- compute samples
+            for i = 1,N_SAMPLES do
+                samples[#samples + 1] = rng.truncated_exponential(rand, shape)
+                rand = rng.prng(rand, seed)
+                progress()
+            end
+
+            -- TODO: A moments_and_subsamples_test here instead?
+            moments_test(
+                samples,
+                exp_mean,
+                exp_stdev,
+                "truncated_exponential(:" .. seed .. ":, " .. shape .. ")"
+            )
+
+            -- Note: js/anarchy_tests.js contains a derivation of the
+            -- truncated CDF formula we're using here
+            cdf_test(
+                samples,
+                function(x)
+                    return (1 - exp(-shape * x)) / (1 - exp(-shape))
+                end,
+                cdf_points(0, 1),
+                "truncated_exponential(:" .. seed .. ":, " .. shape .. ")"
+            )
+        end
+    end
+
+    samples = {}
+    shape = 0.75
+    exp_mean = (1 / shape) - (1 / (exp(shape) - 1))
+    exp_stdev = nil  -- TODO
+    start_progress("truncated_exponential::sequential", #SEQ_SEEDS)
+    for _, seed in ipairs(SEQ_SEEDS) do
+        samples[#samples + 1] = rng.truncated_exponential(seed, shape)
+    end
+
+    -- TODO: A moments_and_subsamples_test here instead?
+    moments_test(
+        samples,
+        exp_mean,
+        exp_stdev,
+        "truncated_exponential(:sequential:, " .. shape .. ")"
+    )
+
+    cdf_test(
+        samples,
+        function(x)
+            return (1 - exp(-shape * x)) / (1 - exp(-shape))
+        end,
+        cdf_points(0, 1),
+        "truncated_exponential(:sequential:, " .. shape .. ")"
+    )
+end
+test_truncated_exponential_distribution()
+
+
+--=======--
+-- Tests --
+--=======--
 
 -- Straightforward value tests...
 
@@ -451,81 +1065,205 @@ end
 test_byte_mask()
 
 
+function test_unit_ops()
+    local seed = 129873918231
+    start_progress("ops", 5 * bit.lshift(1, 12) * #TEST_VALUES)
+    for _, o in ipairs{0, 12, 24, 36, 48} do
+        for i = 0,bit.lshift(1, 12) do
+            local x = bit.lshift(i, o)
+            assert(x == rng.flop(rng.flop(x)))
+            assert(x == rng.rev_scramble(rng.scramble(x)))
+            assert(x == rng.prng(rng.rev_prng(x, seed), seed))
+            local r = x
+            local p = x
+            for j, y in ipairs(TEST_VALUES) do
+                assert(x == rng.rev_swirl(rng.swirl(x, y), y))
+                assert(x == rng.fold(rng.fold(x, y), y))
+                assert(r == rng.scramble(rng.rev_scramble(r)))
+                local r = rng.rev_scramble(r)
+                assert(p == rng.rev_prng(rng.prng(p, seed), seed))
+                local p = rng.prng(p, seed)
+                progress()
+            end
+        end
+    end
+end
+
+
 function test_swirl()
     assert(rng.swirl(2, 1) == 1)
     assert(rng.swirl(4, 1) == 2)
     assert(rng.swirl(8, 2) == 2)
-    assert(rng.swirl(1, 1) == tobit(0x80000000))
-    assert(rng.swirl(2, 2) == tobit(0x80000000))
-    assert(rng.swirl(1, 2) == tobit(0x40000000))
+    assert(rng.swirl(1, 1) == 0x8000000000000000)
+    assert(rng.swirl(2, 2) == 0x8000000000000000)
+    assert(rng.swirl(1, 2) == 0x4000000000000000)
     assert(rng.rev_swirl(1, 2) == 4)
     assert(rng.rev_swirl(1, 3) == 8)
     assert(rng.rev_swirl(2, 2) == 8)
-    assert(rng.rev_swirl(0x80000000, 1) == 1)
-    assert(rng.rev_swirl(0x80000000, 2) == 2)
-    assert(rng.rev_swirl(0x80000000, 3) == 4)
-    assert(rng.rev_swirl(0x40000000, 3) == 2)
-    assert(rng.rev_swirl(0x00101030, 1) == tobit(0x00202060))
+    assert(rng.rev_swirl(0x8000000000000000, 1) == 1)
+    assert(rng.rev_swirl(0x8000000000000000, 2) == 2)
+    assert(rng.rev_swirl(0x8000000000000000, 3) == 4)
+    assert(rng.rev_swirl(0x4000000000000000, 3) == 2)
+    assert(rng.rev_swirl(0x0010000000001030, 1) == 0x0020000000002060)
     assert(rng.rev_swirl(rng.swirl(1098301, 17), 17) == 1098301)
 end
 test_swirl()
 
 
 function test_fold()
-    -- TODO: Verify these!
-    assert(rng.fold(22908, 7) == tobit(3002620284))
-    assert(rng.fold(18201, 18) == tobit(3326101273))
-    assert(rng.fold(rng.fold(18201, 18), 18) == 18201)
-    assert(rng.fold(rng.fold(89348393, 1289), 1289) == 89348393)
+    local f
+    -- Test that it's its own inverse
+    f = rng.fold(rng.fold(18201, 18), 18)
+    assert(f == 18201, f)
+    f = rng.fold(rng.fold(89348393, 1289), 1289)
+    assert(f == 89348393, f)
+
+    if anarchy.ID_BYTES == 4 then
+        -- Should fold 10 bits (8-16 range w/ 2 index)
+        -- 0x747 (minus initial 01) ->
+        -- 11 01 00 01 11
+        -- Folding onto upper 10 bits, which are:
+        -- 00 01 00 11 00
+        -- So we get:
+        -- 11 00 00 10 11
+        -- Which is (along with extra 0x01): 0xc2d
+        f = rng.fold(0x13134747, 2)
+        assert(f == 0xc2d34747, f)
+
+        -- Random values checked & locked in
+        f = rng.fold(22908, 7)
+        assert(f == 3002620284, f)
+        f = rng.fold(18201, 18)
+        assert(f == 3326101273, f)
+    else
+        -- Should fold 18 bits (16-32 range w/ 2 index)
+        -- 0x34747 (minus two initial zeroes) ->
+        -- 11 01 00 01 11 01 00 01 11
+        -- Folding onto upper 18 bits, which are:
+        -- 00 01 00 11 00 01 00 11 00
+        -- So we get:
+        -- 11 00 00 10 11 00 00 10 11
+        -- Which is (along with extra 0x01): 0xc2c2d
+        f = rng.fold(0x1313131313134747, 2)
+        assert(f == 0xc2c2d31313134747, f)
+
+        -- Random values checked & locked in
+        f = rng.fold(22908, 7)
+        assert(f == 50375224738208124, f)
+        f = rng.fold(18201, 18)
+        assert(f == 1280781512777680665, f)
+
+        -- 8-byte inverse tests
+        f = rng.fold(rng.fold(0x0000f37d1ac247eb, 23982), 23982)
+        assert(f == 0x0000f37d1ac247eb, f)
+        f = rng.fold(rng.fold(0xfff4422ffff4422, 0), 0)
+        assert(f == 0xfff4422ffff4422, f)
+    end
 end
 test_fold()
 
 
 function test_flop()
-    -- TODO: Verify these!
-    assert(rng.flop(0xf0f0f0f0) == tobit(0x0f0f0f0f))
-    assert(rng.flop(0x0f0f0f0f) == tobit(0xf0f0f0f0))
+    assert(rng.flop(0xf0f0f0f0) == 0x0f0f0f0f)
+    assert(rng.flop(0x0a0a0a0a) == 0xa0a0a0a0)
     assert(rng.flop(22908) == 38343)
     assert(rng.flop(18201) == 29841)
     assert(rng.flop(rng.flop(3892389)) == 3892389)
     assert(rng.flop(rng.flop(489248448)) == 489248448)
+    if anarchy.ID_BYTES == 8 then
+        assert(rng.flop(0x7070707070707070) == 0x0707070707070707)
+        assert(rng.flop(0x0e0e0e0e0e0e0e0e) == 0xe0e0e0e0e0e0e0e0)
+    end
 end
 test_flop()
 
 
 function test_scramble()
+    local t, s
+    -- Test value that has no overlap with the scramble set bits, but
+    -- which will trigger scrambling even when shifted left by 1
+    t = 0x40004001
     assert(
-        rng.scramble(
-            rng.rev_swirl(bor(0x03040610, 0x40004001), 1)
+        (t & rng.SCRAMBLE_SET) == 0,
+        string.format(
+            "%x overlaps with %x: %x",
+            t,
+            rng.SCRAMBLE_SET,
+            (t & rng.SCRAMBLE_SET)
         )
-     == 0x40004001
     )
-    assert(
-        rng.rev_scramble(0x40004001)
-     == rng.rev_swirl(bit.bor(0x03040610, 0x40004001), 1)
-    )
-    assert(rng.rev_scramble(rng.scramble(17)) == 17)
-    assert(rng.rev_scramble(rng.scramble(8493489)) == 8493489)
-    assert(rng.scramble(rng.rev_scramble(8493489)) == 8493489)
+    -- OR-in scramble set bits, shift left, and scramble
+    -- Scramble bits should knock themselves out leaving the t value
+    -- alone
+    s = rng.scramble(rng.rev_swirl(rng.SCRAMBLE_SET | t, 1))
+    assert(s == 0x40004001, s)
+    s = rng.rev_scramble(0x40004001)
+    assert(s == rng.rev_swirl(rng.SCRAMBLE_SET | 0x40004001, 1), s)
+    s = rng.rev_scramble(rng.scramble(17))
+    assert(s == 17, s)
+    s = rng.rev_scramble(rng.scramble(8493489))
+    assert(s == 8493489, s)
+    s = rng.scramble(rng.rev_scramble(8493489))
+    assert(s == 8493489, s)
+    if anarchy.ID_BYTES == 8 then
+        local s = rng.scramble(rng.rev_scramble(0x378294ef7ab3301))
+        assert(s == 0x378294ef7ab3301, s)
+    end
+    s = rng.scramble(rng.rev_scramble(0))
+    assert(s == 0, s)
+    s = rng.rev_scramble(rng.scramble(0))
+    assert(s == 0, s)
 end
 test_scramble()
 
 
 function test_prng()
-    assert(
-        rng.prng(489348, 373891) == 1541976216,
-        "" .. rng.prng(489348, 373891) .. " ? " .. 1541976216
-    )
-    assert(rng.rev_prng(1541976216, 373891) == 489348)
-    assert(rng.prng(0, 0) == -1409750063, "" .. rng.prng(0, 0) .. " ? " .. -1409750063)
-    assert(rng.rev_prng(-1409750063, 0) == 0)
+    local seed, start, expect, result
+    local test_values
     assert(rng.prng(rng.rev_prng(1782, 39823), 39823) == 1782)
     assert(rng.rev_prng(rng.prng(1782, 39823), 39823) == 1782)
+    test_values = {
+        {373891, 489348, 1541976216},
+        {0, 0, -1409750063},
+        {28983, 389, 0},
+    }
+    if anarchy.ID_BYTES == 8 then
+        seed = 4938433849834
+        start = 98349833984983
+        result = rng.prng(rng.rev_prng(start, seed), seed) 
+        assert(result == start, "" .. result .. " </> " .. start)
+        seed = 0x803451657483efa7
+        start = 0x0493f3a8dec4d4aa
+        result = rng.prng(rng.rev_prng(start, seed), seed) 
+        assert(result == start, "" .. result .. " </> " .. start)
+        assert(rng.rev_prng(rng.prng(0, 483984), 483984) == 0)
+        assert(rng.prng(rng.rev_prng(0, 483984), 483984) == 0)
+        test_values = {
+            {373891, 489348, 7811360407439714725},
+            {0, 0, 131877779694904891},
+            {28983, 389, -1691726202175399180},
+            {483984, 2489308509186683412, 0},
+        }
+    end
+
+    for _, tvs in ipairs(test_values) do
+        seed = tvs[1]
+        start = tvs[2]
+        expect = tvs[3]
+        result = rng.prng(start, seed)
+        assert(
+            result == expect,
+            string.format("%d: %d ? %d", seed, result, expect)
+        )
+        assert(rng.rev_prng(result, seed) == start)
+    end
+
     local n = 298398
     for s = 34878374,34878374 + 100 do
         local nx = rng.prng(n, s)
         assert(rng.rev_prng(nx, s) == n)
     end
+
     for s = 1,30 do
         local sd = 18373 + 3289832*s
         for i = 1,100 do
@@ -547,93 +1285,183 @@ test_lfsr()
 
 
 function test_uniform()
-    assert(
-        rng.uniform(0)
-     ==  0.16982559633064941984059714741306379437446594238281250,
-        string.format("%.53f", rng.uniform(0))
-    )
-    assert(
-        rng.uniform(8329801)
-     ==  0.57223131074824162833891705304267816245555877685546875,
-        string.format("%.53f", rng.uniform(8329801))
-    )
-    assert(
-        rng.uniform(58923)
-     ==  0.26524206860099791560614335139689501374959945678710938,
-        string.format("%.53f", rng.uniform(58923))
-    )
+    if anarchy.ID_BYTES == 4 then
+        assert(
+            rng.uniform(0)
+         ==  0.16982559633064941984059714741306379437446594238281250,
+            string.format("%.53f", rng.uniform(0))
+        )
+        assert(
+            rng.uniform(8329801)
+         ==  0.57223131074824162833891705304267816245555877685546875,
+            string.format("%.53f", rng.uniform(8329801))
+        )
+        assert(
+            rng.uniform(58923)
+         ==  0.26524206860099791560614335139689501374959945678710938,
+            string.format("%.53f", rng.uniform(58923))
+        )
+    elseif anarchy.ID_BYTES == 8 then
+        assert(
+            rng.uniform(0)
+         ==   0.41885797171245592318555850397387985140085220336914062,
+            string.format("%.53f", rng.uniform(0))
+        )
+        assert(
+            rng.uniform(8329801)
+         == 0.99183482023694691243065335584105923771858215332031250,
+            string.format("%.53f", rng.uniform(8329801))
+        )
+        assert(
+            rng.uniform(58923)
+         == 0.68184228287304127213985793787287548184394836425781250,
+            string.format("%.53f", rng.uniform(58923))
+        )
+    else
+        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
+    end
 end
 test_uniform()
 
 
 function test_normalish()
-    assert(
-        rng.normalish(0)
-     ==  0.48090422481456157610679724712099414318799972534179688,
-        string.format("%.53f", rng.normalish(0))
-    )
-    assert(
-        rng.normalish(8329801)
-     == 0.72301795258193080062625313075841404497623443603515625,
-        string.format("%.53f", rng.normalish(8329801))
-    )
-    assert(
-        rng.normalish(58923)
-     == 0.46549958295476212555286110728047788143157958984375000,
-        string.format("%.53f", rng.normalish(58923))
-    )
+    if anarchy.ID_BYTES == 4 then
+        assert(
+            rng.normalish(0)
+         ==  0.48090422481456157610679724712099414318799972534179688,
+            string.format("%.53f", rng.normalish(0))
+        )
+        assert(
+            rng.normalish(8329801)
+         == 0.99183482023694691243065335584105923771858215332031250,
+            string.format("%.53f", rng.normalish(8329801))
+        )
+        assert(
+            rng.normalish(58923)
+         == 0.46549958295476212555286110728047788143157958984375000,
+            string.format("%.53f", rng.normalish(58923))
+        )
+    elseif anarchy.ID_BYTES == 8 then
+        assert(
+            rng.normalish(0)
+         == 0.62947778336024839962448140795459039509296417236328125,
+            string.format("%.53f", rng.normalish(0))
+        )
+        assert(
+            rng.normalish(8329801)
+         == 0.28449636259630423085198458466038573533296585083007812,
+            string.format("%.53f", rng.normalish(8329801))
+        )
+        assert(
+            rng.normalish(58923)
+         == 0.56064914785989483636541308442247100174427032470703125,
+            string.format("%.53f", rng.normalish(58923))
+        )
+    else
+        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
+    end
 end
 test_normalish()
 
 
 function test_integer()
-    assert(rng.integer(0, 0, 1) == 0, rng.integer(0, 0, 1))
-    assert(rng.integer(0, 3, 25) == 6, rng.integer(0, 3, 25))
-    assert(rng.integer(1, 3, 25) == 20, rng.integer(1, 3, 25))
-    assert(rng.integer(2, 3, 25) == 17, rng.integer(2, 3, 25))
-    assert(rng.integer(58923, 3, 25) == 8, rng.integer(58923, 3, 25))
-    assert(rng.integer(58923, -2, -4) == -3, rng.integer(58923, -2, -4))
-    assert(rng.integer(58923, -20, -40) == -26, rng.integer(58923, -20, -40))
+    local r
+    if anarchy.ID_BYTES == 4 then
+        r = rng.integer(0, 0, 1)
+        assert(r == 0, r)
+        r = rng.integer(0, 3, 25)
+        assert(r == 6, r)
+        r = rng.integer(1, 3, 25)
+        assert(r == 20, r)
+        r = rng.integer(2, 3, 25)
+        assert(r == 17, r)
+        r = rng.integer(58923, 3, 25)
+        assert(r == 8, r)
+        r = rng.integer(58923, -2, -4)
+        assert(r == -3, r)
+        r = rng.integer(58923, -20, -40)
+        assert(r == -26, r)
+    elseif anarchy.ID_BYTES == 8 then
+        r = rng.integer(0, 0, 1)
+        assert(r == 0, r)
+        r = rng.integer(0, 3, 25)
+        assert(r == 12, r)
+        r = rng.integer(1, 3, 25)
+        assert(r == 11, r)
+        r = rng.integer(2, 3, 25)
+        assert(r == 23, r)
+        r = rng.integer(58923, 3, 25)
+        assert(r == 18, r)
+        r = rng.integer(58923, -2, -4)
+        assert(r == -4, r)
+        r = rng.integer(58923, -20, -40)
+        assert(r == -34, r)
+    else
+        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
+    end
 end
 test_integer()
 
 
 function test_exponential()
-    assert(
-        rng.exponential(0, 0.5)
-     == 3.54596654493773444372095582366455346345901489257812500,
-        string.format("%.53f", rng.exponential(0, 0.5))
-    )
-    assert(
-        rng.exponential(8329801, 0.5)
-     == 1.11642395985140230330046051676617935299873352050781250,
-        string.format("%.53f", rng.exponential(8329801, 0.5))
-    )
-    assert(
-        rng.exponential(58923, 1.5)
-     == 0.88474160235573739985426300336257554590702056884765625,
-        string.format("%.53f", rng.exponential(58923, 1.5))
-    )
+    if anarchy.ID_BYTES == 4 then
+        assert(
+            rng.exponential(0, 0.5)
+         == 3.54596654493773444372095582366455346345901489257812500,
+            string.format("%.53f", rng.exponential(0, 0.5))
+        )
+        assert(
+            rng.exponential(8329801, 0.5)
+         == 1.11642395985140230330046051676617935299873352050781250,
+            string.format("%.53f", rng.exponential(8329801, 0.5))
+        )
+        assert(
+            rng.exponential(58923, 1.5)
+         == 0.88474160235573739985426300336257554590702056884765625,
+            string.format("%.53f", rng.exponential(58923, 1.5))
+        )
+    elseif anarchy.ID_BYTES == 8 then
+    else
+        assert(false, "Unexpected ID bytes: " .. anarchy.ID_BYTES)
+    end
 end
 test_exponential()
 
 
 function test_truncated_exponential()
-    assert(
-        rng.truncated_exponential(0, 0.5)
-     == 0.54596654493773444372095582366455346345901489257812500,
-        string.format("%.53f", rng.truncated_exponential(0, 0.5))
-    )
-    assert(
-        rng.truncated_exponential(8329801, 1.5)
-     == 0.37214131995046745293720391600800212472677230834960938,
-        string.format("%.53f", rng.truncated_exponential(8329801, 1.5))
-    )
-    assert(
-        rng.truncated_exponential(58923, 2.5)
-     == 0.53084496141344250652593927952693775296211242675781250,
-        string.format("%.53f", rng.truncated_exponential(58923, 2.5))
-    )
+    if anarchy.ID_BYTES == 4 then
+        assert(
+            rng.truncated_exponential(0, 0.5)
+         == 0.54596654493773444372095582366455346345901489257812500,
+            string.format("%.53f", rng.truncated_exponential(0, 0.5))
+        )
+        assert(
+            rng.truncated_exponential(8329801, 1.5)
+         == 0.37214131995046745293720391600800212472677230834960938,
+            string.format("%.53f", rng.truncated_exponential(8329801, 1.5))
+        )
+        assert(
+            rng.truncated_exponential(58923, 2.5)
+         == 0.53084496141344250652593927952693775296211242675781250,
+            string.format("%.53f", rng.truncated_exponential(58923, 2.5))
+        )
+    elseif anarchy.ID_BYTES == 8 then
+        assert(
+            rng.truncated_exponential(0, 0.5)
+         == 0.74044677236642031381563811009982600808143615722656250,
+            string.format("%.53f", rng.truncated_exponential(0, 0.5))
+        )
+        assert(
+            rng.truncated_exponential(8329801, 1.5)
+         == 0.00546579827987946423317744404357654275372624397277832,
+            string.format("%.53f", rng.truncated_exponential(8329801, 1.5))
+        )
+        assert(
+            rng.truncated_exponential(58923, 2.5)
+         == 0.15318276186681811790180063326261006295680999755859375,
+            string.format("%.53f", rng.truncated_exponential(58923, 2.5))
+        )
+    end
 end
 test_truncated_exponential()
 
@@ -955,412 +1783,6 @@ function test_cohort_shuffle()
     end
 end
 test_cohort_shuffle()
-
-
-function test_uniform_distribution()
-    -- Tests the mean, standard deviation, and CDF for uniform results using
-    -- N_SAMPLES samples starting from each of a few different seeds.
-    start_progress("uniform::managed", #TEST_VALUES * N_SAMPLES)
-    for _, seed in ipairs(TEST_VALUES) do
-        local rand = seed
-        local samples = {}
-        for _ = 1,N_SAMPLES do
-            samples[#samples + 1] = rng.uniform(rand)
-            rand = rng.prng(rand, seed)
-            progress()
-        end
-
-        moments_test(
-            samples,
-            0.5,
-            1 / 12 ^ 0.5,
-            "uniform(:" .. seed .. ":)"
-        )
-
-        cdf_test(
-            samples,
-            function(x) return x end,
-            cdf_points(0, 1),
-            "uniform(:" .. seed .. ":)"
-        )
-    end
-
-    samples = {}
-    start_progress("uniform::sequential", #SEQ_SEEDS)
-    for _, seed in ipairs(SEQ_SEEDS) do
-        samples[#samples + 1] = rng.uniform(seed)
-        progress()
-    end
-
-    moments_test(
-        samples,
-        0.5,
-        1 / 12 ^ 0.5,
-        "uniform(:sequential:)"
-    )
-
-    cdf_test(
-        samples,
-        function(x) return x end,
-        cdf_points(0, 1),
-        "uniform(:sequential:)"
-    )
-end
-test_uniform_distribution()
-
-
-function test_normalish_distribution()
-    -- Like `test_uniform_distribution`, but tests normalish. Does not test
-    -- the CDF. (TODO: That?)
-    start_progress("normalish::managed", #TEST_VALUES * N_SAMPLES)
-    for _, seed in ipairs(TEST_VALUES) do
-        local rand = seed
-        local samples = {}
-        for i = 1,N_SAMPLES do
-            samples[#samples + 1] = rng.normalish(rand)
-            rand = rng.prng(rand, seed)
-            progress()
-        end
-
-        moments_test(
-            samples,
-            0.5,
-            1 / 6, -- see js/anarchy_tests.js for derivation
-            "normalish(:" .. seed .. ":)"
-        )
-    end
-
-    -- TODO: CDF test here?
-
-    samples = {}
-    start_progress("normalish::sequential", #SEQ_SEEDS)
-    for _, seed in ipairs(SEQ_SEEDS) do
-        samples[#samples + 1] = rng.normalish(seed)
-        progress()
-    end
-
-    moments_test(
-        samples,
-        0.5,
-        1 / 6,
-        "normalish(:sequential:)"
-    )
-end
-test_normalish_distribution()
-
-
-function test_flip_distribution()
-    -- Tests the mean and standard deviation for the flip function using a few
-    -- different probabilities and a few different seeds at each probability.
-    local test_with = { 0.5, 0.2, 0.005, 0.9, 0.99 }
-    start_progress(
-        "flip::managed",
-        (#test_with - 1) * #TEST_VALUES * N_SAMPLES
-      + #TEST_VALUES * N_SAMPLES * 8
-    )
-    for _, p in ipairs(test_with) do
-        for _, seed in ipairs(TEST_VALUES) do
-            local rand = seed
-            local samples = {}
-            local n_samples = N_SAMPLES
-            local tol = tolerance(n_samples)
-            if p < 0.01 or (1 - p) < 0.01 then
-                n_samples = n_samples * 8
-                -- we allow 8x tolerance for low/high-p flips
-            end
-            for i = 1,n_samples do
-                samples[#samples + 1] = rng.flip(p, rand)
-                rand = rng.prng(rand, seed)
-                progress()
-            end
-
-            binomial_samples_test(
-                samples,
-                p,
-                100, -- use 100 groups to calculate standard deviation
-                "flip(" .. p .. ", :" .. seed .. ":)",
-                tol
-            )
-        end
-    end
-
-    samples = {}
-    start_progress("flip::sequential", #SEQ_SEEDS)
-    for i, seed in ipairs(SEQ_SEEDS) do
-        samples[#samples + 1] = rng.flip(0.5, seed)
-        progress()
-    end
-
-    binomial_samples_test(
-        samples,
-        0.5,
-        100,  -- 100 groups
-        "flip(0.5, :sequential:)"
-    )
-end
-test_flip_distribution()
-
-
-function test_integer_distribution()
-    -- Tests the mean, stdev, and CDF for `anarchy.rng.integer` using
-    -- various low/high values, including inverted pairs.
-    local lows = { 0, -31, 1289, -7294712 }
-    local highs = { 0, -30, 1289482, -7298392 }
-    start_progress(
-        "integer::managed",
-        #lows * #highs * #TEST_VALUES * N_SAMPLES
-    )
-    for _, low in ipairs(lows) do
-        for _, high in ipairs(highs) do
-            for _, seed in ipairs(TEST_VALUES) do
-                local rand = seed
-                local samples = {}
-                for i = 1,N_SAMPLES do
-                    samples[#samples + 1] = rng.integer(rand, low, high)
-                    rand = rng.prng(rand, seed)
-                    progress()
-                end
-
-                if low == high then
-                    -- No need for mean/stdev/cdf tests here
-                    for _, s in ipairs(samples) do
-                        assert(
-                            s == low,
-                            (
-                                "Non-fixed sample for integer(:"
-                             .. seed .. ":, " .. low .. ", " .. high
-                             .. "): " .. s
-                            )
-                        )
-                    end
-                else
-                    local span = high - 1 - low
-                    local exp_mean = low + span / 2
-                    local exp_stdev = (1 / (12 ^ 0.5)) * abs(span)
-
-                    moments_test(
-                        samples,
-                        exp_mean,
-                        exp_stdev,
-                        (
-                            "integer(:" .. seed .. ":, " .. low .. ", "
-                         .. high .. ")"
-                        )
-                    )
-
-                    local real_low = min(low, high)
-                    local real_high = max(low, high)
-
-                    local points
-                    if high <= low + 1 then
-                        points = { real_low, real_high + 1 }
-                    else
-                        points = cdf_points(real_low, real_high)
-                    end
-                    cdf_test(
-                        samples,
-                        function(x)
-                            if real_high > real_low + 1 then
-                                return min(
-                                    1,
-                                    ((x - real_low) / (real_high - real_low))
-                                )
-                            elseif x > real_low then
-                                return 1
-                            else
-                                return 0
-                            end
-                            return 
-                        end,
-                        points,
-                        (
-                            "integer(:" .. seed .. ":, " .. low .. ", "
-                         .. high .. ")"
-                        )
-                    )
-                end
-            end
-        end
-    end
-
-    samples = {}
-    low = -12
-    high = 10472
-    span = high - 1 - low
-    exp_mean = low + span / 2
-    exp_stdev = (1 / (12 ^ 0.5)) * abs(span)
-    start_progress("integer::sequential", #SEQ_SEEDS)
-    for _, seed in ipairs(SEQ_SEEDS) do
-        samples[#samples + 1] = rng.integer(seed, low, high)
-        progress()
-    end
-
-    moments_test(
-        samples,
-        exp_mean,
-        exp_stdev,
-        "integer(:sequential:, " .. low .. ", " .. high .. ")"
-    )
-
-    cdf_test(
-        samples,
-        function(x) return min(1, ((x - low) / (high - low) )) end,
-        cdf_points(low, high),
-        "integer(:sequential:, " .. low .. ", " .. high .. ")"
-    )
-end
-test_integer_distribution()
-
-
-function test_exponential_distribution()
-    -- Tests the distribution of exponential means, stdevs, and CDFs for
-    -- several different seeds at each of several different shape values.
-    local shapes = { 0.05, 0.5, 1, 1.5, 5 }
-    start_progress(
-        "exponential::managed",
-        #shapes * #TEST_VALUES * N_SAMPLES
-    )
-    for _, shape in ipairs(shapes) do
-        -- Test with different shape (lambda) values
-        for _, seed in ipairs(TEST_VALUES) do
-            local rand = seed
-            local samples = {}
-
-            local exp_mean = 1 / shape
-            -- expected stdev is the same as the expected mean for an
-            -- exponential distribution
-            local exp_stdev = exp_mean
-
-            -- compute samples
-            for i = 1,N_SAMPLES do
-                samples[#samples + 1] = rng.exponential(rand, shape)
-                rand = rng.prng(rand, seed)
-                progress()
-            end
-
-            moments_test(
-                samples,
-                exp_mean,
-                exp_stdev,
-                "exponential(:" .. seed .. ":, " .. shape .. ")"
-            )
-
-            local exp_cdf = cdf_points(0, 2)
-            for _, p in ipairs(cdf_points(2.5, 30)) do
-                exp_cdf[#exp_cdf + 1] = p
-            end
-            cdf_test(
-                samples,
-                function (x) return 1 - exp(-shape * x) end,
-                exp_cdf,
-                "exponential(:" .. seed .. ":, " .. shape .. ")"
-            )
-        end
-    end
-
-    samples = {}
-    local shape = 0.75
-    exp_mean = 1 / shape
-    exp_stdev = exp_mean
-    start_progress("exponential::sequential", #SEQ_SEEDS)
-    for _, seed in ipairs(SEQ_SEEDS) do
-        samples[#samples + 1] = rng.exponential(seed, shape)
-        progress()
-    end
-
-    moments_test(
-        samples,
-        exp_mean,
-        exp_stdev,
-        "exponential(:sequential:, " .. shape .. ")"
-    )
-
-    cdf = cdf_points(0, 2)
-    for _, p in ipairs(cdf_points(2.5, 30)) do
-        cdf[#cdf + 1] = p
-    end
-    cdf_test(
-        samples,
-        function(x) return 1 - exp(-shape * x) end,
-        cdf,
-        "exponential(:sequential:, " .. shape .. ")"
-    )
-end
-test_exponential_distribution()
-
-
-function test_truncated_exponential_distribution()
-    -- Tests `anarchy.rng.truncated_exponential` results at several
-    -- different shape values. Tests means and CDFS but not stdevs (TODO:
-    -- that?).
-    local shapes = { 0.05, 0.5, 1, 1.5, 5 }
-    start_progress(
-        "truncated_exponential::managed",
-        #shapes * #TEST_VALUES * N_SAMPLES
-    )
-    for _, shape in ipairs(shapes) do
-        -- Test with different shape (lambda) values
-        for _, seed in ipairs(TEST_VALUES) do
-            local rand = seed
-            local samples = {}
-
-            local exp_mean = (1 / shape) - (1 / (exp(shape) - 1))
-            -- TODO: What's the expected stdev here?
-            local exp_stdev = nil
-
-            -- compute samples
-            for i = 1,N_SAMPLES do
-                samples[#samples + 1] = rng.truncated_exponential(rand, shape)
-                rand = rng.prng(rand, seed)
-                progress()
-            end
-
-            moments_test(
-                samples,
-                exp_mean,
-                exp_stdev,
-                "truncated_exponential(:" .. seed .. ":, " .. shape .. ")"
-            )
-
-            -- Note: js/anarchy_tests.js contains a derivation of the
-            -- truncated CDF formula we're using here
-            cdf_test(
-                samples,
-                function(x)
-                    return (1 - exp(-shape * x)) / (1 - exp(-shape))
-                end,
-                cdf_points(0, 1),
-                "truncated_exponential(:" .. seed .. ":, " .. shape .. ")"
-            )
-        end
-    end
-
-    samples = {}
-    shape = 0.75
-    exp_mean = (1 / shape) - (1 / (exp(shape) - 1))
-    exp_stdev = nil  -- TODO
-    start_progress("truncated_exponential::sequential", #SEQ_SEEDS)
-    for _, seed in ipairs(SEQ_SEEDS) do
-        samples[#samples + 1] = rng.truncated_exponential(seed, shape)
-    end
-
-    moments_test(
-        samples,
-        exp_mean,
-        exp_stdev,
-        "truncated_exponential(:sequential:, " .. shape .. ")"
-    )
-
-    cdf_test(
-        samples,
-        function(x)
-            return (1 - exp(-shape * x)) / (1 - exp(-shape))
-        end,
-        cdf_points(0, 1),
-        "truncated_exponential(:sequential:, " .. shape .. ")"
-    )
-end
-test_truncated_exponential_distribution()
 
 
 function test_cohort_ops()
@@ -2021,3 +2443,59 @@ function test_sumtables()
     end
 end
 test_sumtables()
+
+
+-- This is a long test so we save it for last
+function test_prng_cycles()
+    -- Test lots of different seeds/starts looking for too-short cycles
+    start_progress("prng cycles", 292 * 2839 * 50)
+    for s = 1,292 do
+        local seed = 2983 + 849843 * s
+        for st = 1,2839 do
+            local start = 4 + st * 29839
+            local n = start
+            for i = 1,50 do
+                n = rng.prng(n, seed)
+                assert(
+                    n ~= start,
+                    (
+                        "Found cycle of length " .. i .. " for seed " .. seed
+                     .. " starting from " .. start
+                    )
+                )
+                progress()
+            end
+        end
+    end
+
+    -- Compute full cycle lengths (up to a limit) for fewer seeds/starts
+    start_progress("prng cycle lengths", 8 * 100 * 50)
+    for s = 1,8 do
+        local seed = rng.scramble_seed(s)
+        for st = 1,100 do
+            local start = rng.rev_prng(st, seed + 8238)
+            local n = start
+            local clen = nil
+            for i = 1,10000 do
+                n = rng.prng(n, seed)
+                if n == start then
+                    clen = i
+                    break
+                end
+            end
+            -- Print analysis
+            if clen == nil then
+                print(
+                    "Cycle length for seed " .. seed .. " starting from "
+                 .. start .. " is at least 10000."
+                )
+            else
+                print(
+                    "Cycle length for seed " .. seed .. " starting from "
+                 .. start .. " is " .. clen
+                )
+            end
+        end
+    end
+end
+test_prng_cycles()

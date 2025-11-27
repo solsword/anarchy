@@ -1448,5 +1448,50 @@ def test_sumtables():
             assert distribution.sumtable_segment(t, item) == in_segment
 
 
+@loudtest
+def test_prng_cycles():
+    # Test cycle lengths (up to a limit) for a few seeds/starts
+    start_progress("prng cycle lengths", 8 * 100 * 50)
+    for s in range(8):
+        seed = rng.scramble_seed(s)
+        for st in range(100):
+            start = rng.rev_prng(st, seed + 8238)
+            n = start
+            clen = None
+            for i in range(10000):
+                n = rng.prng(n, seed)
+                if n == start:
+                    clen = i
+                    break
+                progress()
+            # Print analysis
+            # TODO: Assertions here instead!
+            if clen is None:
+                print(
+                    f"Cycle length for seed {seed} starting from {start}"
+                    f" is at least 10000."
+                )
+            else:
+                print(
+                    f"Cycle length for seed {seed} starting from {start}"
+                    f" is {clen}"
+                )
+
+    # Test for too-short cycle lengths for a lot of seeds/starts
+    start_progress("prng cycles", 292 * 2839 * 50)
+    for s in range(292):
+        seed = 2983 + 849843 * s
+        for st in range(2839):
+            start = 4 + st * 29839
+            n = start
+            for i in range(50):
+                n = rng.prng(n, seed)
+                assert n != start, (
+                    f"Found cycle of length {i} for seed {seed}"
+                    f" starting from {start}."
+                )
+                progress()
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main(sys.argv[3:] + ["--pyargs", "anarchy.test"]))
