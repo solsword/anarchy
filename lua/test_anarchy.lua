@@ -411,6 +411,7 @@ function cdf_test(
     cdf,
     test_points,
     label,
+    skip_buckets,
     area_tolerance,
     cumulative_tolerance,
     bucket_tolerance
@@ -435,7 +436,13 @@ function cdf_test(
     --
     -- This function uses asserts to test the outcome; the label is used
     -- for messaging.
+    --
+    -- Set 'skip_buckets' to true in order to just perform overall area
+    -- testing, not per-bucket and cumulative testing.
     local ns = #samples
+    if skip_buckets == nil then
+        skip_buckets = false
+    end
     if area_tolerance == nil then
         area_tolerance = tolerance(ns)
     end
@@ -473,65 +480,69 @@ function cdf_test(
         local prev_bucket_exp = exp_precount - prev_exp_pc
         local prev_bucket_count = obs_precount - prev_precount
 
-        -- Check that the cumulative count is within tolerance
-        local cumulative_discrepancy = (
-            (obs_precount - exp_precount)
-          / exp_precount
-        )
-        local cumulative_tolerance_now = cumulative_tolerance
-        if cumulative_tolerance_now == nil then
-            -- Set it based on precount so far, so that it narrows as
-            -- we've seen more of the CDF
-            cumulative_tolerance_now = tolerance(exp_precount)
-        end
-        if exp_precount == 0 then
-            cumulative_discrepancy = obs_precount  -- not a percentage
-        end
-
-        assert(
-            cumulative_discrepancy < cumulative_tolerance_now,
-            string.format(
-                (
-                    "Suspicious CDF cumulative count difference from %.2f for"
-                 .. " %s values less than %.5f: %d -> %.2f%% > %.2f%%"
-                ),
-                exp_precount,
-                label,
-                tp,
-                obs_precount,
-                100 * cumulative_discrepancy,
-                100 * cumulative_tolerance_now
+        -- Don't check cumulative count or bucket count if told not to
+        if not skip_buckets then
+            -- Check that the cumulative count is within tolerance
+            local cumulative_discrepancy = (
+                (obs_precount - exp_precount)
+              / exp_precount
             )
-        )
+            local cumulative_tolerance_now = cumulative_tolerance
+            if cumulative_tolerance_now == nil then
+                -- Set it based on precount so far, so that it narrows as
+                -- we've seen more of the CDF
+                cumulative_tolerance_now = tolerance(exp_precount)
+            end
+            if exp_precount == 0 then
+                cumulative_discrepancy = obs_precount  -- not a percentage
+            end
 
-        -- Check that the local bucket count is within tolerance
-        local bucket_discrepancy = (
-            (prev_bucket_count - prev_bucket_exp)
-          / prev_bucket_exp
-        )
-        local this_bucket_tolerance = bucket_tolerance
-        if this_bucket_tolerance == nil then
-            this_bucket_tolerance = tolerance(prev_bucket_exp)
-        end
-        if prev_bucket_exp == 0 then
-            bucket_discrepancy = prev_bucket_count  -- not a percentage...
-        end
-        assert(
-            bucket_discrepancy < this_bucket_tolerance,
-            string.format(
-                (
-                    "Suspicious CDF bucket count difference from %.2f for"
-                 .. " %s bucket %.5f-%.5f: %d -> %.2f%% > %.2f%%"
-                ),
-                prev_bucket_exp,
-                label,
-                prev_point,
-                tp,
-                prev_bucket_count,
-                100 * bucket_discrepancy,
-                100 * this_bucket_tolerance
+            assert(
+                cumulative_discrepancy < cumulative_tolerance_now,
+                string.format(
+                    (
+                        "Suspicious CDF cumulative count difference from"
+                     .. " %.2f for %s values less than %.5f: %d -> %.2f%%"
+                     .. " > %.2f%%"
+                    ),
+                    exp_precount,
+                    label,
+                    tp,
+                    obs_precount,
+                    100 * cumulative_discrepancy,
+                    100 * cumulative_tolerance_now
+                )
             )
-        )
+
+            -- Check that the local bucket count is within tolerance
+            local bucket_discrepancy = (
+                (prev_bucket_count - prev_bucket_exp)
+              / prev_bucket_exp
+            )
+            local this_bucket_tolerance = bucket_tolerance
+            if this_bucket_tolerance == nil then
+                this_bucket_tolerance = tolerance(prev_bucket_exp)
+            end
+            if prev_bucket_exp == 0 then
+                bucket_discrepancy = prev_bucket_count  -- not a percentage...
+            end
+            assert(
+                bucket_discrepancy < this_bucket_tolerance,
+                string.format(
+                    (
+                        "Suspicious CDF bucket count difference from %.2f"
+                     .. "for %s bucket %.5f-%.5f: %d -> %.2f%% > %.2f%%"
+                    ),
+                    prev_bucket_exp,
+                    label,
+                    prev_point,
+                    tp,
+                    prev_bucket_count,
+                    100 * bucket_discrepancy,
+                    100 * this_bucket_tolerance
+                )
+            )
+        end
 
         -- Only for the 2nd+ test points...
         if i > 1 then
