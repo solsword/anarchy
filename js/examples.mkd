@@ -1171,16 +1171,17 @@ p_sn.addEventListener("click", p_cycle_nseed);
 ```
 </details>
 
-Here are the actual results. The top row shows un-shuffled poems, and the
-bottom row shows shuffled poems from the same space. Note that with traditional
-shuffling where results are stored in an array, we'd need to store an array of
-length `gr_full` ($2^{30}$ = 1073741824, which is about 1 GB, or 4 GB
-considering each entry would likely need 4 bytes). Additionally, we'd need at
-least one more array of length `lim_gr_full` ($2^{28} = 268435456; 1 GB) if we
-wanted to also handle the filter we've implemented, and additional arrays for
-other filters. Anarchy is happy to give us virtual shuffles without using any
-space, and only computing the parts that are actually requested, and it can
-also give us a new shuffle on demand if we just change the seed value, without
+Here are the actual results. The top row shows un-shuffled poems, and
+the bottom row shows shuffled poems from the same space. Note that with
+traditional shuffling where results are stored in an array, we'd need
+to store an array of length `gr_full` ($2^{30}$ = 1073741824, which is
+about 1 GB, or 4 GB considering each entry would likely need 4 bytes).
+Additionally, we'd need at least one more array of length `lim_gr_full`
+($2^{28}$ = 268435456; 1 GB) if we wanted to also handle the filter
+we've implemented, and additional arrays for other filters. Anarchy is
+happy to give us virtual shuffles without using any space, and only
+computing the parts that are actually requested, and it can also give
+us a new shuffle on demand if we just change the seed value, without
 any extra overhead of re-shuffling things.
 
 <input type="button" value="<" id="poetry_demo_previous">
