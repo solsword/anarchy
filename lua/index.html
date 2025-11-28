@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>README</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="js/examples.css" />
+</head>
+<body>
+<h1 id="anarchy">anarchy</h1>
+<p>Incremental &amp; reversible chaos library. Generates pseudo-random
+numbers (not suitable for cryptographic or statistical applications) in
+a reversible and incremental manner.</p>
+<p>“Reversible” means that you can take a random result value and use
+reverse random functions to determine the seed value it came from, or
+take a shuffled item position and determine which original position it
+had. This property is useful for implementing things like a compass or
+‘rare item radar’ that can lead the way to the nearest
+randomly-distributed item of a particular type, since you can not only
+ask “I’m generating the tile at 3, 17, what goes here?” but also “Which
+tile was treasure #25 assigned to?”</p>
+<p>“Incremental” means that you can generate the index of one shuffled
+item without generating and storing an array containing the total
+ordering of the items (or figure out which segment an item got
+distributed into without storing the full mapping of items to segments).
+This property is useful in situations like Minecraft, where we need to
+generate chunks of a larger world based on the order the player explores
+them in. Pre-generating entire regions (or even data structures to
+support placement of items in those regions) is not feasible, and
+instead with <code>anarchy</code>, you can simply request the portions
+of a shuffle or distribution that you need as you need them. In general
+this also means that you don’t need to manage and hand around an “RNG”
+instance in the code, but can instead share a single integer seed and
+have each part of the code derive all the information it needs from that
+alone.</p>
+<p>Capabilities include:</p>
+<ul>
+<li>Reversible pseudo-random number generator</li>
+<li>Convenience functions for pseudo-normal, exponential, etc.
+distributions</li>
+<li>Reversible &amp; incremental shuffling</li>
+<li>Reversible &amp; incremental random distribution of items among
+segments</li>
+</ul>
+<p>This is the directory for the Lua versions; the library is also
+available in C, Unity/C#, Python, and Javascript.</p>
+<p>There are four versions of the library available in Lua:</p>
+<ol type="1">
+<li>For Lua 5.1, 5.2 and LuaJIT, <a
+href="anarchy32.lua"><code>anarchy32.lua</code></a>. If you need a
+version that defines the <code>anarchy</code> table as a global variable
+rather than returning it module-style, get <a
+href="anarchy32_global.lua"><code>anarchy32_global.lua</code></a>
+instead.</li>
+<li>For Lua 5.3+, using 64-bit integers where available and the new
+built-in bitwise operators that should make things faster, get <a
+href="anarchy.lua"><code>anarchy.lua</code></a>. The corresponding
+global-variable version is <a
+href="anarchy.lua"><code>anarchy_global.lua</code></a>.</li>
+</ol>
+<p>The module versions are also on <a
+href="https://luarocks.org/modules/solsword/anarchy">Luarocks</a> so you
+can do <code>luarocks install anarchy</code> or
+<code>luarocks install anarchy32</code> to install them if you want.</p>
+<h2 id="links">Links</h2>
+<p>The <a href="https://cs.wellesley.edu/~pmwh/anarchy/">main README
+page</a> has links to live examples and documentation for some other
+versions.</p>
+<p><a
+href="https://cs.wellesley.edu/~pmwh/anarchy/lua/docs32/index.html">Documentation
+for the <code>anarchy32</code> version</a> and <a
+href="https://cs.wellesley.edu/~pmwh/anarchy/lua/docs/index.html">documentation
+for the <code>anarchy</code> version</a> are available.</p>
+</body>
+</html>

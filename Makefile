@@ -1,5 +1,5 @@
 index.html: README.md 
-	pandoc --standalone --css js/examples.css README.md -o index.html
+	pandoc --standalone --css js/examples.css $< -o $@
 
 lua/index.html: lua/README.md 
-	pandoc --standalone --css js/examples.css README.md -o index.html
+	pandoc --standalone --css js/examples.css $< -o $@
