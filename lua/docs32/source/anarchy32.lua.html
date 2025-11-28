@@ -1,0 +1,1524 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Anarchy32 Lua Documentation</title>
+    <link rel="stylesheet" href="../ldoc_fixed.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Anarchy32</h1>
+
+
+
+
+
+<h2>Source</h2>
+<ul class="nowrap">
+  <li><strong>anarchy32.lua</strong></li>
+  <li><a href="../source/test_anarchy32.lua.html">test_anarchy32.lua</a></li>
+</ul>
+<h2>Libraries</h2>
+<ul class="nowrap">
+  <li><a href="../index.html">anarchy32</a></li>
+</ul>
+<h2>Examples</h2>
+<ul class="nowrap">
+  <li><a href="../examples/test_anarchy32.lua.html">test_anarchy32.lua</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+    <h2>anarchy32.lua</h2>
+<pre>
+<span class="comment">--- anarchy32.lua
+</span><span class="comment">-- @module anarchy32
+</span><span class="comment">-- Reversible chaos library (Lua 32-bit version for Lua 5.1, 5.2, and
+</span><span class="comment">--   LuaJIT).
+</span><span class="comment">-- @author Peter Mawhorter
+</span><span class="comment">-- @copyright 2025 Peter Mawhorter
+</span><span class="comment">-- @release 1.0-1
+</span><span class="comment">--
+</span><span class="comment">-- If you're reading the online documentation: The "Local" functions are
+</span><span class="comment">-- organized under 'util', 'rng', 'cohort', and 'distribution'
+</span><span class="comment">-- sub-modules. Haven't figured out how to get LDoc to understand that
+</span><span class="comment">-- yet.
+</span><span class="comment">--
+</span><span class="comment">-- This version effectively uses 32-bit integers via the 'bit' or 'bit32'
+</span><span class="comment">-- library, since Lua &lt; 5.3 and LuaJIT don't have bitwise operations, and
+</span><span class="comment">-- use 32-bit integers stored as floating point numbers. Use the
+</span><span class="comment">-- 'anarchy' library instead if you have access to Lua 5.3+.
+</span><span class="comment">--
+</span><span class="comment">-- Note: In LuaJIT, 'bit' is available via 'require' for 32-bit bitwise
+</span><span class="comment">-- operations. In Lua 5.1, a backport of the Lua 5.2 bit32 library could
+</span><span class="comment">-- be installed as a dependency. In Lua 5.2, 'bit32' is built-in. In Lua
+</span><span class="comment">-- 5.3+, 'bit32' is deprecated and we get 64-bit integers plus built-in
+</span><span class="comment">-- bitwise operations (you'll need the 'anarchy' module instead, which is
+</span><span class="comment">-- the 64-bit version)!
+</span><span class="comment">--
+</span><span class="comment">-- It might make sense to depend on Lua 5.3+ and use the built-ins, but
+</span><span class="comment">-- many modding situations have older Lua versions tied into engines. So
+</span><span class="comment">-- we awkwardly try to support all of these different options...
+</span>
+<span class="comment">-- Decide what to do about bitwise operators depending on the version
+</span><span class="keyword">local</span> bit
+<span class="keyword">local</span> succeeded
+
+<span class="comment">-- How to map bitwise operations
+</span><span class="keyword">local</span> mappings = <span class="keyword">nil</span>
+
+<span class="keyword">local</span> tobit, band, bor, bnot, bxor, lshift, rshift, arshift, rol, ror
+
+<span class="keyword">if</span> _VERSION == <span class="string">"Lua 5.1"</span> <span class="keyword">then</span>
+    <span class="comment">-- Try to require 'bit' first in case of LuaJIT
+</span>    succeeded, bit = <span class="global">pcall</span>(<span class="global">require</span>, <span class="string">"bit"</span>)
+    <span class="keyword">if</span> <span class="keyword">not</span> succeeded <span class="keyword">then</span>
+        <span class="comment">-- Try to look for bit32 backport?
+</span>        succeeded, bit = <span class="global">pcall</span>(<span class="global">require</span>, <span class="string">"bit32"</span>)
+        <span class="keyword">if</span> <span class="keyword">not</span> succeeded <span class="keyword">then</span>
+            <span class="global">print</span>(
+                <span class="string">"Neither 'bit' nor 'bit32' is available and Lua version"</span>
+             .. <span class="string">" reports 5.1."</span>
+            )
+            <span class="global">os</span>.<span class="function-name">exit</span>(<span class="number">1</span>)
+        <span class="keyword">else</span>
+            mappings = <span class="string">"bit32"</span>
+        <span class="keyword">end</span>
+    <span class="keyword">else</span>
+        <span class="comment">-- Versions from LuaJIT 'bit' library
+</span>        mappings = <span class="string">"bit"</span>
+    <span class="keyword">end</span>
+<span class="keyword">elseif</span> _VERSION == <span class="string">"Lua 5.2"</span> <span class="keyword">then</span>
+    <span class="comment">-- This version should have 'bit32' built-in
+</span>    mappings = <span class="string">"bit32"</span>
+    bit = bit32
+    <span class="keyword">if</span> bit == <span class="keyword">nil</span> <span class="keyword">then</span>
+        <span class="global">print</span>(
+            <span class="string">"'bit32' built-in is not available even though version"</span>
+         .. <span class="string">" reports 5.2."</span>
+        )
+        <span class="global">os</span>.<span class="function-name">exit</span>(<span class="number">1</span>)
+    <span class="keyword">end</span>
+<span class="keyword">else</span>
+    <span class="comment">-- Need to use the 'anarchy' library for newer versions.
+</span>    <span class="global">print</span>(
+        <span class="string">"Lua reports version '"</span> .. _VERSION .. <span class="string">", which is not compatible"</span>
+     .. <span class="string">" with this module. This module should work with Lua 5.1, Lua"</span>
+     .. <span class="string">"5.2, and LuaJIT (reports itself as 5.1). Get the 'anarchy'"</span>
+     .. <span class="string">" library (without the '32' suffix) if you need to work with"</span>
+     .. <span class="string">" versions 5.3+."</span>
+    )
+    <span class="global">os</span>.<span class="function-name">exit</span>(<span class="number">1</span>)
+<span class="keyword">end</span>
+
+<span class="keyword">if</span> mappings == <span class="string">"bit32"</span> <span class="keyword">then</span>
+    <span class="comment">-- Versions from backported bit32 library
+</span>    tobit = <span class="keyword">function</span>(x) <span class="keyword">return</span> bit.<span class="function-name">bor</span>(x, <span class="number">0</span>) <span class="keyword">end</span>
+    band = bit.band
+    bor = bit.bor
+    bnot = bit.bnot
+    bxor = bit.bxor
+    lshift = bit.lshift
+    rshift = bit.rshift
+    arshift = bit.arshift
+    rol = bit.lrotate
+    ror = bit.rrotate
+<span class="keyword">elseif</span> mappings == <span class="string">"bit"</span> <span class="keyword">then</span>
+    tobit = bit.tobit
+    band = bit.band
+    bor = bit.bor
+    bnot = bit.bnot
+    bxor = bit.bxor
+    lshift = bit.lshift
+    rshift = bit.rshift
+    arshift = bit.arshift
+    rol = bit.rol
+    ror = bit.ror
+<span class="keyword">else</span>
+    <span class="global">print</span>(<span class="string">"No workable mappings for 'bit' library."</span>)
+    <span class="global">os</span>.<span class="function-name">exit</span>(<span class="number">2</span>)
+<span class="keyword">end</span>
+
+<span class="comment">-- Local refs for math functions
+</span><span class="keyword">local</span> min = <span class="global">math</span>.min
+<span class="keyword">local</span> log = <span class="global">math</span>.log
+<span class="keyword">local</span> floor = <span class="global">math</span>.floor
+<span class="keyword">local</span> ceil = <span class="global">math</span>.ceil
+
+<span class="keyword">local</span> ID_BITS = <span class="number">32</span>;
+<span class="keyword">local</span> ID_BYTES = <span class="number">4</span>;
+
+
+<span class="comment">-- Set up module table
+</span><span class="keyword">local</span> anarchy = {
+    version = <span class="number">1.0</span>,
+    ID_BITS = ID_BITS,
+    ID_BYTES = ID_BYTES,
+    util = {},
+    rng = {},
+    cohort = {},
+    distribution = {},
+}
+
+<span class="comment">-- Attach bitwise operations to anarchy.util
+</span>anarchy.util.tobit = tobit
+anarchy.util.band = band
+anarchy.util.bor = bor
+anarchy.util.bnot = bnot
+anarchy.util.bxor = bxor
+anarchy.util.lshift = lshift
+anarchy.util.rshift = rshift
+anarchy.util.arshift = arshift
+anarchy.util.rol = rol
+anarchy.util.ror = ror
+
+
+<span class="comment">--- Modulus that's always positive
+</span><span class="comment">-- Use % operator instead in Lua since it has the same behavior
+</span><span class="comment">-- Included for compatibility with anarchy implementations in other
+</span><span class="comment">-- languages.
+</span><span class="comment">-- @tparam number num The number to compute the modulus of.
+</span><span class="comment">-- @tparam number base The base of the modulus.
+</span><span class="comment">-- @treturn number The number modulo the base.
+</span>anarchy.util.posmod = <span class="keyword">function</span> (num, base)
+    <span class="keyword">return</span> num % base
+<span class="keyword">end</span>
+<span class="keyword">local</span> posmod = anarchy.util.posmod
+
+<span class="comment">--- A string hashing function.
+</span><span class="comment">-- See: https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
+</span><span class="comment">-- @tparam string s The string to hash
+</span><span class="comment">-- @treturn number The hash for that string
+</span>anarchy.util.hash_string = <span class="keyword">function</span>(s)
+    <span class="keyword">local</span> hash = <span class="number">0</span>
+    <span class="keyword">local</span> i
+    <span class="keyword">local</span> chr
+    <span class="keyword">if</span> #s == <span class="number">0</span> <span class="keyword">then</span>
+        <span class="keyword">return</span> hash
+    <span class="keyword">end</span>
+    <span class="keyword">for</span> i = <span class="number">1</span>,#s <span class="keyword">do</span>
+        chr = s.<span class="function-name">byte</span>(i)
+        hash = (hash * <span class="number">31</span>) + chr
+    <span class="keyword">end</span>
+    <span class="keyword">return</span> hash
+<span class="keyword">end</span>
+<span class="keyword">local</span> hash_string = anarchy.util.hash_string
+
+<span class="comment">--- Creates a mask with the given number of 1 bits.
+</span><span class="comment">-- Avoids shift operator because of 32-bit limit, but watch out for
+</span><span class="comment">-- floating point behavior for bit amounts greater than ~52
+</span><span class="comment">-- @tparam number bits The number of 1 bits to put in the mask.
+</span><span class="comment">-- @treturn number A value with that many 1 bits starting from the
+</span><span class="comment">--   least significant place. Won't work for large numbers of bits.
+</span>anarchy.util.mask = <span class="keyword">function</span>(bits)
+    <span class="keyword">return</span> (<span class="number">2</span> ^ bits) - <span class="number">1</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> mask = anarchy.util.mask
+
+<span class="comment">--- Returns a mask that covers just the nth byte (zero-indexed), starting
+</span><span class="comment">-- from the least-significant digits.
+</span><span class="comment">-- Starts to break down when it exceeds ~52 bits (byte 6 or so).
+</span><span class="comment">-- @tparam number n The byte index (starting from 0)
+</span><span class="comment">-- @treturn number The mask with 1s in that byte and 0s elsewhere
+</span>anarchy.util.byte_mask = <span class="keyword">function</span>(n)
+    <span class="keyword">return</span> (<span class="number">2</span> ^ (n*<span class="number">8</span>)) * <span class="number">255</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> byte_mask = anarchy.util.byte_mask
+
+<span class="comment">--- Circular bit shift to the right
+</span><span class="comment">-- Distance is capped at 3/4 of ID_BITS
+</span><span class="comment">-- @tparam number x The number to swirl.
+</span><span class="comment">-- @tparam number distance How far to swirl it.
+</span><span class="comment">-- @treturn number The swirled number.
+</span>anarchy.rng.swirl = <span class="keyword">function</span>(x, distance)
+    distance = distance % <span class="function-name">floor</span>(<span class="number">3</span> * ID_BITS / <span class="number">4</span>)
+    <span class="keyword">return</span> <span class="function-name">ror</span>(x, distance)
+<span class="keyword">end</span>
+<span class="keyword">local</span> swirl = anarchy.rng.swirl
+
+<span class="comment">--- Circular bit shift to the left inverse of swirl
+</span><span class="comment">-- Distance is capped at 3/4 of ID_BITS
+</span><span class="comment">-- @tparam number x The number to unswirl.
+</span><span class="comment">-- @tparam number distance How far to unswirl it.
+</span><span class="comment">-- @treturn number The unswirled number.
+</span>anarchy.rng.rev_swirl = <span class="keyword">function</span>(x, distance)
+    distance = distance % <span class="function-name">floor</span>(<span class="number">3</span> * ID_BITS / <span class="number">4</span>)
+    <span class="keyword">return</span> <span class="function-name">rol</span>(x, distance)
+<span class="keyword">end</span>
+<span class="keyword">local</span> rev_swirl = anarchy.rng.rev_swirl
+
+<span class="comment">--- Folds lower bits into upper bits using xor.
+</span><span class="comment">-- fold is its own inverse.
+</span><span class="comment">-- 'where' is restricted to fall between 1/4 and 1/2 of ID_BITS.
+</span><span class="comment">-- @tparam number x the number to fold.
+</span><span class="comment">-- @tparam number where which tit to fold at
+</span>anarchy.rng.fold = <span class="keyword">function</span>(x, where)
+    <span class="keyword">local</span> quarter = <span class="function-name">floor</span>(ID_BITS / <span class="number">4</span>);
+    where = where % quarter + quarter
+    <span class="keyword">local</span> m = <span class="function-name">mask</span>(where)
+    <span class="keyword">local</span> lower = <span class="function-name">band</span>(x, m)
+    <span class="keyword">local</span> shift_by = ID_BITS - where
+    <span class="keyword">return</span> <span class="function-name">bxor</span>(x, <span class="function-name">lshift</span>(lower, shift_by))
+<span class="keyword">end</span>
+<span class="keyword">local</span> fold = anarchy.rng.fold
+
+<span class="keyword">local</span> FLOP_MASK = <span class="number">0xf0f0f0f0</span>
+anarchy.rng.FLOP_MASK = FLOP_MASK
+
+<span class="comment">--- Flops each 1/2 byte with the adjacent 1/2 byte.
+</span><span class="comment">-- flop is its own inverse.
+</span><span class="comment">-- @tparam number x the number to flop
+</span><span class="comment">-- @treturn number The flopped number
+</span>anarchy.rng.flop = <span class="keyword">function</span>(x)
+    <span class="keyword">local</span> left = <span class="function-name">band</span>(x, FLOP_MASK)
+    <span class="keyword">local</span> right = <span class="function-name">band</span>(x, <span class="function-name">bnot</span>(FLOP_MASK))
+    <span class="keyword">return</span> <span class="function-name">bor</span>(<span class="function-name">lshift</span>(right, <span class="number">4</span>), <span class="function-name">rshift</span>(left, <span class="number">4</span>))
+<span class="keyword">end</span>
+<span class="keyword">local</span> flop = anarchy.rng.flop
+
+<span class="comment">--- Implements a reversible linear-feedback-shift-register-like operation.
+</span><span class="comment">-- @tparam number x the number to scramble.
+</span><span class="comment">-- @treturn number the scrambled number
+</span>anarchy.rng.scramble = <span class="keyword">function</span>(x)
+    <span class="keyword">local</span> trigger = <span class="function-name">band</span>(x, <span class="number">0x80200003</span>)
+    <span class="keyword">local</span> r = <span class="function-name">ror</span>(x, <span class="number">1</span>)
+    <span class="keyword">if</span> trigger ~= <span class="number">0</span> <span class="keyword">then</span>
+        r = <span class="function-name">bxor</span>(r, <span class="number">0x03040610</span>)
+    <span class="keyword">end</span>
+    <span class="keyword">return</span> r
+<span class="keyword">end</span>
+<span class="keyword">local</span> scramble = anarchy.rng.scramble
+
+<span class="comment">--- Inverse of scramble (see above).
+</span><span class="comment">-- @tparam number x the number to unscramble
+</span><span class="comment">-- @treturn number the unscrambled number
+</span>anarchy.rng.rev_scramble = <span class="keyword">function</span>(x)
+    <span class="keyword">local</span> pr = <span class="function-name">rol</span>(x, <span class="number">1</span>)
+    <span class="keyword">local</span> trigger = <span class="function-name">band</span>(pr, <span class="number">0x80200003</span>)
+    <span class="keyword">if</span> trigger ~= <span class="number">0</span> <span class="keyword">then</span>
+        <span class="comment">-- pr = bxor(pr, rol(0x03040610, 1));
+</span>        pr = <span class="function-name">bxor</span>(pr, <span class="number">0x06080c20</span>)
+    <span class="keyword">end</span>
+    <span class="keyword">return</span> pr
+<span class="keyword">end</span>
+<span class="keyword">local</span> rev_scramble = anarchy.rng.rev_scramble
+
+
+<span class="comment">--- Scrambles a seed value to help separate RNG sequences generated from
+</span><span class="comment">-- sequential seeds.
+</span><span class="comment">-- @tparam number s the seed to scramble
+</span><span class="comment">-- @treturn number the scrambled seed
+</span>anarchy.rng.scramble_seed = <span class="keyword">function</span>(s)
+    s = <span class="function-name">tobit</span>((s + <span class="number">1</span>) * (<span class="number">3</span> + s % <span class="number">23</span>))
+    s = <span class="function-name">fold</span>(s, <span class="number">11</span>) <span class="comment">-- prime
+</span>    s = <span class="function-name">scramble</span>(s)
+    s = <span class="function-name">swirl</span>(s, s + <span class="number">23</span>) <span class="comment">-- prime
+</span>    s = <span class="function-name">scramble</span>(s)
+    s = <span class="function-name">bxor</span>(s, (s % <span class="number">153</span>) * <span class="function-name">scramble</span>(s))
+
+    <span class="keyword">return</span> s;
+<span class="keyword">end</span>
+<span class="keyword">local</span> scramble_seed = anarchy.rng.scramble_seed
+
+<span class="comment">--- A simple reversible pseudo-random number generator
+</span><span class="comment">-- You can call @see anarchy.rng.rev_prng with the result of this
+</span><span class="comment">-- function and the same seed to get back the number you put in here,
+</span><span class="comment">-- so that results form a chain you can traverse forwards or backwards.
+</span><span class="comment">-- @tparam number x the current/previous number
+</span><span class="comment">-- @tparam number seed the generation sequence seed (this can be
+</span><span class="comment">--   constant for a bunch of calls)
+</span><span class="comment">-- @treturn number the next number in the generation sequence
+</span>anarchy.rng.prng = <span class="keyword">function</span>(x, seed)
+
+    <span class="comment">-- seed scrambling:
+</span>    seed = <span class="function-name">scramble_seed</span>(seed)
+
+    <span class="comment">-- value scrambling:
+</span>    x = <span class="function-name">bxor</span>(x, seed)
+    x = <span class="function-name">fold</span>(x, seed + <span class="number">17</span>) <span class="comment">-- prime
+</span>    x = <span class="function-name">flop</span>(x)
+    x = <span class="function-name">swirl</span>(x, seed + <span class="number">37</span>) <span class="comment">-- prime
+</span>    x = <span class="function-name">fold</span>(x, seed + <span class="number">89</span>) <span class="comment">-- prime
+</span>    x = <span class="function-name">swirl</span>(x, seed + <span class="number">107</span>) <span class="comment">-- prime
+</span>    x = <span class="function-name">scramble</span>(x)
+    <span class="keyword">return</span> x
+<span class="keyword">end</span>
+<span class="keyword">local</span> prng = anarchy.rng.prng
+
+<span class="comment">--- Inverse of @see anarchy.rng.prng (see above).
+</span><span class="comment">-- @tparam number x the current/next number
+</span><span class="comment">-- @tparam number seed the generation seed that determines the sequence
+</span><span class="comment">-- @treturn number the previous number in the generation sequence
+</span>anarchy.rng.rev_prng = <span class="keyword">function</span>(x, seed)
+
+    <span class="comment">-- seed scrambling:
+</span>    seed = <span class="function-name">scramble_seed</span>(seed)
+
+    <span class="comment">-- value unscrambling:
+</span>    x = <span class="function-name">rev_scramble</span>(x)
+    x = <span class="function-name">rev_swirl</span>(x, seed + <span class="number">107</span>)  <span class="comment">-- prime
+</span>    x = <span class="function-name">fold</span>(x, seed + <span class="number">89</span>)  <span class="comment">-- prime
+</span>    x = <span class="function-name">rev_swirl</span>(x, seed + <span class="number">37</span>)  <span class="comment">-- prime
+</span>    x = <span class="function-name">flop</span>(x)
+    x = <span class="function-name">fold</span>(x, seed + <span class="number">17</span>)  <span class="comment">-- prime
+</span>    x = <span class="function-name">bxor</span>(x, seed)
+    <span class="keyword">return</span> x
+<span class="keyword">end</span>
+<span class="keyword">local</span> rev_prng = anarchy.rng.rev_prng
+
+
+<span class="comment">--- Implements a max-cycle-length 32-bit linear feedback shift register.
+</span><span class="comment">-- See: https://en.wikipedia.org/wiki/Linear-feedback_shift_register
+</span><span class="comment">-- Note that this is NOT reversible!
+</span><span class="comment">-- Note: Do not use this as an irreversible PRNG; it's a terrible one!
+</span><span class="comment">-- Note: Zero is a fixed point of this function: do not use it as
+</span><span class="comment">-- your seed!
+</span><span class="comment">-- @tparam number x the current number
+</span><span class="comment">-- @treturn number the next number in the LFSR sequence
+</span>anarchy.rng.lfsr = <span class="keyword">function</span>(x)
+    <span class="keyword">return</span> <span class="function-name">bxor</span>(<span class="function-name">rshift</span>(x, <span class="number">1</span>), (<span class="number">0x80200003</span> * (x % <span class="number">2</span>)))  <span class="comment">-- 32, 22, 2, 1
+</span><span class="keyword">end</span>
+<span class="keyword">local</span> lfsr = anarchy.rng.lfsr
+
+<span class="comment">--- Generates a random number between 0 and 1 given a seed value.
+</span><span class="comment">-- @tparam number seed The seed that determines the result.
+</span><span class="comment">-- @treturn number A number between 0 (inclusive) and 1 (exclusive)
+</span>anarchy.rng.uniform = <span class="keyword">function</span>(seed)
+    <span class="keyword">local</span> sc = <span class="function-name">bxor</span>(seed, <span class="function-name">lshift</span>(seed, <span class="number">16</span>))
+    <span class="keyword">local</span> ux = <span class="function-name">prng</span>(<span class="function-name">prng</span>(<span class="function-name">prng</span>(sc, <span class="number">53</span>), sc), seed)
+    <span class="keyword">return</span> (ux % <span class="number">2147483659</span>) / <span class="number">2147483659</span>  <span class="comment">-- prime near 2^31
+</span><span class="keyword">end</span>
+<span class="keyword">local</span> uniform = anarchy.rng.uniform
+
+<span class="comment">--- Generates and averages three random numbers between 0 and 1 to give a
+</span><span class="comment">-- pseudo-gaussian-distributed random number (still strictly on [0, 1) )
+</span><span class="comment">-- @tparam number seed The seed that determines the result.
+</span><span class="comment">-- @treturn number A number between 0 (inclusive) and 1 (exclusive)
+</span><span class="comment">--   which is more likely to be near 0.5 than near either 0 or 1.
+</span>anarchy.rng.normalish = <span class="keyword">function</span>(seed)
+    <span class="keyword">local</span> t = <span class="number">0</span>
+    t = t + <span class="function-name">uniform</span>(seed + <span class="number">9182183</span>)
+    t = t + <span class="function-name">uniform</span>(seed + <span class="number">7438742</span>)
+    t = t + <span class="function-name">uniform</span>(seed + <span class="number">4683129</span>)
+    <span class="keyword">return</span> t/<span class="number">3</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> normalish = anarchy.rng.normalish
+
+<span class="comment">--- Flips a coin with probability p of being True. Using the same seed
+</span><span class="comment">-- always gives the same result.
+</span><span class="comment">-- @tparam number p The probability that the result should be True when
+</span><span class="comment">--   results are averaged across many different seeds.
+</span><span class="comment">-- @tparam number seed The seed that determines the result.
+</span><span class="comment">-- @treturn boolean Either true (with probability p when averaged
+</span><span class="comment">--   across seeds) or false (with probability 1-p when averaged
+</span><span class="comment">--   across seeds).
+</span>anarchy.rng.flip = <span class="keyword">function</span>(p, seed)
+    <span class="keyword">return</span> <span class="function-name">uniform</span>(seed) &lt; p
+<span class="keyword">end</span>
+<span class="keyword">local</span> flip = anarchy.rng.flip
+
+<span class="comment">--- Even distribution over the given integer range, including the start
+</span><span class="comment">-- but excluding the cap (even if the cap is lower than the start).
+</span><span class="comment">-- The last number before the cap is about 1/2^31 less likely to be generated
+</span><span class="comment">-- than the other numbers.
+</span><span class="comment">-- @tparam number seed The seed that determines the result.
+</span><span class="comment">-- @tparam number start The minimum allowed result value.
+</span><span class="comment">-- @tparam number cap The result limit (will NOT ever be generated itself).
+</span><span class="comment">-- @treturn number An integer between start (inclusive) and cap (exclusive).
+</span>anarchy.rng.integer = <span class="keyword">function</span>(seed, start, cap)
+    <span class="keyword">return</span> <span class="function-name">floor</span>(<span class="function-name">uniform</span>(seed) * (cap - start)) + start;
+<span class="keyword">end</span>
+<span class="keyword">local</span> integer = anarchy.rng.integer
+
+<span class="comment">--- Generates a number from an exponential distribution on [0,∞) with mean
+</span><span class="comment">-- 1/lambda given a seed. Higher values of lambda make the distribution more
+</span><span class="comment">-- sharply exponential; values between 0.5 and 1.5 exhibit reasonable
+</span><span class="comment">-- variation. See:
+</span><span class="comment">-- https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
+</span><span class="comment">-- and
+</span><span class="comment">-- https://en.wikipedia.org/wiki/Exponential_distribution
+</span><span class="comment">-- @tparam number seed The seed that determines the result.
+</span><span class="comment">-- @tparam number lambda The shape parameter for the distribution.
+</span><span class="comment">-- @treturn number An arbitrarily large number (subject to the limits of the
+</span><span class="comment">--   number type) that's much more likely to be small than large.
+</span>anarchy.rng.exponential = <span class="keyword">function</span>(seed, lambda)
+    <span class="keyword">local</span> u = <span class="function-name">uniform</span>(seed)
+    <span class="keyword">return</span> -<span class="function-name">log</span>(u)/lambda
+<span class="keyword">end</span>
+<span class="keyword">local</span> exponential = anarchy.rng.exponential
+
+<span class="comment">--- Generates a number from a truncated exponential distribution on [0,
+</span><span class="comment">-- 1), given a particular seed. As with expdist, the lambda parameter
+</span><span class="comment">-- controls the shape of the distribution, and a 0.5–1.5 range is usually
+</span><span class="comment">-- reasonable. For why this method works, see:
+</span><span class="comment">-- https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
+</span><span class="comment">-- @tparam number seed The seed that determines the result.
+</span><span class="comment">-- @tparam number lambda The shape parameter for the distribution.
+</span><span class="comment">-- @treturn number A number between 0 (inclusive) and 1 (exclusive) that
+</span><span class="comment">--   is much more likely to be small than large.
+</span>anarchy.rng.truncated_exponential = <span class="keyword">function</span>(seed, lambda)
+    <span class="keyword">local</span> e = <span class="function-name">exponential</span>(seed, lambda);
+    <span class="keyword">return</span> e - <span class="function-name">floor</span>(e);
+<span class="keyword">end</span>
+<span class="keyword">local</span> truncated_exponential = anarchy.rng.truncated_exponential
+
+
+<span class="comment">--- Computes cohort number for the given outer index and cohort size.
+</span><span class="comment">-- @tparam number outer An index into a sequence to be chopped into
+</span><span class="comment">--   cohorts, starting with the beginning of the first cohort at index 1.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort to divide the
+</span><span class="comment">--   sequence into.
+</span><span class="comment">-- @treturn number The index of the cohort that the outer index falls
+</span><span class="comment">--   into. The first cohort (starting at index 1 of the outer sequence)
+</span><span class="comment">--   has index 1.
+</span><span class="comment">--
+</span><span class="comment">-- For example, if outer index is 54 and cohort_size is 10, the return
+</span><span class="comment">-- value will be 6, since 54 falls into the 6th group of 10.
+</span>anarchy.cohort.cohort = <span class="keyword">function</span>(outer, cohort_size)
+    <span class="keyword">return</span> <span class="function-name">floor</span>((outer - <span class="number">1</span>) / cohort_size) + <span class="number">1</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort = anarchy.cohort.cohort
+
+<span class="comment">--- Computes within-cohort index for the given outer index and cohorts of
+</span><span class="comment">-- the given size.
+</span><span class="comment">-- @tparam number outer An index into a sequence to be chopped into
+</span><span class="comment">--   cohorts, starting with the beginning of the first cohort at index 1.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort to divide the
+</span><span class="comment">--   sequence into.
+</span><span class="comment">-- @treturn number The index of the given outer index within its cohort,
+</span><span class="comment">--   starting from 1 in the first position.
+</span><span class="comment">--
+</span><span class="comment">-- For example, if the outer index is 54 and the cohort_size is 10, the
+</span><span class="comment">-- result will be 4, since 54 falls at index 4 within its group of 10
+</span><span class="comment">-- (starting at index 1 at 51).
+</span>anarchy.cohort.cohort_inner = <span class="keyword">function</span>(outer, cohort_size)
+    <span class="keyword">return</span> <span class="number">1</span> + ((outer - <span class="number">1</span>) % cohort_size)
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_inner = anarchy.cohort.cohort_inner
+
+<span class="comment">--- Returns two results: the cohort number and inner index for the given
+</span><span class="comment">-- outer index and cohort size.
+</span><span class="comment">-- @tparam number outer An index into a sequence to be chopped into cohorts.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort to divide the
+</span><span class="comment">--   sequence into.
+</span><span class="comment">-- @return Multiple values: The cohort index (an integer) followed by the
+</span><span class="comment">--   inner index within that cohort (also an integer).
+</span><span class="comment">--
+</span><span class="comment">-- For example, if the outer index is 29 and the cohort_size is 10, this will
+</span><span class="comment">-- return 3, 9
+</span>anarchy.cohort.cohort_and_inner = <span class="keyword">function</span>(outer, cohort_size)
+    <span class="keyword">return</span> <span class="function-name">cohort</span>(outer, cohort_size), <span class="function-name">cohort_inner</span>(outer, cohort_size)
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_and_inner = anarchy.cohort.cohort_and_inner
+
+<span class="comment">--- Inverse of cohort_and_inner; computes the outer index from a cohort
+</span><span class="comment">-- number and inner index.
+</span><span class="comment">-- @tparam number cohort The cohort index determining which group a position
+</span><span class="comment">--   belongs to.
+</span><span class="comment">-- @tparam number inner The index of the position within that group.
+</span><span class="comment">--   Should be between 1 and the cohort size, inclusive.
+</span><span class="comment">-- @tparam number cohort_size The size of each group to divide the total
+</span><span class="comment">--   sequence of positions into.
+</span><span class="comment">-- @treturn number The index of that position within the total sequence of
+</span><span class="comment">--   positions, starting from index 1.
+</span><span class="comment">--
+</span><span class="comment">-- For example, if cohort is 3, inner is 1, and cohort_size is 5, then
+</span><span class="comment">-- we're at index 1 (1st item) within the 3th group of 5 things, putting
+</span><span class="comment">-- us at total index 5*2 + 1 = 11 outside of the groups.
+</span><span class="comment">--
+</span><span class="comment">-- Note: Negative cohort and/or inner indices may result in negative
+</span><span class="comment">-- outer indices. The inner index value is not constrained to be smaller
+</span><span class="comment">-- than the cohort size.
+</span>anarchy.cohort.cohort_outer = <span class="keyword">function</span>(cohort, inner, cohort_size)
+    <span class="keyword">return</span> cohort_size * (cohort - <span class="number">1</span>) + inner
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_outer = anarchy.cohort.cohort_outer
+
+<span class="comment">--- Interleaves cohort members by folding the top half into the bottom
+</span><span class="comment">-- half. The bottom half get even indices while the top half are assigned
+</span><span class="comment">-- backwards to the odd indices.
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @treturn number The new within-cohort index for the same item after
+</span><span class="comment">--   interleaving the top and bottom parts of the cohort.
+</span>anarchy.cohort.cohort_interleave = <span class="keyword">function</span>(inner, cohort_size)
+    <span class="keyword">if</span> inner &lt;= <span class="function-name">floor</span>(cohort_size/<span class="number">2</span>) <span class="keyword">then</span>
+        <span class="keyword">return</span> inner * <span class="number">2</span>  <span class="comment">-- even and never &gt; cohort_size
+</span>    <span class="keyword">else</span>
+        <span class="keyword">return</span> ((cohort_size - inner) * <span class="number">2</span>) + <span class="number">1</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_interleave = anarchy.cohort.cohort_interleave
+
+<span class="comment">--- Inverse interleave (see above).
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort after
+</span><span class="comment">--   interleaving items.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @treturn number The original index within that cohort that the item
+</span><span class="comment">--   would have been at prior to interleaving things.
+</span>anarchy.cohort.rev_cohort_interleave = <span class="keyword">function</span>(inner, cohort_size)
+    <span class="keyword">if</span> inner % <span class="number">2</span> ~= <span class="number">0</span> <span class="keyword">then</span>
+        <span class="keyword">return</span> cohort_size - <span class="function-name">floor</span>(inner/<span class="number">2</span>)
+    <span class="keyword">else</span>
+        <span class="keyword">return</span> <span class="function-name">floor</span>(inner / <span class="number">2</span>)
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> rev_cohort_interleave = anarchy.cohort.rev_cohort_interleave
+
+
+<span class="comment">--- Folds items past an arbitrary split point (in the second half of the
+</span><span class="comment">-- cohort) into the middle of the cohort. The split will always leave an
+</span><span class="comment">-- odd number at the end.
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determines where the fold happens.
+</span><span class="comment">-- @treturn number The new index of the item within the cohort after folding.
+</span>anarchy.cohort.cohort_fold = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">local</span> half = <span class="function-name">ceil</span>(cohort_size / <span class="number">2</span>)
+    <span class="keyword">local</span> quarter = <span class="function-name">ceil</span>(cohort_size / <span class="number">4</span>)
+    <span class="keyword">local</span> split = half
+    <span class="keyword">if</span> quarter &gt; <span class="number">0</span> <span class="keyword">then</span>
+        split = split + seed % quarter
+    <span class="keyword">end</span>
+    <span class="keyword">local</span> after = cohort_size - split
+    split = split + ((after + <span class="number">1</span>) % <span class="number">2</span>)  <span class="comment">-- force odd leftovers
+</span>    after = cohort_size - split
+
+    <span class="keyword">local</span> fold_to = half - <span class="function-name">floor</span>(after / <span class="number">2</span>)
+
+    <span class="keyword">if</span> inner &lt; fold_to <span class="keyword">then</span>  <span class="comment">-- first region
+</span>        <span class="keyword">return</span> inner
+    <span class="keyword">elseif</span> inner &lt;= split <span class="keyword">then</span>  <span class="comment">-- second region
+</span>        <span class="keyword">return</span> inner + after  <span class="comment">-- push out past fold region
+</span>    <span class="keyword">else</span>  <span class="comment">-- fold region
+</span>        <span class="keyword">return</span> (inner - split) + fold_to - <span class="number">1</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_fold = anarchy.cohort.cohort_fold
+
+<span class="comment">--- Inverse fold (see above).
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort after folding.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determines where the fold happened.
+</span><span class="comment">-- @treturn number The original index that would have been folded into
+</span><span class="comment">--   the given position if cohort_fold were used with the same seed..
+</span>anarchy.cohort.rev_cohort_fold = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">local</span> half = <span class="function-name">ceil</span>(cohort_size / <span class="number">2</span>)
+    <span class="keyword">local</span> quarter = <span class="function-name">ceil</span>(cohort_size / <span class="number">4</span>)
+    <span class="keyword">local</span> split = half
+    <span class="keyword">if</span> quarter &gt; <span class="number">0</span> <span class="keyword">then</span>
+        split = split + seed % quarter
+    <span class="keyword">end</span>
+    <span class="keyword">local</span> after = cohort_size - split
+    split = split + ((after + <span class="number">1</span>) % <span class="number">2</span>)  <span class="comment">-- force an odd split point
+</span>    after = cohort_size - split
+
+    <span class="keyword">local</span> fold_to = half - <span class="function-name">floor</span>(after / <span class="number">2</span>)
+
+    <span class="keyword">if</span> inner &lt; fold_to <span class="keyword">then</span>  <span class="comment">-- first region
+</span>        <span class="keyword">return</span> inner
+    <span class="keyword">elseif</span> (inner &lt; fold_to + after) <span class="keyword">then</span>  <span class="comment">-- second region
+</span>        <span class="keyword">return</span> inner - (fold_to - <span class="number">1</span>) + split
+    <span class="keyword">else</span>
+        <span class="keyword">return</span> inner - after
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> rev_cohort_fold = anarchy.cohort.rev_cohort_fold
+
+<span class="comment">--- Applies a circular offset
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determines how far to spin.
+</span><span class="comment">-- @treturn number The index of the item after spinning.
+</span>anarchy.cohort.cohort_spin = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">return</span> ((inner - <span class="number">1</span>) + (seed % cohort_size)) % cohort_size + <span class="number">1</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_spin = anarchy.cohort.cohort_spin
+
+<span class="comment">--- Inverse spin (see above).
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort after being spun.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determined how far to spin.
+</span><span class="comment">-- @treturn number The original index of the item before spinning.
+</span>anarchy.cohort.rev_cohort_spin = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">return</span> (
+        (inner - <span class="number">1</span>) + (cohort_size - (seed % cohort_size))
+    ) % cohort_size + <span class="number">1</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> rev_cohort_spin = anarchy.cohort.rev_cohort_spin
+
+<span class="comment">--- Flops sections (with seeded sizes) with their neighbors.
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determines how big each section to
+</span><span class="comment">--   flop is.
+</span><span class="comment">-- @treturn number The index of the item after flopping with a neighboring
+</span><span class="comment">--   sesction.
+</span>anarchy.cohort.cohort_flop = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">local</span> limit = <span class="function-name">floor</span>(cohort_size / <span class="number">8</span>)
+    <span class="keyword">if</span> limit &lt; <span class="number">4</span> <span class="keyword">then</span>
+        limit = limit + <span class="number">4</span>
+    <span class="keyword">end</span>
+    <span class="keyword">local</span> size = (seed % limit) + <span class="number">2</span>
+    <span class="keyword">local</span> which = <span class="function-name">floor</span>((inner - <span class="number">1</span>) / size)
+    <span class="keyword">local</span> in_part = (inner - <span class="number">1</span>) % size
+
+    <span class="keyword">local</span> result = <span class="number">0</span>
+    <span class="keyword">if</span> which % <span class="number">2</span> ~= <span class="number">0</span> <span class="keyword">then</span>
+        result = (which - <span class="number">1</span>) * size + in_part + <span class="number">1</span>
+    <span class="keyword">else</span>
+        result = (which + <span class="number">1</span>) * size + in_part + <span class="number">1</span>
+    <span class="keyword">end</span>
+
+    <span class="keyword">if</span> result &gt; cohort_size <span class="keyword">then</span>  <span class="comment">-- don't flop out of the cohort
+</span>        <span class="keyword">return</span> inner
+    <span class="keyword">else</span>
+        <span class="keyword">return</span> result
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_flop = anarchy.cohort.cohort_flop
+<span class="comment">-- flop is its own inverse
+</span>
+<span class="comment">--- Applies a spin to even and odd items separately with different seeds.
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determines how far to spin evens &amp; odds.
+</span><span class="comment">-- @treturn number The index of the item after spinning the even &amp; odd elements
+</span><span class="comment">--   among themselves with different (derived) seeds.
+</span>anarchy.cohort.cohort_mix = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">local</span> even = inner - inner % <span class="number">2</span>
+    <span class="keyword">local</span> target
+    <span class="keyword">if</span> inner % <span class="number">2</span> ~= <span class="number">0</span> <span class="keyword">then</span>
+        target = <span class="function-name">cohort_spin</span>(
+            <span class="number">1</span> + <span class="function-name">floor</span>(even / <span class="number">2</span>),
+            cohort_size - <span class="function-name">floor</span>(cohort_size / <span class="number">2</span>),
+            seed + <span class="number">464185</span>
+        )
+        <span class="keyword">return</span> <span class="number">2</span> * target - <span class="number">1</span>
+    <span class="keyword">else</span>
+        target = <span class="function-name">cohort_spin</span>(
+            <span class="function-name">floor</span>(even / <span class="number">2</span>),
+            <span class="function-name">floor</span>(cohort_size / <span class="number">2</span>),
+            seed + <span class="number">1048239</span>
+        )
+        <span class="keyword">return</span> <span class="number">2</span> * target
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_mix = anarchy.cohort.cohort_mix
+
+<span class="comment">--- Inverse mix (see above).
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort after mixing.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determined how far to spin evens &amp; odds.
+</span><span class="comment">-- @treturn number The index that this index would have been before mixing
+</span><span class="comment">--   with the given seed.
+</span>anarchy.cohort.rev_cohort_mix = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">local</span> even = inner - inner % <span class="number">2</span>
+    <span class="keyword">local</span> target = <span class="number">0</span>
+    <span class="keyword">if</span> inner % <span class="number">2</span> ~= <span class="number">0</span> <span class="keyword">then</span>
+        target = <span class="function-name">rev_cohort_spin</span>(
+            <span class="number">1</span> + <span class="function-name">floor</span>(even / <span class="number">2</span>),
+            cohort_size - <span class="function-name">floor</span>(cohort_size / <span class="number">2</span>),
+            seed + <span class="number">464185</span>
+        )
+        <span class="keyword">return</span> <span class="number">2</span> * target - <span class="number">1</span>
+    <span class="keyword">else</span>
+        target = <span class="function-name">rev_cohort_spin</span>(
+            <span class="function-name">floor</span>(even / <span class="number">2</span>),
+            <span class="function-name">floor</span>(cohort_size / <span class="number">2</span>),
+            seed + <span class="number">1048239</span>
+        );
+        <span class="keyword">return</span> <span class="number">2</span> * target
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> rev_cohort_mix = anarchy.cohort.rev_cohort_mix
+
+
+<span class="comment">-- Constants that limit how regions can be sized in cohort_spread.
+</span><span class="keyword">local</span> MIN_REGION_SIZE = <span class="number">2</span>;
+<span class="keyword">local</span> MAX_REGION_COUNT = <span class="number">16</span>;
+anarchy.cohort.MIN_REGION_SIZE = MIN_REGION_SIZE;
+anarchy.cohort.MAX_REGION_COUNT = MAX_REGION_COUNT;
+
+<span class="comment">--- Spreads items out between a random number of different regions within
+</span><span class="comment">-- the cohort.
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determines how many regions we use.
+</span><span class="comment">-- @treturn number The index after spreading out indices between random
+</span><span class="comment">--   regions.
+</span>anarchy.cohort.cohort_spread = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">local</span> min_regions = <span class="number">2</span>
+    <span class="keyword">if</span> cohort_size &lt; <span class="number">2</span> * MIN_REGION_SIZE <span class="keyword">then</span>
+        min_regions = <span class="number">1</span>
+    <span class="keyword">end</span>
+    <span class="keyword">local</span> max_regions = <span class="number">1</span> + <span class="function-name">floor</span>(cohort_size / MIN_REGION_SIZE)
+    <span class="keyword">local</span> regions = (
+        min_regions + (
+            (seed % (<span class="number">1</span> + (max_regions - min_regions)))
+          % MAX_REGION_COUNT
+        )
+    )
+    <span class="keyword">local</span> region_size = <span class="function-name">floor</span>(cohort_size / regions)
+    <span class="keyword">local</span> leftovers = cohort_size - (regions * region_size)
+
+    <span class="keyword">local</span> region = (inner - <span class="number">1</span>) % regions
+    <span class="keyword">local</span> index = <span class="function-name">floor</span>((inner - <span class="number">1</span>) / regions) + <span class="number">1</span>
+    <span class="keyword">if</span> index &lt;= region_size <span class="keyword">then</span>  <span class="comment">-- non-leftovers
+</span>        <span class="keyword">return</span> region * region_size + index + leftovers
+    <span class="keyword">else</span>  <span class="comment">-- leftovers go at the front:
+</span>        <span class="keyword">return</span> (inner - <span class="number">1</span>) - regions * region_size + <span class="number">1</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_spread = anarchy.cohort.cohort_spread
+
+<span class="comment">--- Inverse spread (see above).
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort after spreading.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determined how many regions we use.
+</span><span class="comment">-- @treturn number The index that would have been used to generate the provided
+</span><span class="comment">--   index with a spread operation and the given seed.
+</span>anarchy.cohort.rev_cohort_spread = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">local</span> min_regions = <span class="number">2</span>
+    <span class="keyword">if</span> cohort_size &lt; <span class="number">2</span> * MIN_REGION_SIZE <span class="keyword">then</span>
+        min_regions = <span class="number">1</span>
+    <span class="keyword">end</span>
+    <span class="keyword">local</span> max_regions = <span class="number">1</span> + <span class="function-name">floor</span>(cohort_size / MIN_REGION_SIZE)
+    <span class="keyword">local</span> regions = (
+        min_regions + (
+            (seed % (<span class="number">1</span> + (max_regions - min_regions)))
+          % MAX_REGION_COUNT
+        )
+    );
+
+    <span class="keyword">local</span> region_size = <span class="function-name">floor</span>(cohort_size / regions);
+    <span class="keyword">local</span> leftovers = cohort_size - (regions * region_size);
+
+    <span class="keyword">local</span> index = <span class="function-name">floor</span>(((inner - <span class="number">1</span>) - leftovers) / region_size)
+    <span class="keyword">local</span> region = ((inner - <span class="number">1</span>) - leftovers) % region_size
+
+    <span class="keyword">if</span> inner &lt;= leftovers <span class="keyword">then</span>  <span class="comment">-- leftovers back to the end:
+</span>        <span class="keyword">return</span> regions * region_size + inner
+    <span class="keyword">else</span>
+        <span class="keyword">return</span> region * regions + <span class="number">1</span> + index
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> rev_cohort_spread = anarchy.cohort.rev_cohort_spread
+
+<span class="comment">--- Reverses ordering within each of several fragments.
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determined how many regions we use.
+</span><span class="comment">-- @treturn number The index after upending the order of each region.
+</span>anarchy.cohort.cohort_upend = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">local</span> min_regions = <span class="number">2</span>
+    <span class="keyword">if</span> (cohort_size &lt; <span class="number">2</span> * MIN_REGION_SIZE) <span class="keyword">then</span>
+        min_regions = <span class="number">1</span>
+    <span class="keyword">end</span>
+    <span class="keyword">local</span> max_regions = <span class="number">1</span> + <span class="function-name">floor</span>(cohort_size / MIN_REGION_SIZE)
+    <span class="keyword">local</span> regions = (
+        min_regions + (
+            (seed % (<span class="number">1</span> + (max_regions - min_regions)))
+          % MAX_REGION_COUNT
+        )
+    )
+    <span class="keyword">local</span> region_size = <span class="function-name">floor</span>(cohort_size / regions)
+
+    <span class="keyword">local</span> region = <span class="function-name">floor</span>((inner - <span class="number">1</span>) / region_size)
+    <span class="keyword">local</span> index = ((inner - <span class="number">1</span>) % region_size) + <span class="number">1</span>
+
+    <span class="keyword">local</span> result = (region * region_size) + (region_size + <span class="number">1</span> - index)
+
+    <span class="keyword">if</span> result &lt;= cohort_size <span class="keyword">then</span>
+        <span class="keyword">return</span> result
+    <span class="keyword">else</span>
+        <span class="keyword">return</span> inner
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_upend = anarchy.cohort.cohort_upend
+<span class="comment">-- Upend is its own inverse.
+</span>
+<span class="comment">--- Compose a bunch of the above functions to perform a nice thorough
+</span><span class="comment">-- shuffle within a cohort.
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determines where to shuffle things.
+</span><span class="comment">-- @treturn number The position of the index after shuffling the cohort. When
+</span><span class="comment">--   shuffling two different indices with the same cohort size and
+</span><span class="comment">--   seed, you'll get two different results. Usually not the same as
+</span><span class="comment">--   the original index.
+</span>anarchy.cohort.cohort_shuffle = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">local</span> r = inner
+    seed = <span class="function-name">bxor</span>(seed, cohort_size)
+    <span class="comment">-- print("\ncs", inner, cohort_size)
+</span>    r = <span class="function-name">cohort_spread</span>(r, cohort_size, seed + <span class="number">457</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" spread " .. r)
+</span>    r = <span class="function-name">cohort_mix</span>(r, cohort_size, seed + <span class="number">2897</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" mix " .. r)
+</span>    r = <span class="function-name">cohort_interleave</span>(r, cohort_size)
+    <span class="comment">-- io.write(" interleave " .. r)
+</span>    <span class="comment">-- io.write("\n")
+</span>    r = <span class="function-name">cohort_spin</span>(r, cohort_size, seed + <span class="number">1987</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" spin " .. r)
+</span>    r = <span class="function-name">cohort_upend</span>(r, cohort_size, seed + <span class="number">47</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" upend " .. r)
+</span>    r = <span class="function-name">cohort_fold</span>(r, cohort_size, seed + <span class="number">839</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" fold " .. r)
+</span>    r = <span class="function-name">cohort_interleave</span>(r, cohort_size)
+    <span class="comment">-- io.write(" interleave " .. r)
+</span>    <span class="comment">-- io.write("\n")
+</span>    r = <span class="function-name">cohort_flop</span>(r, cohort_size, seed + <span class="number">53</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" flop " .. r)
+</span>    r = <span class="function-name">cohort_fold</span>(r, cohort_size, seed + <span class="number">211</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" fold " .. r)
+</span>    r = <span class="function-name">cohort_mix</span>(r, cohort_size, seed + <span class="number">733</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" mix " .. r)
+</span>    r = <span class="function-name">cohort_spread</span>(r, cohort_size, seed + <span class="number">881</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" spread " .. r)
+</span>    r = <span class="function-name">cohort_interleave</span>(r, cohort_size)
+    <span class="comment">-- io.write(" interleave " .. r)
+</span>    <span class="comment">-- io.write("\n")
+</span>    r = <span class="function-name">cohort_flop</span>(r, cohort_size, seed + <span class="number">193</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" flop " .. r)
+</span>    r = <span class="function-name">cohort_upend</span>(r, cohort_size, seed + <span class="number">794641</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" upend " .. r)
+</span>    r = <span class="function-name">cohort_spin</span>(r, cohort_size, seed + <span class="number">19</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" spin " .. r)
+</span>    <span class="comment">-- io.write("\n")
+</span>    <span class="keyword">return</span> r
+<span class="keyword">end</span>
+<span class="keyword">local</span> cohort_shuffle = anarchy.cohort.cohort_shuffle
+
+<span class="comment">--- Inverse shuffle (see above).
+</span><span class="comment">-- @tparam number inner The index of an item within a cohort after shuffling.
+</span><span class="comment">-- @tparam number cohort_size The size of each cohort.
+</span><span class="comment">-- @tparam number seed The seed that determined where to shuffle things.
+</span><span class="comment">-- @treturn number The original index within the cohort that would have been
+</span><span class="comment">--   shuffled into the specified position.
+</span>anarchy.cohort.rev_cohort_shuffle = <span class="keyword">function</span>(inner, cohort_size, seed)
+    <span class="keyword">local</span> r = inner
+    seed = <span class="function-name">bxor</span>(seed, cohort_size)
+    <span class="comment">-- print("\nrcs", inner, cohort_size)
+</span>    r = <span class="function-name">rev_cohort_spin</span>(r, cohort_size, seed + <span class="number">19</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" spin " .. r)
+</span>    r = <span class="function-name">cohort_upend</span>(r, cohort_size, seed + <span class="number">794641</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" upend " .. r)
+</span>    r = <span class="function-name">cohort_flop</span>(r, cohort_size, seed + <span class="number">193</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" flop " .. r)
+</span>    r = <span class="function-name">rev_cohort_interleave</span>(r, cohort_size)
+    <span class="comment">-- io.write("\n")
+</span>    <span class="comment">-- io.write(" interleave " .. r)
+</span>    r = <span class="function-name">rev_cohort_spread</span>(r, cohort_size, seed + <span class="number">881</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" spread " .. r)
+</span>    r = <span class="function-name">rev_cohort_mix</span>(r, cohort_size, seed + <span class="number">733</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" mix " .. r)
+</span>    r = <span class="function-name">rev_cohort_fold</span>(r, cohort_size, seed + <span class="number">211</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" fold " .. r)
+</span>    r = <span class="function-name">cohort_flop</span>(r, cohort_size, seed + <span class="number">53</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" flop " .. r)
+</span>    r = <span class="function-name">rev_cohort_interleave</span>(r, cohort_size)
+    <span class="comment">-- io.write("\n")
+</span>    <span class="comment">-- io.write(" interleave " .. r)
+</span>    r = <span class="function-name">rev_cohort_fold</span>(r, cohort_size, seed + <span class="number">839</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" fold " .. r)
+</span>    r = <span class="function-name">cohort_upend</span>(r, cohort_size, seed + <span class="number">47</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" upend " .. r)
+</span>    r = <span class="function-name">rev_cohort_spin</span>(r, cohort_size, seed + <span class="number">1987</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" spin " .. r)
+</span>    r = <span class="function-name">rev_cohort_interleave</span>(r, cohort_size);
+    <span class="comment">-- io.write("\n")
+</span>    <span class="comment">-- io.write(" interleave " .. r)
+</span>    r = <span class="function-name">rev_cohort_mix</span>(r, cohort_size, seed + <span class="number">2897</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" mix " .. r)
+</span>    r = <span class="function-name">rev_cohort_spread</span>(r, cohort_size, seed + <span class="number">457</span>)  <span class="comment">-- prime
+</span>    <span class="comment">-- io.write(" spread " .. r)
+</span>    <span class="comment">-- io.write("\n")
+</span>    <span class="keyword">return</span> r
+<span class="keyword">end</span>
+<span class="keyword">local</span> rev_cohort_shuffle = anarchy.cohort.rev_cohort_shuffle
+
+
+<span class="comment">-- Forward declaration for recursive function
+</span><span class="keyword">local</span> distribution_spilt_point
+
+<span class="comment">--- Implements common distribution functionality: given a total item
+</span><span class="comment">-- count, a segment count and per-segment capacity, and a roughness value
+</span><span class="comment">-- and seed, computes the split point for the items as well as the
+</span><span class="comment">-- halfway index for the segments.
+</span><span class="comment">--
+</span><span class="comment">-- Note that per the normal Lua convention, indices for both total items
+</span><span class="comment">-- and segments start from 1!
+</span><span class="comment">--
+</span><span class="comment">-- @tparam number total The total number of items that will be
+</span><span class="comment">--   distributed among segments.
+</span><span class="comment">-- @tparam number n_segments The number of segments to distribute the
+</span><span class="comment">--   items into.
+</span><span class="comment">-- @tparam number segment_capacity The capacity of each segment.
+</span><span class="comment">--   n_segments times segment_capacity must be &gt;= total.
+</span><span class="comment">-- @tparam number roughness A number between 0 and 1. When roughness is
+</span><span class="comment">--   0, items will be split across segments as evenly as possible. When
+</span><span class="comment">--   roughness is 1, up to 100% of the items may be placed into the
+</span><span class="comment">--   first or second half of the segments while recursively
+</span><span class="comment">--   apportioning items. At roughness 0.5 the first or second half of
+</span><span class="comment">--   the segments might get as little as 50% of what it would get when
+</span><span class="comment">--   roughness is 0.
+</span><span class="comment">-- @tparam number seed The seed that determines how the total gets
+</span><span class="comment">--   distributed among the segments when roughness allows different
+</span><span class="comment">--   distributions.
+</span><span class="comment">-- @return Multiple results: two numbers. The first is the split point
+</span><span class="comment">--   for the distribution: the number out of the total items which end
+</span><span class="comment">--   up in the first half of the segments. The second is the number of
+</span><span class="comment">--   segments in that first half of the segments, which is half of
+</span><span class="comment">--   n_segments, rounded down.
+</span>anarchy.distribution.distribution_spilt_point = <span class="keyword">function</span>(
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+)
+    <span class="comment">-- how the segments are divided:
+</span>    <span class="keyword">local</span> first_half = <span class="function-name">floor</span>(n_segments / <span class="number">2</span>)
+
+    <span class="comment">-- compute min/max split points according to roughness:
+</span>    <span class="keyword">local</span> nat = <span class="function-name">floor</span>(total * (first_half / n_segments))
+    <span class="keyword">local</span> split_min = <span class="function-name">floor</span>(nat - nat * roughness)
+    <span class="keyword">local</span> split_max = <span class="function-name">floor</span>(nat + (total - nat) * roughness)
+
+    <span class="comment">-- adjust for capacity limits:
+</span>    <span class="keyword">if</span> (total - split_min) &gt; segment_capacity * (n_segments - first_half) <span class="keyword">then</span>
+        split_min = total - (segment_capacity * (n_segments - first_half))
+    <span class="keyword">end</span>
+
+    <span class="keyword">if</span> split_max &gt; segment_capacity * first_half <span class="keyword">then</span>
+        split_max = segment_capacity * first_half
+    <span class="keyword">end</span>
+
+    <span class="comment">-- compute a random split point:
+</span>    <span class="keyword">local</span> split = nat
+    <span class="keyword">if</span> split_min &gt;= split_max <span class="keyword">then</span>
+        split = split_min
+    <span class="keyword">else</span>
+        split = split_min + (
+            <span class="function-name">prng</span>(total, seed)
+          % (split_max - split_min)
+        )
+    <span class="keyword">end</span>
+
+    <span class="keyword">return</span> split, first_half
+<span class="keyword">end</span>
+distribution_spilt_point = anarchy.distribution.distribution_spilt_point
+
+
+<span class="comment">-- Forward declaration for recursive function
+</span><span class="keyword">local</span> distribution_items
+
+<span class="comment">--- Given that 'total' items are to be distributed evenly among
+</span><span class="comment">-- 'n_segment' segments each with at most 'segment_capacity' items and
+</span><span class="comment">-- we're in segment 'segment' of those (indexed from 1), computes the
+</span><span class="comment">-- start index (from 1) among the total of the first item in this
+</span><span class="comment">-- segment, and how many items are in this segment. The 'roughness'
+</span><span class="comment">-- argument should be a number between 0 and 1 indicating how even the
+</span><span class="comment">-- distribution is: 0 indicates a perfectly even distribution, while 1
+</span><span class="comment">-- indicates a perfectly random distribution. Does work proportional to
+</span><span class="comment">-- the log of the number of segments.
+</span><span class="comment">--
+</span><span class="comment">-- Note that segment_capacity * n_segments should be &gt; total.
+</span><span class="comment">--
+</span><span class="comment">-- @tparam number segment Which segment we want to know the portion for,
+</span><span class="comment">--   as an index starting from 1.
+</span><span class="comment">-- @tparam number total The total number of items that will be
+</span><span class="comment">--   distributed among segments.
+</span><span class="comment">-- @tparam number n_segments The number of segments to distribute the
+</span><span class="comment">--   items into.
+</span><span class="comment">-- @tparam number segment_capacity The capacity of each segment.
+</span><span class="comment">--   n_segments times segment_capacity must be &gt;= total.
+</span><span class="comment">-- @tparam number roughness A number between 0 and 1. When roughness is
+</span><span class="comment">--   0, items will be split across segments as evenly as possible. When
+</span><span class="comment">--   roughness is 1, up to 100% of the items may be placed into the
+</span><span class="comment">--   first or second half of the segments while recursively
+</span><span class="comment">--   apportioning items. At roughness 0.5 the first or second half of
+</span><span class="comment">--   the segments might get as little as 50% of what it would get when
+</span><span class="comment">--   roughness is 0.
+</span><span class="comment">-- @tparam number seed The seed that determines how the total gets
+</span><span class="comment">--   distributed among the segments when roughness allows different
+</span><span class="comment">--   distributions.
+</span><span class="comment">-- @return Multiple values: the start index (from 1) of the first item in
+</span><span class="comment">--   this segment and the number of the total items that get
+</span><span class="comment">--   distributed into the specified segment, for the given seed. The
+</span><span class="comment">--   number of items May be as low as 0 when roughness is 1; it will be
+</span><span class="comment">--   one of the integers adjacent to (total / n_segments) when
+</span><span class="comment">--   roughness is 0. If the number of items is 0, then the 'start
+</span><span class="comment">--   index' will be the same as the 'start index' for the subsequent
+</span><span class="comment">--   segment (and if multiple segments in a row get 0 items they'll all
+</span><span class="comment">--   share the same start index with the first segment after them that
+</span><span class="comment">--   gets at least 1 item).
+</span>anarchy.distribution.distribution_items = <span class="keyword">function</span>(
+    segment,
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+)
+    <span class="comment">-- base case
+</span>    <span class="keyword">if</span> n_segments == <span class="number">1</span> <span class="keyword">then</span>
+        <span class="keyword">return</span> <span class="number">1</span>, total
+    <span class="keyword">end</span>
+
+    <span class="comment">-- compute split point:
+</span>    <span class="keyword">local</span> split, half = <span class="function-name">distribution_spilt_point</span>(
+        total,
+        n_segments,
+        segment_capacity,
+        roughness,
+        seed
+    );
+
+    <span class="comment">-- call ourselves recursively:
+</span>    <span class="keyword">if</span> segment &lt;= half <span class="keyword">then</span>
+        <span class="keyword">return</span> <span class="function-name">distribution_items</span>(
+            segment,
+            split,
+            half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+    <span class="keyword">else</span>
+        <span class="keyword">local</span> start, count = <span class="function-name">distribution_items</span>(
+            segment - half,
+            total - split,
+            n_segments - half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+        <span class="keyword">return</span> split + start, count
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+distribution_items = anarchy.distribution.distribution_items
+
+
+<span class="comment">-- Forward declaration for recursive function
+</span><span class="keyword">local</span> distribution_segment
+
+<span class="comment">--- Computes the segment number in which a certain item appears (one of
+</span><span class="comment">-- the 'total' items distributed between segments; see distribution_items
+</span><span class="comment">-- above). Requires work proportional to the log of the number of
+</span><span class="comment">-- segments.
+</span><span class="comment">--
+</span><span class="comment">-- @tparam number index Which item among the total we want to know the
+</span><span class="comment">--   fate of, starting from 1. Must be less than or equal to the total.
+</span><span class="comment">-- @tparam number total The total number of items that will be
+</span><span class="comment">--   distributed among segments.
+</span><span class="comment">-- @tparam number n_segments The number of segments to distribute the
+</span><span class="comment">--   items into.
+</span><span class="comment">-- @tparam number segment_capacity The capacity of each segment.
+</span><span class="comment">--   n_segments times segment_capacity must be &gt;= total.
+</span><span class="comment">-- @tparam number roughness A number between 0 and 1. When roughness is
+</span><span class="comment">--   0, items will be split across segments as evenly as possible. When
+</span><span class="comment">--   roughness is 1, up to 100% of the items may be placed into the
+</span><span class="comment">--   first or second half of the segments while recursively
+</span><span class="comment">--   apportioning items. At roughness 0.5 the first or second half of
+</span><span class="comment">--   the segments might get as little as 50% of what it would get when
+</span><span class="comment">--   roughness is 0.
+</span><span class="comment">-- @tparam number seed The seed that determines how the total gets
+</span><span class="comment">--   distributed among the segments when roughness allows different
+</span><span class="comment">--   distributions.
+</span><span class="comment">-- @return Multiple values: the segment index (starting from 1) within
+</span><span class="comment">--   which the indicated item appears, and then the index within that
+</span><span class="comment">--   segment (starting from 1) at which it is placed.
+</span>anarchy.distribution.distribution_segment = <span class="keyword">function</span>(
+    index,
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+)
+    <span class="comment">-- base case
+</span>    <span class="keyword">if</span> n_segments == <span class="number">1</span> <span class="keyword">then</span>
+        <span class="keyword">return</span> <span class="number">1</span>, index  <span class="comment">-- we are in the only segment there is
+</span>    <span class="keyword">end</span>
+
+    <span class="comment">-- compute split point:
+</span>    <span class="keyword">local</span> split, half = <span class="function-name">distribution_spilt_point</span>(
+        total,
+        n_segments,
+        segment_capacity,
+        roughness,
+        seed
+    )
+
+    <span class="comment">-- call ourselves recursively:
+</span>    <span class="keyword">if</span> index &lt;= split <span class="keyword">then</span>
+        <span class="keyword">return</span> <span class="function-name">distribution_segment</span>(
+            index,
+            split,
+            half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+    <span class="keyword">else</span>
+        <span class="keyword">local</span> segment, within = <span class="function-name">distribution_segment</span>(
+            index - split,
+            total - split,
+            n_segments - half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+        <span class="keyword">return</span> half + segment, within
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+distribution_segment = anarchy.distribution.distribution_segment
+
+
+<span class="comment">-- Forward declaration as local (see function definition below)
+</span><span class="keyword">local</span> fill_sumtable_for_distribution
+
+<span class="comment">--- Takes distribution parameters and returns a table containing the
+</span><span class="comment">-- cumulative sum of items in each segment (The table indices will start
+</span><span class="comment">-- at 1, just like the segment indices). The list contains <code>n_segments</code>
+</span><span class="comment">-- entries, and each entry holds the sum of the items from the <code>total</code>
+</span><span class="comment">-- assigned to that segment plus all earlier segments. This means that
+</span><span class="comment">-- each entry is greater than or equal to the entry before it (and
+</span><span class="comment">-- they're only equal if zero items are assigned to that segment). The
+</span><span class="comment">-- last entry will be equal to the total.
+</span><span class="comment">--
+</span><span class="comment">-- @tparam number total The total number of items being distributed.
+</span><span class="comment">-- @tparam number n_segments The number of segments to distribute items
+</span><span class="comment">--   among.
+</span><span class="comment">-- @tparam number segment_capacity The capacity of each segment.
+</span><span class="comment">-- @tparam number roughness How rough the distribution should be (0-1).
+</span><span class="comment">-- @tparam number seed The seed that determines a specific distribution.
+</span><span class="comment">--
+</span><span class="comment">-- @treturn table An array table holding cumulative sums, starting at
+</span><span class="comment">--   index 1 with the number of items in the first segment.
+</span><span class="comment">--
+</span><span class="comment">-- <code>n_segments</code> times <code>segment_capacity</code> must be &gt;= <code>total</code> otherwise an
+</span><span class="comment">-- error will be raised.
+</span>anarchy.distribution.sumtable_for_distribution = <span class="keyword">function</span>(
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+)
+
+    <span class="keyword">if</span> n_segments * segment_capacity &lt; total <span class="keyword">then</span>
+        <span class="global">error</span>(
+            <span class="string">"Cannot distribute "</span> .. total .. <span class="string">" item(s) across "</span>
+         .. n_segments .. <span class="string">" segments of size "</span> .. segment_capacity
+         .. <span class="string">": There's not enough space for them all to fit."</span>
+        )
+    <span class="keyword">end</span>
+
+    <span class="comment">-- No need to pre-populate table
+</span>    result = {}
+    <span class="function-name">fill_sumtable_for_distribution</span>(
+        result,
+        <span class="number">1</span>,
+        <span class="number">0</span>,
+        total,
+        n_segments,
+        segment_capacity,
+        roughness,
+        seed
+    )
+    <span class="keyword">return</span> result
+<span class="keyword">end</span>
+<span class="keyword">local</span> sumtable_for_distribution = (
+    anarchy.distribution.sumtable_for_distribution
+)
+
+
+<span class="comment">--- Recursively fills in the sumtable based on the distribution
+</span><span class="comment">-- parameters given (see <a href="../index.html#anarchy.distribution.sumtable_for_distribution">sumtable_for_distribution</a>). Total work done
+</span><span class="comment">-- is <code>n_segments</code> times log(<code>n_segments</code>).
+</span><span class="comment">--
+</span><span class="comment">-- Note that using a sumtable instead of using the distribution
+</span><span class="comment">-- functions with the same parameters over and over again represents a
+</span><span class="comment">-- space/time tradeoff. Most operations on a sumtable are O(1), where
+</span><span class="comment">-- equivalent distribution functions need O(log(n)) time. The sumtable
+</span><span class="comment">-- needs to store one integer per segment. The use of distribution
+</span><span class="comment">-- functions is recommended primarily in situations where the algorithm
+</span><span class="comment">-- structure makes it inconvenient to store the sumtable in an
+</span><span class="comment">-- accessible way, so sharing parameters is easier.
+</span><span class="comment">-- Parameters are the same as for <a href="../index.html#anarchy.distribution.sumtable_for_distribution">sumtable_for_distribution</a> but with:
+</span><span class="comment">--
+</span><span class="comment">-- @tparam table ledger The table to fill in. Values will be
+</span><span class="comment">--   added/overwritten between <code>start</code> and <code>start</code> + <code>n_segments</code> - 1
+</span><span class="comment">--   (inclusive).
+</span><span class="comment">-- @tparam number start The index at which to start overwriting values
+</span><span class="comment">--   (counting from index 1).
+</span><span class="comment">-- @tparam number  prior The number of items distributed prior to the start
+</span><span class="comment">--   index.
+</span><span class="comment">--
+</span><span class="comment">-- @treturn nil No return (modifies the given ledger).
+</span>anarchy.distribution.fill_sumtable_for_distribution = <span class="keyword">function</span>(
+    <span class="global">table</span>,
+    start,
+    prior,
+    total,
+    n_segments,
+    segment_capacity,
+    roughness,
+    seed
+)
+    <span class="keyword">if</span> n_segments == <span class="number">0</span> <span class="keyword">then</span>  <span class="comment">-- base case: nothing to modify
+</span>        <span class="global">assert</span>(total == <span class="number">0</span>)
+        <span class="keyword">return</span>
+    <span class="keyword">elseif</span> n_segments == <span class="number">1</span> <span class="keyword">then</span>  <span class="comment">-- base case: fill in one entry
+</span>        <span class="global">table</span>[start] = prior + total
+    <span class="keyword">else</span>  <span class="comment">-- recurse into each half of the table
+</span>        <span class="keyword">local</span> sub_prior, first_half = <span class="function-name">distribution_spilt_point</span>(
+            total,
+            n_segments,
+            segment_capacity,
+            roughness,
+            seed
+        )
+        <span class="comment">-- Fill in the first half
+</span>        <span class="function-name">fill_sumtable_for_distribution</span>(
+            <span class="global">table</span>,
+            start,
+            prior,
+            sub_prior,
+            first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+        <span class="comment">-- Fill in the second half
+</span>        <span class="function-name">fill_sumtable_for_distribution</span>(
+            <span class="global">table</span>,
+            start + first_half,
+            prior + sub_prior,
+            total - sub_prior,
+            n_segments - first_half,
+            segment_capacity,
+            roughness,
+            seed
+        )
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+fill_sumtable_for_distribution = (
+    anarchy.distribution.fill_sumtable_for_distribution
+)
+
+<span class="comment">--- Returns a sumtable for the same distribution, where entries are the
+</span><span class="comment">-- cumulative sum of all portions up to an index, rather than just the
+</span><span class="comment">-- portion at that index. Use functions like <a href="../index.html#anarchy.distribution.sumtable_total">sumtable_total</a>,
+</span><span class="comment">-- <a href="../index.html#anarchy.distribution.sumtable_segments">sumtable_segments</a>, <a href="../index.html#anarchy.distribution.sumtable_portion">sumtable_portion</a>, and <a href="../index.html#anarchy.distribution.sumtable_segment">sumtable_segment</a> to get
+</span><span class="comment">-- information out of the sumtable efficiently.
+</span><span class="comment">--
+</span><span class="comment">-- @tparam table portions The array of per-segment item counts, indexed
+</span><span class="comment">--   starting at 1.
+</span><span class="comment">--
+</span><span class="comment">-- @treturn table The sumtable that encodes the same distribution (also
+</span><span class="comment">--   indexed from 1, like all normal Lua tables. Hahaha why would we
+</span><span class="comment">--   even mention this?).
+</span>anarchy.distribution.sumtable_from_portions = <span class="keyword">function</span>(portions)
+    sofar = <span class="number">0</span>
+    result = {}
+    <span class="keyword">for</span> i, p <span class="keyword">in</span> <span class="global">ipairs</span>(portions) <span class="keyword">do</span>
+        sofar = sofar + p
+        result[#result + <span class="number">1</span>] = sofar
+    <span class="keyword">end</span>
+
+    <span class="keyword">return</span> result
+<span class="keyword">end</span>
+<span class="keyword">local</span> sumtable_from_portions = anarchy.distribution.sumtable_from_portions
+
+
+<span class="comment">--- Returns the total number of items across all segments in a sumtable,
+</span><span class="comment">-- which is just the last entry in that table.
+</span><span class="comment">--
+</span><span class="comment">-- @tparam table sumtable The table of sums describing the distribution
+</span><span class="comment">--   in question.
+</span><span class="comment">--
+</span><span class="comment">-- @treturn number The total number of items distributed.
+</span>anarchy.distribution.sumtable_total = <span class="keyword">function</span>(sumtable)
+    <span class="keyword">return</span> sumtable[#sumtable]
+<span class="keyword">end</span>
+<span class="keyword">local</span> sumtable_total = anarchy.distribution.sumtable_total
+
+
+<span class="comment">--- Returns the number of segments in the given sumtable, which is just
+</span><span class="comment">-- its length.
+</span><span class="comment">--
+</span><span class="comment">-- @tparam table sumtable The table of sums describing the distribution
+</span><span class="comment">--   in question.
+</span><span class="comment">--
+</span><span class="comment">-- @treturn number The number of segments in the distribution.
+</span>anarchy.distribution.sumtable_segments = <span class="keyword">function</span>(sumtable)
+    <span class="keyword">return</span> #sumtable
+<span class="keyword">end</span>
+<span class="keyword">local</span> sumtable_segments = anarchy.distribution.sumtable_segments
+
+
+<span class="comment">--- Returns the portion of the total items which is distributed into the
+</span><span class="comment">-- segment with the given index (starting from 1). Just needs to subtract
+</span><span class="comment">-- the entry to the left to figure this out. Raises an error if the index
+</span><span class="comment">-- is invalid.
+</span><span class="comment">--
+</span><span class="comment">-- @tparam table sumtable The table of sums describing the distribution
+</span><span class="comment">--   in question.
+</span><span class="comment">-- @tparam number i The segment to compute the portion for (from 1).
+</span><span class="comment">--
+</span><span class="comment">-- @treturn number The number of items distributed into the specified
+</span><span class="comment">--   segment.
+</span>anarchy.distribution.sumtable_portion = <span class="keyword">function</span>(sumtable, i)
+    <span class="comment">-- First entry has nothing to subtract
+</span>    <span class="keyword">local</span> here = sumtable[i]
+    <span class="keyword">if</span> here == <span class="keyword">nil</span> <span class="keyword">then</span>
+        <span class="comment">-- Out-of-bounds
+</span>        <span class="global">error</span>(
+            <span class="string">"Invalid index "</span> .. i .. <span class="string">" for table with "</span> .. #sumtable
+         .. <span class="string">" entries."</span>
+        )
+    <span class="keyword">end</span>
+    <span class="keyword">if</span> i == <span class="number">1</span> <span class="keyword">then</span>
+        <span class="keyword">return</span> here
+    <span class="keyword">else</span>
+        <span class="comment">-- In-bounds entries just subtract sums to get value
+</span>        <span class="keyword">return</span> here - sumtable[i - <span class="number">1</span>]
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> sumtable_portion = anarchy.distribution.sumtable_portion
+
+
+<span class="comment">--- Returns a pair containing the index of the first item in the segment
+</span><span class="comment">-- and then the number of items in that segment, like
+</span><span class="comment">-- <a href="../index.html#anarchy.distribution.distribution_items">distribution_items</a>, but for a sumtable. Parameters:
+</span><span class="comment">--
+</span><span class="comment">-- @tparam table sumtable The table of sums describing the distribution
+</span><span class="comment">--   in question.
+</span><span class="comment">-- @tparam number i The segment to compute the portion for (from 1).
+</span><span class="comment">--
+</span><span class="comment">-- @return Two numbers: The index of the first item in the segment (from
+</span><span class="comment">--   1), then the number o items in the indicated segment.
+</span>anarchy.distribution.sumtable_items = <span class="keyword">function</span>(sumtable, i)
+    <span class="keyword">local</span> portion = <span class="function-name">sumtable_portion</span>(sumtable, i)  <span class="comment">-- error here if bad i
+</span>
+    <span class="comment">-- Read prior sum directly from adjacent table entry
+</span>    <span class="keyword">if</span> i == <span class="number">1</span> <span class="keyword">then</span>
+        prior = <span class="number">0</span>
+    <span class="keyword">else</span>
+        prior = sumtable[i - <span class="number">1</span>]
+    <span class="keyword">end</span>
+
+    <span class="keyword">return</span> prior + <span class="number">1</span>, portion
+<span class="keyword">end</span>
+<span class="keyword">local</span> sumtable_items = anarchy.distribution.sumtable_items
+
+
+<span class="comment">--- Uses binary search to find the index of the smallest sum in the given
+</span><span class="comment">-- sumtable that's greater than or equal to the given value breaking ties
+</span><span class="comment">-- towards earlier entries. Works in time proportional to the logarithm
+</span><span class="comment">-- of the sumtable size. This will be the segment which the given item
+</span><span class="comment">-- (out of the total) falls into.
+</span><span class="comment">--
+</span><span class="comment">-- Raises an error if the sumtable is empty, or if the item index is too
+</span><span class="comment">-- large for the sumtable or is zero or negative.
+</span><span class="comment">--
+</span><span class="comment">-- @tparam table sumtable The table of sums describing the distribution
+</span><span class="comment">--   in question.
+</span><span class="comment">-- @tparam number item The item (out of the total distributed, starting
+</span><span class="comment">--   from 0) that we want to find the segment for.
+</span><span class="comment">--
+</span><span class="comment">-- @treturn number The segment index (starting from 1) for the specified
+</span><span class="comment">--   item.
+</span>anarchy.distribution.sumtable_segment = <span class="keyword">function</span>(sumtable, item)
+    <span class="keyword">if</span> #sumtable == <span class="number">0</span> <span class="keyword">then</span>
+        <span class="global">error</span>(<span class="string">"Empty sumtable in sumtable_segment."</span>)
+    <span class="keyword">elseif</span> item &lt; <span class="number">1</span> <span class="keyword">then</span>
+        <span class="global">error</span>(
+            <span class="string">"Zero or negative item index "</span> .. item .. <span class="string">" not permitted in"</span>
+         .. <span class="string">" sumtable_segment."</span>
+        )
+    <span class="keyword">elseif</span> item &gt; sumtable[#sumtable] <span class="keyword">then</span>
+        <span class="global">error</span>(
+            <span class="string">"Item index "</span> .. item .. <span class="string">" is too large in sumtable_segment."</span>
+         .. <span class="string">" The sumtable only contains "</span> .. sumtable[#sumtable]
+         .. <span class="string">" items."</span>
+        )
+    <span class="keyword">end</span>
+
+    <span class="keyword">local</span> fr = <span class="number">1</span>  <span class="comment">-- inclusive
+</span>    <span class="keyword">local</span> to = #sumtable  <span class="comment">-- inclusive
+</span>    <span class="keyword">local</span> where = <span class="keyword">nil</span>
+    <span class="comment">-- Keep splitting until we narrow it down to a single position (or none)
+</span>    <span class="keyword">while</span> to - fr &gt; <span class="number">0</span> <span class="keyword">do</span>
+        where = fr + <span class="function-name">floor</span>((to - fr) / <span class="number">2</span>)  <span class="comment">-- halfway between
+</span>        <span class="keyword">if</span> sumtable[where] &lt; item <span class="keyword">then</span>  <span class="comment">-- definitely not here; it's farther
+</span>            fr = where + <span class="number">1</span>
+        <span class="keyword">else</span>  <span class="comment">-- could be here
+</span>            to = where
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+
+    <span class="keyword">if</span> to - fr &lt; <span class="number">0</span> <span class="keyword">then</span>
+        <span class="comment">-- shouldn't be possible in a valid sumtable given the checks
+</span>        <span class="comment">-- above...
+</span>        <span class="keyword">local</span> frspec = <span class="string">""</span> .. fr .. <span class="string">" (value "</span> .. sumtable[fr] .. <span class="string">")"</span>
+        <span class="keyword">local</span> tospec = <span class="string">""</span> .. to .. <span class="string">" (value "</span> .. sumtable[to] .. <span class="string">")"</span>
+        <span class="global">error</span>(
+            <span class="string">"Item index "</span> .. item .. <span class="string">" not found in sumtable. Must be at"</span>
+         .. <span class="string">" least at index "</span> .. frspec .. <span class="string">" but may not be past index "</span>
+         .. tospec .. <span class="string">"."</span>
+        )
+    <span class="keyword">end</span>
+
+    <span class="global">assert</span>(to == fr)
+    <span class="comment">-- Check the single remaining entry &amp; return
+</span>    <span class="keyword">if</span> sumtable[fr] &lt; item <span class="keyword">then</span>
+        <span class="comment">-- Shouldn't be possible with a valid sumtable given checks above
+</span>        <span class="comment">-- that the index is in range of the total
+</span>        <span class="global">error</span>(
+            <span class="string">"Item index "</span> .. item .. <span class="string">" not found in sumtable. Must be at"</span>
+         .. <span class="string">" index "</span> .. fr .. <span class="string">" (value "</span> .. sumtable[fr] .. <span class="string">") but that"</span>
+         .. <span class="string">" value is too small."</span>
+        )
+    <span class="keyword">else</span>
+        <span class="keyword">return</span> fr
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">local</span> sumtable_segment = anarchy.distribution.sumtable_segment
+
+
+<span class="comment">-- Return module table
+</span><span class="keyword">return</span> anarchy</pre>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2025-11-28 02:16:35 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

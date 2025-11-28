@@ -1,5 +1,5 @@
 package = 'Anarchy'
-version = '1.0-1'
+version = '1.0-2'
 source = {
     url = "https://cs.wellesley.edu/~pmwh/anarchy/lua/anarchy.lua"
 }
@@ -21,7 +21,7 @@ Capabilities include:
 
 Also available in Python, Javascript, C, and C# (with a Unity demo).
 ]],
-    homepage = "https://cs.wellesley.edu/~pmwh/anarchy/lua/doc.html",
+    homepage = "https://cs.wellesley.edu/~pmwh/anarchy/lua/",
     license = "BSD 3-clause"
 }
 dependencies = {

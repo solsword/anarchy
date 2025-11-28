@@ -25,7 +25,7 @@ Also available in Python, Javascript, C, and C# (with a Unity demo).
 For use with Lua 5.1, you'll need to install the 'bit32' library that
 backports the built-in bit32 module from Lua 5.2.
 ]],
-    homepage = "https://cs.wellesley.edu/~pmwh/anarchy/lua/doc32.html",
+    homepage = "https://cs.wellesley.edu/~pmwh/anarchy/lua/",
     license = "BSD 3-clause"
 }
 dependencies = {

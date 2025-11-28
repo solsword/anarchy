@@ -4,6 +4,30 @@ Incremental & reversible chaos library. Generates pseudo-random numbers
 (not suitable for cryptographic or statistical applications) in a
 reversible and incremental manner.
 
+"Reversible" means that you can take a random result value and use
+reverse random functions to determine the seed value it came from, or
+take a shuffled item position and determine which original position it
+had. This property is useful for implementing things like a compass or
+'rare item radar' that can lead the way to the nearest
+randomly-distributed item of a particular type, since you can not only
+ask "I'm generating the tile at 3, 17, what goes here?" but also "Which
+tile was treasure #25 assigned to?"
+
+"Incremental" means that you can generate the index of one shuffled
+item without generating and storing an array containing the total
+ordering of the items (or figure out which segment an item got
+distributed into without storing the full mapping of items to
+segments). This property is useful in situations like Minecraft, where
+we need to generate chunks of a larger world based on the order the
+player explores them in. Pre-generating entire regions (or even data
+structures to support placement of items in those regions) is not
+feasible, and instead with `anarchy`, you can simply request the
+portions of a shuffle or distribution that you need as you need them.
+In general this also means that you don't need to manage and hand
+around an "RNG" instance in the code, but can instead share a single
+integer seed and have each part of the code derive all the information
+it needs from that alone.
+
 Capabilities include:
 
 - Reversible pseudo-random number generator
@@ -46,11 +70,20 @@ includes:
 
 ## Core documentation
 
-Full documentation for all core functions pulled directly from the Python
-implementation (applies to all implementations, just with a few
-per-language differences):
+Reading the source code comments for the implementation you're using is
+the best way to get details on specific functions. Online you can find:
 
-[Core Documentation](https://solsword.github.io/anarchy/python/doc.html)
+- [Documentation for the Python
+    version](https://cs.wellesley.edu/~pmwh/anarchy/python/doc.html) -
+    This is the most complete online documentation available. Of course
+    each implementation has its own nuances that may be slightly
+    different from the Python version.
+- [Documentation for the main Lua
+    version](https://cs.wellesley.edu/~pmwh/anarchy/lua/docs/index.html)
+    This documentation applies to the Lua 5.3+ version. See also [the
+    Lua version README
+    page](https://cs.wellesley.edu/~pmwh/anarchy/lua/).
+
 
 Each individual implementation's source code is documented.
 
@@ -58,9 +91,12 @@ Each individual implementation's source code is documented.
 ## Example code
 
 Example code using the JavaScript implementation that demonstrates things
-to do with the library.
+to do with the library. These examples run live in your browser and
+include code snippets showing how things are accomplished; reading
+through these is the fastest way to get a sense of how to use the
+library and what it's good for.
 
-[Examples](https://solsword.github.io/anarchy/js/examples.html)
+[Examples](https://cs.wellesley.edu/~pmwh/anarchy/js/examples.html)
 
 
 ## Unity Example

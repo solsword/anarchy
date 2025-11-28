@@ -1,0 +1,2250 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+<head>
+    <title>Anarchy Lua Documentation</title>
+    <link rel="stylesheet" href="../ldoc_fixed.css" type="text/css" />
+</head>
+<body>
+
+<div id="container">
+
+<div id="product">
+	<div id="product_logo"></div>
+	<div id="product_name"><big><b></b></big></div>
+	<div id="product_description"></div>
+</div> <!-- id="product" -->
+
+
+<div id="main">
+
+
+<!-- Menu -->
+
+<div id="navigation">
+<br/>
+<h1>Anarchy</h1>
+
+
+
+<h2>Contents</h2>
+<ul>
+<li><a href="#Utility_Functions">Utility Functions </a></li>
+<li><a href="#Random_Number_Generator_Functions">Random Number Generator Functions </a></li>
+<li><a href="#Cohort_Functions">Cohort Functions </a></li>
+<li><a href="#Distribution_Functions">Distribution Functions </a></li>
+</ul>
+
+
+<h2>Libraries</h2>
+<ul class="nowrap">
+  <li><strong>anarchy</strong></li>
+</ul>
+<h2>Examples</h2>
+<ul class="nowrap">
+  <li><a href="../examples/test_anarchy.lua.html">test_anarchy.lua</a></li>
+</ul>
+<h2>Source</h2>
+<ul class="nowrap">
+  <li><a href="../source/anarchy.lua.html">anarchy.lua</a></li>
+  <li><a href="../source/test_anarchy.lua.html">test_anarchy.lua</a></li>
+</ul>
+
+</div>
+
+<div id="content">
+
+<h1>Module <code>anarchy</code></h1>
+<p>anarchy.lua</p>
+<p> Reversible chaos library (version for Lua 5.3+).</p>
+    <h3>Info:</h3>
+    <ul>
+        <li><strong>Copyright</strong>: 2025 Peter Mawhorter</li>
+        <li><strong>Release</strong>:  1.0-1</p>
+
+<p> This version uses the native integers available in Lua versions 5.3+,
+ which are 64-bit integers by default or 32-bit integers if your Lua
+ was compiled with only 32-bit integer support.</p>
+
+<p> If you want to use Lua 5.1, 5.2 or LuaJIT, use the 'anarchy32'
+ library instead, although performance and probably quality will be
+ worse.</p>
+
+<p> See more details <a href="https://cs.wellesley.edu/~pmwh/anarchy/lua/">in the README
+ file</a>.</li>
+        <li><strong>Author</strong>: Peter Mawhorter</li>
+    </ul>
+
+
+<h2><a href="#Utility_Functions">Utility Functions </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.util.posmod">anarchy.util.posmod (num, base)</a></td>
+	<td class="summary">Modulus that's always positive
+ Use % operator instead in Lua since it has the same behavior.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.util.hash_string">anarchy.util.hash_string (s)</a></td>
+	<td class="summary">A string hashing function.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.util.mask">anarchy.util.mask (bits)</a></td>
+	<td class="summary">Creates a mask with the given number of 1 bits, up to
+ <code>anarchy.ID_BITS</code> maximum (any larger value gives all-1s, same as if
+ you had given <code>anarchy.ID_BITS</code>).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.util.byte_mask">anarchy.util.byte_mask (n)</a></td>
+	<td class="summary">Returns a mask that covers just the nth byte (zero-indexed), starting
+ from the least-significant digits.</td>
+	</tr>
+</table>
+<h2><a href="#Random_Number_Generator_Functions">Random Number Generator Functions </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.swirl">anarchy.rng.swirl (x, distance)</a></td>
+	<td class="summary">Circular bit shift to the right
+ Distance is capped at 3/4 of ID_BITS</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.rev_swirl">anarchy.rng.rev_swirl (x, distance)</a></td>
+	<td class="summary">Circular bit shift to the left inverse of swirl
+ Distance is capped at 3/4 of ID_BITS</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.fold">anarchy.rng.fold (x, where)</a></td>
+	<td class="summary">Folds lower bits into upper bits using xor.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.flop">anarchy.rng.flop (x)</a></td>
+	<td class="summary">Flops each 1/2 byte with the adjacent 1/2 byte.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.scramble">anarchy.rng.scramble (x)</a></td>
+	<td class="summary">Implements a reversible linear-feedback-shift-register-like operation.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.rev_scramble">anarchy.rng.rev_scramble (x)</a></td>
+	<td class="summary">Inverse of scramble (see above).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.scramble_seed">anarchy.rng.scramble_seed (s)</a></td>
+	<td class="summary">Scrambles a seed value to help separate RNG sequences generated from
+ sequential seeds.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.prng">anarchy.rng.prng (x, seed)</a></td>
+	<td class="summary">A simple reversible pseudo-random number generator
+ You can call <a href="../index.html#anarchy.rng.rev_prng">anarchy.rng.rev_prng</a> with the result of this
+ function and the same seed to get back the number you put in here,
+ so that results form a chain you can traverse forwards or backwards.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.rev_prng">anarchy.rng.rev_prng (x, seed)</a></td>
+	<td class="summary">Inverse of <a href="../index.html#anarchy.rng.prng">anarchy.rng.prng</a> (see above).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.lfsr">anarchy.rng.lfsr (x)</a></td>
+	<td class="summary">Implements a max-cycle-length 32-bit linear feedback shift register.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.uniform">anarchy.rng.uniform (seed)</a></td>
+	<td class="summary">Generates a random number between 0 and 1 given a seed value.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.normalish">anarchy.rng.normalish (seed)</a></td>
+	<td class="summary">Generates and averages three random numbers between 0 and 1 to give a
+ pseudo-gaussian-distributed random number (still strictly on [0, 1) )</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.flip">anarchy.rng.flip (p, seed)</a></td>
+	<td class="summary">Flips a coin with probability p of being True.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.integer">anarchy.rng.integer (seed, start, cap)</a></td>
+	<td class="summary">Even distribution over the given integer range, including the start
+ but excluding the cap (even if the cap is lower than the start).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.exponential">anarchy.rng.exponential (seed, lambda)</a></td>
+	<td class="summary">Generates a number from an exponential distribution on [0,∞) with mean
+ 1/lambda given a seed.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.rng.truncated_exponential">anarchy.rng.truncated_exponential (seed, lambda)</a></td>
+	<td class="summary">Generates a number from a truncated exponential distribution on [0,
+ 1), given a particular seed.</td>
+	</tr>
+</table>
+<h2><a href="#Cohort_Functions">Cohort Functions </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort">anarchy.cohort.cohort (outer, cohort_size)</a></td>
+	<td class="summary">Computes cohort number for the given outer index and cohort size.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_inner">anarchy.cohort.cohort_inner (outer, cohort_size)</a></td>
+	<td class="summary">Computes within-cohort index for the given outer index and cohorts of
+ the given size.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_and_inner">anarchy.cohort.cohort_and_inner (outer, cohort_size)</a></td>
+	<td class="summary">Returns two results: the cohort number and inner index for the given
+ outer index and cohort size.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_outer">anarchy.cohort.cohort_outer (cohort, inner, cohort_size)</a></td>
+	<td class="summary">Inverse of cohort<em>and</em>inner; computes the outer index from a cohort
+ number and inner index.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_interleave">anarchy.cohort.cohort_interleave (inner, cohort_size)</a></td>
+	<td class="summary">Interleaves cohort members by folding the top half into the bottom
+ half.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.rev_cohort_interleave">anarchy.cohort.rev_cohort_interleave (inner, cohort_size)</a></td>
+	<td class="summary">Inverse interleave (see above).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_fold">anarchy.cohort.cohort_fold (inner, cohort_size, seed)</a></td>
+	<td class="summary">Folds items past an arbitrary split point (in the second half of the
+ cohort) into the middle of the cohort.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.rev_cohort_fold">anarchy.cohort.rev_cohort_fold (inner, cohort_size, seed)</a></td>
+	<td class="summary">Inverse fold (see above).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_spin">anarchy.cohort.cohort_spin (inner, cohort_size, seed)</a></td>
+	<td class="summary">Applies a circular offset</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.rev_cohort_spin">anarchy.cohort.rev_cohort_spin (inner, cohort_size, seed)</a></td>
+	<td class="summary">Inverse spin (see above).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_flop">anarchy.cohort.cohort_flop (inner, cohort_size, seed)</a></td>
+	<td class="summary">Flops sections (with seeded sizes) with their neighbors.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_mix">anarchy.cohort.cohort_mix (inner, cohort_size, seed)</a></td>
+	<td class="summary">Applies a spin to even and odd items separately with different seeds.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.rev_cohort_mix">anarchy.cohort.rev_cohort_mix (inner, cohort_size, seed)</a></td>
+	<td class="summary">Inverse mix (see above).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_spread">anarchy.cohort.cohort_spread (inner, cohort_size, seed)</a></td>
+	<td class="summary">Spreads items out between a random number of different regions within
+ the cohort.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.rev_cohort_spread">anarchy.cohort.rev_cohort_spread (inner, cohort_size, seed)</a></td>
+	<td class="summary">Inverse spread (see above).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_upend">anarchy.cohort.cohort_upend (inner, cohort_size, seed)</a></td>
+	<td class="summary">Reverses ordering within each of several fragments.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.cohort_shuffle">anarchy.cohort.cohort_shuffle (inner, cohort_size, seed)</a></td>
+	<td class="summary">Compose a bunch of the above functions to perform a nice thorough
+ shuffle within a cohort.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.cohort.rev_cohort_shuffle">anarchy.cohort.rev_cohort_shuffle (inner, cohort_size, seed)</a></td>
+	<td class="summary">Inverse shuffle (see above).</td>
+	</tr>
+</table>
+<h2><a href="#Distribution_Functions">Distribution Functions </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.distribution_split_point">anarchy.distribution.distribution_split_point (total, n_segments, segment_capacity, roughness, seed)</a></td>
+	<td class="summary">Implements common distribution functionality: given a total item
+ count, a segment count and per-segment capacity, and a roughness value
+ and seed, computes the split point for the items as well as the
+ halfway index for the segments.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.distribution_items">anarchy.distribution.distribution_items (segment, total, n_segments, segment_capacity, roughness, seed)</a></td>
+	<td class="summary">Given that 'total' items are to be distributed evenly among
+ 'n<em>segment' segments each with at most 'segment</em>capacity' items and
+ we're in segment 'segment' of those (indexed from 1), computes the
+ start index (from 1) among the total of the first item in this
+ segment, and how many items are in this segment.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.distribution_segment">anarchy.distribution.distribution_segment (index, total, n_segments, segment_capacity, roughness, seed)</a></td>
+	<td class="summary">Computes the segment number in which a certain item appears (one of
+ the 'total' items distributed between segments; see distribution_items
+ above).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.sumtable_for_distribution">anarchy.distribution.sumtable_for_distribution (total, n_segments, segment_capacity, roughness, seed)</a></td>
+	<td class="summary">Takes distribution parameters and returns a table containing the
+ cumulative sum of items in each segment (The table indices will start
+ at 1, just like the segment indices).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.fill_sumtable_for_distribution">anarchy.distribution.fill_sumtable_for_distribution (ledger, start, prior)</a></td>
+	<td class="summary">Recursively fills in the sumtable based on the distribution
+ parameters given (see <a href="../index.html#anarchy.distribution.sumtable_for_distribution">sumtable_for_distribution</a>).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.sumtable_from_portions">anarchy.distribution.sumtable_from_portions (portions)</a></td>
+	<td class="summary">Returns a sumtable for the same distribution, where entries are the
+ cumulative sum of all portions up to an index, rather than just the
+ portion at that index.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.sumtable_total">anarchy.distribution.sumtable_total (sumtable)</a></td>
+	<td class="summary">Returns the total number of items across all segments in a sumtable,
+ which is just the last entry in that table.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.sumtable_segments">anarchy.distribution.sumtable_segments (sumtable)</a></td>
+	<td class="summary">Returns the number of segments in the given sumtable, which is just
+ its length.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.sumtable_portion">anarchy.distribution.sumtable_portion (sumtable, i)</a></td>
+	<td class="summary">Returns the portion of the total items which is distributed into the
+ segment with the given index (starting from 1).</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.sumtable_items">anarchy.distribution.sumtable_items (sumtable, i)</a></td>
+	<td class="summary">Returns a pair containing the index of the first item in the segment
+ and then the number of items in that segment, like
+ <a href="../index.html#anarchy.distribution.distribution_items">distribution_items</a>, but for a sumtable.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#anarchy.distribution.sumtable_segment">anarchy.distribution.sumtable_segment (sumtable, item)</a></td>
+	<td class="summary">Uses binary search to find the index of the smallest sum in the given
+ sumtable that's greater than or equal to the given value breaking ties
+ towards earlier entries.</td>
+	</tr>
+</table>
+
+<br/>
+<br/>
+
+
+    <h2 class="section-header has-description"><a name="Utility_Functions"></a>Utility Functions </h2>
+
+          <div class="section-description">
+           Helper functions that other categories make use of.
+          </div>
+    <dl class="function">
+    <dt>
+    <a name = "anarchy.util.posmod"></a>
+    <strong>anarchy.util.posmod (num, base)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#55">line 55</a>
+    </dt>
+    <dd>
+    Modulus that's always positive
+ Use % operator instead in Lua since it has the same behavior.
+ Included for compatibility with anarchy implementations in other
+ languages.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">num</span>
+            <span class="types"><span class="type">number</span></span>
+         The number to compute the modulus of.
+        </li>
+        <li><span class="parameter">base</span>
+            <span class="types"><span class="type">number</span></span>
+         The base of the modulus.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The number modulo the base.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.util.hash_string"></a>
+    <strong>anarchy.util.hash_string (s)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#64">line 64</a>
+    </dt>
+    <dd>
+    A string hashing function.
+ See: https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">s</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.4/manual.html#6.4">string</a></span>
+         The string to hash
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The hash for that string
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.util.mask"></a>
+    <strong>anarchy.util.mask (bits)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#85">line 85</a>
+    </dt>
+    <dd>
+    Creates a mask with the given number of 1 bits, up to
+ <code>anarchy.ID_BITS</code> maximum (any larger value gives all-1s, same as if
+ you had given <code>anarchy.ID_BITS</code>).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">bits</span>
+            <span class="types"><span class="type">number</span></span>
+         The number of 1 bits to put in the mask.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        A value with that many 1 bits starting from the
+   least significant place.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.util.byte_mask"></a>
+    <strong>anarchy.util.byte_mask (n)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#95">line 95</a>
+    </dt>
+    <dd>
+    Returns a mask that covers just the nth byte (zero-indexed), starting
+ from the least-significant digits.
+ Returns 0 if n is >= <code>anarchy.ID_BYTES</code>.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">n</span>
+            <span class="types"><span class="type">number</span></span>
+         The byte index (starting from 0)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The mask with 1s in that byte and 0s elsewhere
+    </ol>
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header has-description"><a name="Random_Number_Generator_Functions"></a>Random Number Generator Functions </h2>
+
+          <div class="section-description">
+           These functions help support the <a href="../index.html#anarchy.rng.prng">anarchy.rng.prng</a> pseudo-random
+ number generator function, or otherwise deal with generating
+ sequences of pseudo-random individual numbers, or with generating
+ pseudo-random numbers from specific integer or floating-point
+ distributions based on a pseudo-random integer seed.
+          </div>
+    <dl class="function">
+    <dt>
+    <a name = "anarchy.rng.swirl"></a>
+    <strong>anarchy.rng.swirl (x, distance)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#114">line 114</a>
+    </dt>
+    <dd>
+    Circular bit shift to the right
+ Distance is capped at 3/4 of ID_BITS
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+         The number to swirl.
+        </li>
+        <li><span class="parameter">distance</span>
+            <span class="types"><span class="type">number</span></span>
+         How far to swirl it.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The swirled number.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.rev_swirl"></a>
+    <strong>anarchy.rng.rev_swirl (x, distance)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#131">line 131</a>
+    </dt>
+    <dd>
+    Circular bit shift to the left inverse of swirl
+ Distance is capped at 3/4 of ID_BITS
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+         The number to unswirl.
+        </li>
+        <li><span class="parameter">distance</span>
+            <span class="types"><span class="type">number</span></span>
+         How far to unswirl it.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The unswirled number.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.fold"></a>
+    <strong>anarchy.rng.fold (x, where)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#145">line 145</a>
+    </dt>
+    <dd>
+    Folds lower bits into upper bits using xor.
+ fold is its own inverse.
+ 'where' is restricted to fall between 1/4 and 1/2 of ID_BITS.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+         the number to fold.
+        </li>
+        <li><span class="parameter">where</span>
+            <span class="types"><span class="type">number</span></span>
+         which tit to fold at
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.flop"></a>
+    <strong>anarchy.rng.flop (x)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#171">line 171</a>
+    </dt>
+    <dd>
+    Flops each 1/2 byte with the adjacent 1/2 byte.
+ flop is its own inverse.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+         the number to flop
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The flopped number
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.scramble"></a>
+    <strong>anarchy.rng.scramble (x)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#205">line 205</a>
+    </dt>
+    <dd>
+    Implements a reversible linear-feedback-shift-register-like operation.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+         the number to scramble.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        the scrambled number
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.rev_scramble"></a>
+    <strong>anarchy.rng.rev_scramble (x)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#226">line 226</a>
+    </dt>
+    <dd>
+    Inverse of scramble (see above).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+         the number to unscramble
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        the unscrambled number
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.scramble_seed"></a>
+    <strong>anarchy.rng.scramble_seed (s)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#244">line 244</a>
+    </dt>
+    <dd>
+    Scrambles a seed value to help separate RNG sequences generated from
+ sequential seeds.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">s</span>
+            <span class="types"><span class="type">number</span></span>
+         the seed to scramble
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        the scrambled seed
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.prng"></a>
+    <strong>anarchy.rng.prng (x, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#264">line 264</a>
+    </dt>
+    <dd>
+    A simple reversible pseudo-random number generator
+ You can call <a href="../index.html#anarchy.rng.rev_prng">anarchy.rng.rev_prng</a> with the result of this
+ function and the same seed to get back the number you put in here,
+ so that results form a chain you can traverse forwards or backwards.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+         the current/previous number
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         the generation sequence seed (this can be
+   constant for a bunch of calls)
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        the next number in the generation sequence
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.rev_prng"></a>
+    <strong>anarchy.rng.rev_prng (x, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#286">line 286</a>
+    </dt>
+    <dd>
+    Inverse of <a href="../index.html#anarchy.rng.prng">anarchy.rng.prng</a> (see above).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+         the current/next number
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         the generation seed that determines the sequence
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        the previous number in the generation sequence
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.lfsr"></a>
+    <strong>anarchy.rng.lfsr (x)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#328">line 328</a>
+    </dt>
+    <dd>
+    Implements a max-cycle-length 32-bit linear feedback shift register.
+ See: https://en.wikipedia.org/wiki/Linear-feedback<em>shift</em>register
+ Note that this is NOT reversible!
+ Note: Do not use this as an irreversible PRNG; it's a terrible one!
+ Note: Zero is a fixed point of this function: do not use it as
+ your seed!
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">x</span>
+            <span class="types"><span class="type">number</span></span>
+         the current number
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        the next number in the LFSR sequence
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.uniform"></a>
+    <strong>anarchy.rng.uniform (seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#349">line 349</a>
+    </dt>
+    <dd>
+    Generates a random number between 0 and 1 given a seed value.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines the result.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        A number between 0 (inclusive) and 1 (exclusive)
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.normalish"></a>
+    <strong>anarchy.rng.normalish (seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#361">line 361</a>
+    </dt>
+    <dd>
+    Generates and averages three random numbers between 0 and 1 to give a
+ pseudo-gaussian-distributed random number (still strictly on [0, 1) )
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines the result.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        A number between 0 (inclusive) and 1 (exclusive)
+   which is more likely to be near 0.5 than near either 0 or 1.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.flip"></a>
+    <strong>anarchy.rng.flip (p, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#378">line 378</a>
+    </dt>
+    <dd>
+    Flips a coin with probability p of being True.  Using the same seed
+ always gives the same result.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">p</span>
+            <span class="types"><span class="type">number</span></span>
+         The probability that the result should be True when
+   results are averaged across many different seeds.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines the result.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">boolean</span></span>
+         Either true (with probability p when averaged
+   across seeds) or false (with probability 1-p when averaged
+   across seeds).
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.integer"></a>
+    <strong>anarchy.rng.integer (seed, start, cap)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#399">line 399</a>
+    </dt>
+    <dd>
+    Even distribution over the given integer range, including the start
+ but excluding the cap (even if the cap is lower than the start).
+ The last number before the cap is about 1/<code>anarchy.rng.U_DIVISOR</code> less
+ likely to be generated than the other numbers.</p>
+
+<p> Note: Why route integer stuff through uniform instead of just using a
+ modulus which would be faster? Because we have little idea how
+ selective biased lfsr and/or prng values might be for an arbitrary
+ modulus. Our prng is almost certainly NOT capable of producing every
+ 64-bit number, for example, and might even have some short cycles out
+ there somewhere.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines the result.
+        </li>
+        <li><span class="parameter">start</span>
+            <span class="types"><span class="type">number</span></span>
+         The minimum allowed result value.
+        </li>
+        <li><span class="parameter">cap</span>
+            <span class="types"><span class="type">number</span></span>
+         The result limit (will NOT ever be generated itself).
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        An integer between start (inclusive) and cap (exclusive).
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.exponential"></a>
+    <strong>anarchy.rng.exponential (seed, lambda)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#415">line 415</a>
+    </dt>
+    <dd>
+    Generates a number from an exponential distribution on [0,∞) with mean
+ 1/lambda given a seed.  Higher values of lambda make the distribution more
+ sharply exponential; values between 0.5 and 1.5 exhibit reasonable
+ variation. See:
+ https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
+ and
+ https://en.wikipedia.org/wiki/Exponential_distribution
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines the result.
+        </li>
+        <li><span class="parameter">lambda</span>
+            <span class="types"><span class="type">number</span></span>
+         The shape parameter for the distribution.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        An arbitrarily large number (subject to the limits of the
+   number type) that's much more likely to be small than large.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.rng.truncated_exponential"></a>
+    <strong>anarchy.rng.truncated_exponential (seed, lambda)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#430">line 430</a>
+    </dt>
+    <dd>
+    Generates a number from a truncated exponential distribution on [0,
+ 1), given a particular seed.  As with expdist, the lambda parameter
+ controls the shape of the distribution, and a 0.5–1.5 range is usually
+ reasonable. For why this method works, see:
+ https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines the result.
+        </li>
+        <li><span class="parameter">lambda</span>
+            <span class="types"><span class="type">number</span></span>
+         The shape parameter for the distribution.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        A number between 0 (inclusive) and 1 (exclusive) that
+   is much more likely to be small than large.
+    </ol>
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header has-description"><a name="Cohort_Functions"></a>Cohort Functions </h2>
+
+          <div class="section-description">
+           These functions all deal with 'cohorts', which are arbitrary
+ groupings of integers along the number line into same-size groups.
+ For example, every 100 numbers might be grouped together. A function
+ like <a href="../index.html#anarchy.cohort.cohort_shuffle">anarchy.cohort.cohort_shuffle</a> will randomize an input
+ number's position within its cohort, such that each number's random
+ result is in the same cohort it started in, but the ordering of
+ numbers within each cohort is different (up to the resolution limits
+ of the RNG).
+          </div>
+    <dl class="function">
+    <dt>
+    <a name = "anarchy.cohort.cohort"></a>
+    <strong>anarchy.cohort.cohort (outer, cohort_size)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#459">line 459</a>
+    </dt>
+    <dd>
+    Computes cohort number for the given outer index and cohort size.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">outer</span>
+            <span class="types"><span class="type">number</span></span>
+         An index into a sequence to be chopped into
+   cohorts, starting with the beginning of the first cohort at index 1.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort to divide the
+   sequence into.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+         The index of the cohort that the outer index falls
+   into. The first cohort (starting at index 1 of the outer sequence)
+   has index 1.</p>
+
+<p> For example, if outer index is 54 and cohort_size is 10, the return
+ value will be 6, since 54 falls into the 6th group of 10.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_inner"></a>
+    <strong>anarchy.cohort.cohort_inner (outer, cohort_size)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#476">line 476</a>
+    </dt>
+    <dd>
+    Computes within-cohort index for the given outer index and cohorts of
+ the given size.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">outer</span>
+            <span class="types"><span class="type">number</span></span>
+         An index into a sequence to be chopped into
+   cohorts, starting with the beginning of the first cohort at index 1.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort to divide the
+   sequence into.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+         The index of the given outer index within its cohort,
+   starting from 1 in the first position.</p>
+
+<p> For example, if the outer index is 54 and the cohort_size is 10, the
+ result will be 4, since 54 falls at index 4 within its group of 10
+ (starting at index 1 at 51).
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_and_inner"></a>
+    <strong>anarchy.cohort.cohort_and_inner (outer, cohort_size)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#491">line 491</a>
+    </dt>
+    <dd>
+    Returns two results: the cohort number and inner index for the given
+ outer index and cohort size.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">outer</span>
+            <span class="types"><span class="type">number</span></span>
+         An index into a sequence to be chopped into cohorts.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort to divide the
+   sequence into.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">multiple</span></span>
+         Multiple values: The cohort index (an integer)
+   followed by the inner index within that cohort (also an integer).</p>
+
+<p> For example, if the outer index is 29 and the cohort_size is 10, this will
+ return 3, 9
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_outer"></a>
+    <strong>anarchy.cohort.cohort_outer (cohort, inner, cohort_size)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#514">line 514</a>
+    </dt>
+    <dd>
+    Inverse of cohort<em>and</em>inner; computes the outer index from a cohort
+ number and inner index.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">cohort</span>
+            <span class="types"><span class="type">number</span></span>
+         The cohort index determining which group a position
+   belongs to.
+        </li>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of the position within that group.
+   Should be between 1 and the cohort size, inclusive.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each group to divide the total
+   sequence of positions into.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+         The index of that position within the total sequence of
+   positions, starting from index 1.</p>
+
+<p> For example, if cohort is 3, inner is 1, and cohort_size is 5, then
+ we're at index 1 (1st item) within the 3th group of 5 things, putting
+ us at total index 5*2 + 1 = 11 outside of the groups.</p>
+
+<p> Note: Negative cohort and/or inner indices may result in negative
+ outer indices. The inner index value is not constrained to be smaller
+ than the cohort size.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_interleave"></a>
+    <strong>anarchy.cohort.cohort_interleave (inner, cohort_size)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#526">line 526</a>
+    </dt>
+    <dd>
+    Interleaves cohort members by folding the top half into the bottom
+ half.  The bottom half get even indices while the top half are assigned
+ backwards to the odd indices.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The new within-cohort index for the same item after
+   interleaving the top and bottom parts of the cohort.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.rev_cohort_interleave"></a>
+    <strong>anarchy.cohort.rev_cohort_interleave (inner, cohort_size)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#541">line 541</a>
+    </dt>
+    <dd>
+    Inverse interleave (see above).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort after
+   interleaving items.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The original index within that cohort that the item
+   would have been at prior to interleaving things.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_fold"></a>
+    <strong>anarchy.cohort.cohort_fold (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#558">line 558</a>
+    </dt>
+    <dd>
+    Folds items past an arbitrary split point (in the second half of the
+ cohort) into the middle of the cohort.  The split will always leave an
+ odd number at the end.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines where the fold happens.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The new index of the item within the cohort after folding.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.rev_cohort_fold"></a>
+    <strong>anarchy.cohort.rev_cohort_fold (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#587">line 587</a>
+    </dt>
+    <dd>
+    Inverse fold (see above).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort after folding.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines where the fold happened.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The original index that would have been folded into
+   the given position if cohort_fold were used with the same seed..
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_spin"></a>
+    <strong>anarchy.cohort.cohort_spin (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#615">line 615</a>
+    </dt>
+    <dd>
+    Applies a circular offset
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines how far to spin.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The index of the item after spinning.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.rev_cohort_spin"></a>
+    <strong>anarchy.cohort.rev_cohort_spin (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#625">line 625</a>
+    </dt>
+    <dd>
+    Inverse spin (see above).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort after being spun.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determined how far to spin.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The original index of the item before spinning.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_flop"></a>
+    <strong>anarchy.cohort.cohort_flop (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#639">line 639</a>
+    </dt>
+    <dd>
+    Flops sections (with seeded sizes) with their neighbors.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines how big each section to
+   flop is.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The index of the item after flopping with a neighboring
+   sesction.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_mix"></a>
+    <strong>anarchy.cohort.cohort_mix (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#670">line 670</a>
+    </dt>
+    <dd>
+    Applies a spin to even and odd items separately with different seeds.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines how far to spin evens &amp; odds.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The index of the item after spinning the even &amp; odd elements
+   among themselves with different (derived) seeds.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.rev_cohort_mix"></a>
+    <strong>anarchy.cohort.rev_cohort_mix (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#697">line 697</a>
+    </dt>
+    <dd>
+    Inverse mix (see above).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort after mixing.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determined how far to spin evens &amp; odds.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The index that this index would have been before mixing
+   with the given seed.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_spread"></a>
+    <strong>anarchy.cohort.cohort_spread (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#732">line 732</a>
+    </dt>
+    <dd>
+    Spreads items out between a random number of different regions within
+ the cohort.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines how many regions we use.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The index after spreading out indices between random
+   regions.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.rev_cohort_spread"></a>
+    <strong>anarchy.cohort.rev_cohort_spread (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#763">line 763</a>
+    </dt>
+    <dd>
+    Inverse spread (see above).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort after spreading.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determined how many regions we use.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The index that would have been used to generate the
+   provided index with a spread operation and the given seed.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_upend"></a>
+    <strong>anarchy.cohort.cohort_upend (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#795">line 795</a>
+    </dt>
+    <dd>
+    Reverses ordering within each of several fragments.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determined how many regions we use.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The index after upending the order of each region.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.cohort_shuffle"></a>
+    <strong>anarchy.cohort.cohort_shuffle (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#832">line 832</a>
+    </dt>
+    <dd>
+    Compose a bunch of the above functions to perform a nice thorough
+ shuffle within a cohort.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines where to shuffle things.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+         The position of the index after shuffling the cohort. When
+   shuffling two different indices with the same cohort size and
+   seed, you'll get two different results. Usually not the same as
+   the original index.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.cohort.rev_cohort_shuffle"></a>
+    <strong>anarchy.cohort.rev_cohort_shuffle (inner, cohort_size, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#880">line 880</a>
+    </dt>
+    <dd>
+    Inverse shuffle (see above).
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">inner</span>
+            <span class="types"><span class="type">number</span></span>
+         The index of an item within a cohort after shuffling.
+        </li>
+        <li><span class="parameter">cohort_size</span>
+            <span class="types"><span class="type">number</span></span>
+         The size of each cohort.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determined where to shuffle things.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The original index within the cohort that would have been
+   shuffled into the specified position.
+    </ol>
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header has-description"><a name="Distribution_Functions"></a>Distribution Functions </h2>
+
+          <div class="section-description">
+           These functions all deal with distributing items unevenly between
+ 'segments', which are a finite number of finite-sized bins. For
+ example, we might want to distribute 1000 rare items among 1000000
+ rooms, each of which can hold at most 2 rare items. This section
+ also includes functions for dealing with 'sumtables' which are
+ tables that encode a distribution as the cumulative sum of items
+ assigned to each segment (and all segments before it).
+          </div>
+    <dl class="function">
+    <dt>
+    <a name = "anarchy.distribution.distribution_split_point"></a>
+    <strong>anarchy.distribution.distribution_split_point (total, n_segments, segment_capacity, roughness, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#966">line 966</a>
+    </dt>
+    <dd>
+    Implements common distribution functionality: given a total item
+ count, a segment count and per-segment capacity, and a roughness value
+ and seed, computes the split point for the items as well as the
+ halfway index for the segments. </p>
+
+<p> Note that per the normal Lua convention, indices for both total items
+ and segments start from 1!
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">total</span>
+            <span class="types"><span class="type">number</span></span>
+         The total number of items that will be
+   distributed among segments.
+        </li>
+        <li><span class="parameter">n_segments</span>
+            <span class="types"><span class="type">number</span></span>
+         The number of segments to distribute the
+   items into.
+        </li>
+        <li><span class="parameter">segment_capacity</span>
+            <span class="types"><span class="type">number</span></span>
+         The capacity of each segment.
+   n<em>segments times segment</em>capacity must be >= total.
+        </li>
+        <li><span class="parameter">roughness</span>
+            <span class="types"><span class="type">number</span></span>
+         A number between 0 and 1. When roughness is
+   0, items will be split across segments as evenly as possible. When
+   roughness is 1, up to 100% of the items may be placed into the
+   first or second half of the segments while recursively
+   apportioning items. At roughness 0.5 the first or second half of
+   the segments might get as little as 50% of what it would get when
+   roughness is 0.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines how the total gets
+   distributed among the segments when roughness allows different
+   distributions.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">multiple</span></span>
+         Multiple results: two numbers. The first is the
+   split point for the distribution: the number out of the total
+   items which end up in the first half of the segments. The second
+   is the number of segments in that first half of the segments,
+   which is half of n_segments, rounded down.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.distribution.distribution_items"></a>
+    <strong>anarchy.distribution.distribution_items (segment, total, n_segments, segment_capacity, roughness, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#1049">line 1049</a>
+    </dt>
+    <dd>
+    Given that 'total' items are to be distributed evenly among
+ 'n<em>segment' segments each with at most 'segment</em>capacity' items and
+ we're in segment 'segment' of those (indexed from 1), computes the
+ start index (from 1) among the total of the first item in this
+ segment, and how many items are in this segment.  The 'roughness'
+ argument should be a number between 0 and 1 indicating how even the
+ distribution is: 0 indicates a perfectly even distribution, while 1
+ indicates a perfectly random distribution. Does work proportional to
+ the log of the number of segments.</p>
+
+<p> Note that segment<em>capacity * n</em>segments should be > total.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">segment</span>
+            <span class="types"><span class="type">number</span></span>
+         Which segment we want to know the portion for,
+   as an index starting from 1.
+        </li>
+        <li><span class="parameter">total</span>
+            <span class="types"><span class="type">number</span></span>
+         The total number of items that will be
+   distributed among segments.
+        </li>
+        <li><span class="parameter">n_segments</span>
+            <span class="types"><span class="type">number</span></span>
+         The number of segments to distribute the
+   items into.
+        </li>
+        <li><span class="parameter">segment_capacity</span>
+            <span class="types"><span class="type">number</span></span>
+         The capacity of each segment.
+   n<em>segments times segment</em>capacity must be >= total.
+        </li>
+        <li><span class="parameter">roughness</span>
+            <span class="types"><span class="type">number</span></span>
+         A number between 0 and 1. When roughness is
+   0, items will be split across segments as evenly as possible. When
+   roughness is 1, up to 100% of the items may be placed into the
+   first or second half of the segments while recursively
+   apportioning items. At roughness 0.5 the first or second half of
+   the segments might get as little as 50% of what it would get when
+   roughness is 0.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines how the total gets
+   distributed among the segments when roughness allows different
+   distributions.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">multiple</span></span>
+         Multiple values: the start index (from 1) of the
+   first item in this segment and the number of the total items that
+   get distributed into the specified segment, for the given seed.
+   The number of items May be as low as 0 when roughness is 1; it
+   will be one of the integers adjacent to (total / n_segments) when
+   roughness is 0. If the number of items is 0, then the 'start
+   index' will be the same as the 'start index' for the subsequent
+   segment (and if multiple segments in a row get 0 items they'll all
+   share the same start index with the first segment after them that
+   gets at least 1 item).
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.distribution.distribution_segment"></a>
+    <strong>anarchy.distribution.distribution_segment (index, total, n_segments, segment_capacity, roughness, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#1125">line 1125</a>
+    </dt>
+    <dd>
+    Computes the segment number in which a certain item appears (one of
+ the 'total' items distributed between segments; see distribution_items
+ above).  Requires work proportional to the log of the number of
+ segments.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">index</span>
+            <span class="types"><span class="type">number</span></span>
+         Which item among the total we want to know the
+   fate of, starting from 1. Must be less than or equal to the total.
+        </li>
+        <li><span class="parameter">total</span>
+            <span class="types"><span class="type">number</span></span>
+         The total number of items that will be
+   distributed among segments.
+        </li>
+        <li><span class="parameter">n_segments</span>
+            <span class="types"><span class="type">number</span></span>
+         The number of segments to distribute the
+   items into.
+        </li>
+        <li><span class="parameter">segment_capacity</span>
+            <span class="types"><span class="type">number</span></span>
+         The capacity of each segment.
+   n<em>segments times segment</em>capacity must be >= total.
+        </li>
+        <li><span class="parameter">roughness</span>
+            <span class="types"><span class="type">number</span></span>
+         A number between 0 and 1. When roughness is
+   0, items will be split across segments as evenly as possible. When
+   roughness is 1, up to 100% of the items may be placed into the
+   first or second half of the segments while recursively
+   apportioning items. At roughness 0.5 the first or second half of
+   the segments might get as little as 50% of what it would get when
+   roughness is 0.
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines how the total gets
+   distributed among the segments when roughness allows different
+   distributions.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">multiple</span></span>
+         Multiple values: the segment index (starting from
+   1) within which the indicated item appears, and then the index
+   within that segment (starting from 1) at which it is placed.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.distribution.sumtable_for_distribution"></a>
+    <strong>anarchy.distribution.sumtable_for_distribution (total, n_segments, segment_capacity, roughness, seed)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#1196">line 1196</a>
+    </dt>
+    <dd>
+    Takes distribution parameters and returns a table containing the
+ cumulative sum of items in each segment (The table indices will start
+ at 1, just like the segment indices).  The list contains <code>n_segments</code>
+ entries, and each entry holds the sum of the items from the <code>total</code>
+ assigned to that segment plus all earlier segments. This means that
+ each entry is greater than or equal to the entry before it (and
+ they're only equal if zero items are assigned to that segment). The
+ last entry will be equal to the total.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">total</span>
+            <span class="types"><span class="type">number</span></span>
+         The total number of items being distributed.
+        </li>
+        <li><span class="parameter">n_segments</span>
+            <span class="types"><span class="type">number</span></span>
+         The number of segments to distribute items
+   among.
+        </li>
+        <li><span class="parameter">segment_capacity</span>
+            <span class="types"><span class="type">number</span></span>
+         The capacity of each segment.
+        </li>
+        <li><span class="parameter">roughness</span>
+            <span class="types"><span class="type">number</span></span>
+         How rough the distribution should be (0-1).
+        </li>
+        <li><span class="parameter">seed</span>
+            <span class="types"><span class="type">number</span></span>
+         The seed that determines a specific distribution.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.4/manual.html#6.6">table</a></span>
+         An array table holding cumulative sums, starting at
+   index 1 with the number of items in the first segment.</p>
+
+<p> <code>n_segments</code> times <code>segment_capacity</code> must be >= <code>total</code> otherwise an
+ error will be raised.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.distribution.fill_sumtable_for_distribution"></a>
+    <strong>anarchy.distribution.fill_sumtable_for_distribution (ledger, start, prior)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#1254">line 1254</a>
+    </dt>
+    <dd>
+    Recursively fills in the sumtable based on the distribution
+ parameters given (see <a href="../index.html#anarchy.distribution.sumtable_for_distribution">sumtable_for_distribution</a>).  Total work done
+ is <code>n_segments</code> times log(<code>n_segments</code>).</p>
+
+<p> Note that using a sumtable instead of using the distribution
+ functions with the same parameters over and over again represents a
+ space/time tradeoff. Most operations on a sumtable are O(1), where
+ equivalent distribution functions need O(log(n)) time. The sumtable
+ needs to store one integer per segment. The use of distribution
+ functions is recommended primarily in situations where the algorithm
+ structure makes it inconvenient to store the sumtable in an
+ accessible way, so sharing parameters is easier.
+ Parameters are the same as for <a href="../index.html#anarchy.distribution.sumtable_for_distribution">sumtable_for_distribution</a> but with:
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">ledger</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.4/manual.html#6.6">table</a></span>
+         The table to fill in. Values will be
+   added/overwritten between <code>start</code> and <code>start</code> + <code>n_segments</code> - 1
+   (inclusive).
+        </li>
+        <li><span class="parameter">start</span>
+            <span class="types"><span class="type">number</span></span>
+         The index at which to start overwriting values
+   (counting from index 1).
+        </li>
+        <li><span class="parameter">prior</span>
+            <span class="types"><span class="type">number</span></span>
+         The number of items distributed prior to the start
+   index.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+        No return (modifies the given ledger).
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.distribution.sumtable_from_portions"></a>
+    <strong>anarchy.distribution.sumtable_from_portions (portions)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#1317">line 1317</a>
+    </dt>
+    <dd>
+    Returns a sumtable for the same distribution, where entries are the
+ cumulative sum of all portions up to an index, rather than just the
+ portion at that index.  Use functions like <a href="../index.html#anarchy.distribution.sumtable_total">sumtable_total</a>,
+ <a href="../index.html#anarchy.distribution.sumtable_segments">sumtable_segments</a>, <a href="../index.html#anarchy.distribution.sumtable_portion">sumtable_portion</a>, and <a href="../index.html#anarchy.distribution.sumtable_segment">sumtable_segment</a> to get
+ information out of the sumtable efficiently.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">portions</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.4/manual.html#6.6">table</a></span>
+         The array of per-segment item counts, indexed
+   starting at 1.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.4/manual.html#6.6">table</a></span>
+         The sumtable that encodes the same distribution (also
+   indexed from 1, like all normal Lua tables. Hahaha why would we
+   even mention this?).
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.distribution.sumtable_total"></a>
+    <strong>anarchy.distribution.sumtable_total (sumtable)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#1337">line 1337</a>
+    </dt>
+    <dd>
+    Returns the total number of items across all segments in a sumtable,
+ which is just the last entry in that table.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">sumtable</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.4/manual.html#6.6">table</a></span>
+         The table of sums describing the distribution
+   in question.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The total number of items distributed.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.distribution.sumtable_segments"></a>
+    <strong>anarchy.distribution.sumtable_segments (sumtable)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#1350">line 1350</a>
+    </dt>
+    <dd>
+    Returns the number of segments in the given sumtable, which is just
+ its length.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">sumtable</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.4/manual.html#6.6">table</a></span>
+         The table of sums describing the distribution
+   in question.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The number of segments in the distribution.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.distribution.sumtable_portion"></a>
+    <strong>anarchy.distribution.sumtable_portion (sumtable, i)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#1367">line 1367</a>
+    </dt>
+    <dd>
+    Returns the portion of the total items which is distributed into the
+ segment with the given index (starting from 1).  Just needs to subtract
+ the entry to the left to figure this out. Raises an error if the index
+ is invalid.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">sumtable</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.4/manual.html#6.6">table</a></span>
+         The table of sums describing the distribution
+   in question.
+        </li>
+        <li><span class="parameter">i</span>
+            <span class="types"><span class="type">number</span></span>
+         The segment to compute the portion for (from 1).
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The number of items distributed into the specified
+   segment.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.distribution.sumtable_items"></a>
+    <strong>anarchy.distribution.sumtable_items (sumtable, i)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#1398">line 1398</a>
+    </dt>
+    <dd>
+    Returns a pair containing the index of the first item in the segment
+ and then the number of items in that segment, like
+ <a href="../index.html#anarchy.distribution.distribution_items">distribution_items</a>, but for a sumtable.  Parameters:
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">sumtable</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.4/manual.html#6.6">table</a></span>
+         The table of sums describing the distribution
+   in question.
+        </li>
+        <li><span class="parameter">i</span>
+            <span class="types"><span class="type">number</span></span>
+         The segment to compute the portion for (from 1).
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">multiple</span></span>
+         Two numbers: The index of the first item in the
+   segment (from index 1), then the number o items in the indicated
+   segment.
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "anarchy.distribution.sumtable_segment"></a>
+    <strong>anarchy.distribution.sumtable_segment (sumtable, item)</strong>
+    <a style="float:right;" href="source/anarchy.lua.html#1429">line 1429</a>
+    </dt>
+    <dd>
+    Uses binary search to find the index of the smallest sum in the given
+ sumtable that's greater than or equal to the given value breaking ties
+ towards earlier entries.  Works in time proportional to the logarithm
+ of the sumtable size. This will be the segment which the given item
+ (out of the total) falls into.</p>
+
+<p> Raises an error if the sumtable is empty, or if the item index is too
+ large for the sumtable or is zero or negative.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">sumtable</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.4/manual.html#6.6">table</a></span>
+         The table of sums describing the distribution
+   in question.
+        </li>
+        <li><span class="parameter">item</span>
+            <span class="types"><span class="type">number</span></span>
+         The item (out of the total distributed, starting
+   from 0) that we want to find the segment for.
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">number</span></span>
+        The segment index (starting from 1) for the specified
+   item.
+    </ol>
+
+
+
+
+</dd>
+</dl>
+
+
+</div> <!-- id="content" -->
+</div> <!-- id="main" -->
+<div id="about">
+<i>generated by <a href="http://github.com/lunarmodules/LDoc">LDoc 1.5.0</a></i>
+<i style="float:right;">Last updated 2025-11-28 02:41:06 </i>
+</div> <!-- id="about" -->
+</div> <!-- id="container" -->
+</body>
+</html>

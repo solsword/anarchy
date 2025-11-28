@@ -1,7 +1,7 @@
 --- anarchy32.lua
 -- @module anarchy32
 -- Reversible chaos library (Lua 32-bit version for Lua 5.1, 5.2, and
---     LuaJIT).
+--   LuaJIT).
 -- @author Peter Mawhorter
 -- @copyright 2025 Peter Mawhorter
 -- @release 1.0-1
@@ -9,8 +9,8 @@
 -- This version effectively uses 32-bit integers via the 'bit' or 'bit32'
 -- library, since Lua < 5.3 and LuaJIT don't have bitwise operations, and
 -- use 32-bit integers stored as floating point numbers. Use the
--- 'anarchy' library instead if yoh have access to Lua 5.3+.
-
+-- 'anarchy' library instead if you have access to Lua 5.3+.
+--
 -- Note: In LuaJIT, 'bit' is available via 'require' for 32-bit bitwise
 -- operations. In Lua 5.1, a backport of the Lua 5.2 bit32 library could
 -- be installed as a dependency. In Lua 5.2, 'bit32' is built-in. In Lua
@@ -21,6 +21,9 @@
 -- It might make sense to depend on Lua 5.3+ and use the built-ins, but
 -- many modding situations have older Lua versions tied into engines. So
 -- we awkwardly try to support all of these different options...
+--
+-- See more details [in the README
+-- file](https://cs.wellesley.edu/~pmwh/anarchy/lua/).
 
 -- Decide what to do about bitwise operators depending on the version
 local bit
@@ -122,6 +125,11 @@ local anarchy = {
     distribution = {},
 }
 
+
+--- Utility Functions.
+-- Helper functions that other categories make use of.
+-- @section util
+
 -- Attach bitwise operations to anarchy.util
 anarchy.util.tobit = tobit
 anarchy.util.band = band
@@ -142,16 +150,16 @@ anarchy.util.ror = ror
 -- @tparam number num The number to compute the modulus of.
 -- @tparam number base The base of the modulus.
 -- @treturn number The number modulo the base.
-local posmod = function (num, base)
+anarchy.util.posmod = function (num, base)
     return num % base
 end
-anarchy.util.posmod = posmod
+local posmod = anarchy.util.posmod
 
 --- A string hashing function.
 -- See: https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
 -- @tparam string s The string to hash
 -- @treturn number The hash for that string
-local hash_string = function(s)
+anarchy.util.hash_string = function(s)
     local hash = 0
     local i
     local chr
@@ -164,57 +172,66 @@ local hash_string = function(s)
     end
     return hash
 end
-anarchy.util.hash_string = hash_string
+local hash_string = anarchy.util.hash_string
 
 --- Creates a mask with the given number of 1 bits.
 -- Avoids shift operator because of 32-bit limit, but watch out for
 -- floating point behavior for bit amounts greater than ~52
 -- @tparam number bits The number of 1 bits to put in the mask.
 -- @treturn number A value with that many 1 bits starting from the
---     least significant place. Won't work for large numbers of bits.
-local mask = function(bits)
+--   least significant place. Won't work for large numbers of bits.
+anarchy.util.mask = function(bits)
     return (2 ^ bits) - 1
 end
-anarchy.util.mask = mask
+local mask = anarchy.util.mask
 
 --- Returns a mask that covers just the nth byte (zero-indexed), starting
 -- from the least-significant digits.
 -- Starts to break down when it exceeds ~52 bits (byte 6 or so).
 -- @tparam number n The byte index (starting from 0)
 -- @treturn number The mask with 1s in that byte and 0s elsewhere
-local byte_mask = function(n)
+anarchy.util.byte_mask = function(n)
     return (2 ^ (n*8)) * 255
 end
-anarchy.util.byte_mask = byte_mask
+local byte_mask = anarchy.util.byte_mask
+
+
+--- Random Number Generator Functions.
+-- These functions help support the `anarchy.rng.prng` pseudo-random
+-- number generator function, or otherwise deal with generating
+-- sequences of pseudo-random individual numbers, or with generating
+-- pseudo-random numbers from specific integer or floating-point
+-- distributions based on a pseudo-random integer seed.
+-- @section rng
 
 --- Circular bit shift to the right
 -- Distance is capped at 3/4 of ID_BITS
--- @paramt number x The number to swirl.
--- @paramt number distance How far to swirl it.
--- @returnt number The swirled number.
-local swirl = function(x, distance)
+-- @tparam number x The number to swirl.
+-- @tparam number distance How far to swirl it.
+-- @treturn number The swirled number.
+anarchy.rng.swirl = function(x, distance)
     distance = distance % floor(3 * ID_BITS / 4)
     return ror(x, distance)
 end
-anarchy.rng.swirl = swirl
+local swirl = anarchy.rng.swirl
 
 --- Circular bit shift to the left inverse of swirl
 -- Distance is capped at 3/4 of ID_BITS
--- @paramt number x The number to unswirl.
--- @paramt number distance How far to unswirl it.
--- @returnt number The unswirled number.
-local rev_swirl = function(x, distance)
+-- @tparam number x The number to unswirl.
+-- @tparam number distance How far to unswirl it.
+-- @treturn number The unswirled number.
+anarchy.rng.rev_swirl = function(x, distance)
     distance = distance % floor(3 * ID_BITS / 4)
     return rol(x, distance)
 end
-anarchy.rng.rev_swirl = rev_swirl
+local rev_swirl = anarchy.rng.rev_swirl
 
 --- Folds lower bits into upper bits using xor.
 -- fold is its own inverse.
 -- 'where' is restricted to fall between 1/4 and 1/2 of ID_BITS.
--- @paramt number x the number to fold.
--- @paramt number where which tit to fold at
-local fold = function(x, where)
+-- @tparam number x the number to fold.
+-- @tparam number where which tit to fold at
+anarchy.rng.fold = function(x, where)
     local quarter = floor(ID_BITS / 4);
     where = where % quarter + quarter
     local m = mask(where)
@@ -222,26 +239,26 @@ local fold = function(x, where)
     local shift_by = ID_BITS - where
     return bxor(x, lshift(lower, shift_by))
 end
-anarchy.rng.fold = fold
+local fold = anarchy.rng.fold
 
 local FLOP_MASK = 0xf0f0f0f0
 anarchy.rng.FLOP_MASK = FLOP_MASK
 
 --- Flops each 1/2 byte with the adjacent 1/2 byte.
 -- flop is its own inverse.
--- @paramt number x the number to flop
--- @returnt number The flopped number
-local flop = function(x)
+-- @tparam number x the number to flop
+-- @treturn number The flopped number
+anarchy.rng.flop = function(x)
     local left = band(x, FLOP_MASK)
     local right = band(x, bnot(FLOP_MASK))
     return bor(lshift(right, 4), rshift(left, 4))
 end
-anarchy.rng.flop = flop
+local flop = anarchy.rng.flop
 
 --- Implements a reversible linear-feedback-shift-register-like operation.
--- @paramt number x the number to scramble.
--- @returnt number the scrambled number
-local scramble = function(x)
+-- @tparam number x the number to scramble.
+-- @treturn number the scrambled number
+anarchy.rng.scramble = function(x)
     local trigger = band(x, 0x80200003)
     local r = ror(x, 1)
     if trigger ~= 0 then
@@ -249,12 +266,12 @@ local scramble = function(x)
     end
     return r
 end
-anarchy.rng.scramble = scramble
+local scramble = anarchy.rng.scramble
 
 --- Inverse of scramble (see above).
--- @paramt number x the number to unscramble
--- @returnt number the unscrambled number
-local rev_scramble = function(x)
+-- @tparam number x the number to unscramble
+-- @treturn number the unscrambled number
+anarchy.rng.rev_scramble = function(x)
     local pr = rol(x, 1)
     local trigger = band(pr, 0x80200003)
     if trigger ~= 0 then
@@ -263,14 +280,14 @@ local rev_scramble = function(x)
     end
     return pr
 end
-anarchy.rng.rev_scramble = rev_scramble
+local rev_scramble = anarchy.rng.rev_scramble
 
 
 --- Scrambles a seed value to help separate RNG sequences generated from
 -- sequential seeds.
--- @paramt number s the seed to scramble
--- @returnt number the scrambled seed
-local scramble_seed = function(s)
+-- @tparam number s the seed to scramble
+-- @treturn number the scrambled seed
+anarchy.rng.scramble_seed = function(s)
     s = tobit((s + 1) * (3 + s % 23))
     s = fold(s, 11) -- prime
     s = scramble(s)
@@ -280,17 +297,17 @@ local scramble_seed = function(s)
 
     return s;
 end
-anarchy.rng.scramble_seed = scramble_seed
+local scramble_seed = anarchy.rng.scramble_seed
 
 --- A simple reversible pseudo-random number generator
--- You can call @see anarchy.rng.rev_prng with the result of this
+-- You can call `anarchy.rng.rev_prng` with the result of this
 -- function and the same seed to get back the number you put in here,
 -- so that results form a chain you can traverse forwards or backwards.
--- @paramt number x the current/previous number
--- @paramt number seed the generation sequence seed (this can be
---     constant for a bunch of calls)
--- @returnt number the next number in the generation sequence
-local prng = function(x, seed)
+-- @tparam number x the current/previous number
+-- @tparam number seed the generation sequence seed (this can be
+--   constant for a bunch of calls)
+-- @treturn number the next number in the generation sequence
+anarchy.rng.prng = function(x, seed)
 
     -- seed scrambling:
     seed = scramble_seed(seed)
@@ -305,13 +322,13 @@ local prng = function(x, seed)
     x = scramble(x)
     return x
 end
-anarchy.rng.prng = prng
+local prng = anarchy.rng.prng
 
---- Inverse of @see anarchy.rng.prng (see above).
--- @paramt number x the current/next number
--- @paramt number seed the generation seed that determines the sequence
--- @returnt number the previous number in the generation sequence
-local rev_prng = function(x, seed)
+--- Inverse of `anarchy.rng.prng` (see above).
+-- @tparam number x the current/next number
+-- @tparam number seed the generation seed that determines the sequence
+-- @treturn number the previous number in the generation sequence
+anarchy.rng.rev_prng = function(x, seed)
 
     -- seed scrambling:
     seed = scramble_seed(seed)
@@ -326,7 +343,7 @@ local rev_prng = function(x, seed)
     x = bxor(x, seed)
     return x
 end
-anarchy.rng.rev_prng = rev_prng
+local rev_prng = anarchy.rng.rev_prng
 
 
 --- Implements a max-cycle-length 32-bit linear feedback shift register.
@@ -335,62 +352,62 @@ anarchy.rng.rev_prng = rev_prng
 -- Note: Do not use this as an irreversible PRNG; it's a terrible one!
 -- Note: Zero is a fixed point of this function: do not use it as
 -- your seed!
--- @paramt number x the current number
--- @returnt number the next number in the LFSR sequence
-local lfsr = function(x)
+-- @tparam number x the current number
+-- @treturn number the next number in the LFSR sequence
+anarchy.rng.lfsr = function(x)
     return bxor(rshift(x, 1), (0x80200003 * (x % 2)))  -- 32, 22, 2, 1
 end
-anarchy.rng.lfsr = lfsr
+local lfsr = anarchy.rng.lfsr
 
 --- Generates a random number between 0 and 1 given a seed value.
--- @paramt number seed The seed that determines the result.
--- @returnt number A number between 0 (inclusive) and 1 (exclusive)
-local uniform = function(seed)
+-- @tparam number seed The seed that determines the result.
+-- @treturn number A number between 0 (inclusive) and 1 (exclusive)
+anarchy.rng.uniform = function(seed)
     local sc = bxor(seed, lshift(seed, 16))
     local ux = prng(prng(prng(sc, 53), sc), seed)
     return (ux % 2147483659) / 2147483659  -- prime near 2^31
 end
-anarchy.rng.uniform = uniform
+local uniform = anarchy.rng.uniform
 
 --- Generates and averages three random numbers between 0 and 1 to give a
 -- pseudo-gaussian-distributed random number (still strictly on [0, 1) )
--- @paramt number seed The seed that determines the result.
--- @returnt number A number between 0 (inclusive) and 1 (exclusive)
---     which is more likely to be near 0.5 than near either 0 or 1.
-local normalish = function(seed)
+-- @tparam number seed The seed that determines the result.
+-- @treturn number A number between 0 (inclusive) and 1 (exclusive)
+--   which is more likely to be near 0.5 than near either 0 or 1.
+anarchy.rng.normalish = function(seed)
     local t = 0
     t = t + uniform(seed + 9182183)
     t = t + uniform(seed + 7438742)
     t = t + uniform(seed + 4683129)
     return t/3
 end
-anarchy.rng.normalish = normalish
+local normalish = anarchy.rng.normalish
 
 --- Flips a coin with probability p of being True. Using the same seed
 -- always gives the same result.
--- @paramt number p The probability that the result should be True when
---     results are averaged across many different seeds.
--- @paramt number seed The seed that determines the result.
--- @returnt boolean Either true (with probability p when averaged
---     across seeds) or false (with probability 1-p when averaged
---     across seeds).
-local flip = function(p, seed)
+-- @tparam number p The probability that the result should be True when
+--   results are averaged across many different seeds.
+-- @tparam number seed The seed that determines the result.
+-- @treturn boolean Either true (with probability p when averaged
+--   across seeds) or false (with probability 1-p when averaged
+--   across seeds).
+anarchy.rng.flip = function(p, seed)
     return uniform(seed) < p
 end
-anarchy.rng.flip = flip
+local flip = anarchy.rng.flip
 
 --- Even distribution over the given integer range, including the start
 -- but excluding the cap (even if the cap is lower than the start).
 -- The last number before the cap is about 1/2^31 less likely to be generated
 -- than the other numbers.
--- @paramt number seed The seed that determines the result.
--- @paramt number start The minimum allowed result value.
--- @paramt number cap The result limit (will NOT ever be generated itself).
--- @returnt number An integer between start (inclusive) and cap (exclusive).
-local integer = function(seed, start, cap)
+-- @tparam number seed The seed that determines the result.
+-- @tparam number start The minimum allowed result value.
+-- @tparam number cap The result limit (will NOT ever be generated itself).
+-- @treturn number An integer between start (inclusive) and cap (exclusive).
+anarchy.rng.integer = function(seed, start, cap)
     return floor(uniform(seed) * (cap - start)) + start;
 end
-anarchy.rng.integer = integer
+local integer = anarchy.rng.integer
 
 --- Generates a number from an exponential distribution on [0,∞) with mean
 -- 1/lambda given a seed. Higher values of lambda make the distribution more
@@ -399,90 +416,101 @@ anarchy.rng.integer = integer
 -- https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
 -- and
 -- https://en.wikipedia.org/wiki/Exponential_distribution
--- @paramt number seed The seed that determines the result.
--- @paramt number lambda The shape parameter for the distribution.
--- @returnt number An arbitrarily large number (subject to the limits of the
---     number type) that's much more likely to be small than large.
-local exponential = function(seed, lambda)
+-- @tparam number seed The seed that determines the result.
+-- @tparam number lambda The shape parameter for the distribution.
+-- @treturn number An arbitrarily large number (subject to the limits of the
+--   number type) that's much more likely to be small than large.
+anarchy.rng.exponential = function(seed, lambda)
     local u = uniform(seed)
     return -log(u)/lambda
 end
-anarchy.rng.exponential = exponential
+local exponential = anarchy.rng.exponential
 
 --- Generates a number from a truncated exponential distribution on [0,
 -- 1), given a particular seed. As with expdist, the lambda parameter
 -- controls the shape of the distribution, and a 0.5–1.5 range is usually
 -- reasonable. For why this method works, see:
 -- https://math.stackexchange.com/questions/28004/random-exponential-like-distribution
--- @paramt number seed The seed that determines the result.
--- @paramt number lambda The shape parameter for the distribution.
--- @returnt number A number between 0 (inclusive) and 1 (exclusive) that
---     is much more likely to be small than large.
-local truncated_exponential = function(seed, lambda)
+-- @tparam number seed The seed that determines the result.
+-- @tparam number lambda The shape parameter for the distribution.
+-- @treturn number A number between 0 (inclusive) and 1 (exclusive) that
+--   is much more likely to be small than large.
+anarchy.rng.truncated_exponential = function(seed, lambda)
     local e = exponential(seed, lambda);
     return e - floor(e);
 end
-anarchy.rng.truncated_exponential = truncated_exponential
+local truncated_exponential = anarchy.rng.truncated_exponential
 
+
+--- Cohort Functions.
+-- These functions all deal with 'cohorts', which are arbitrary
+-- groupings of integers along the number line into same-size groups.
+-- For example, every 100 numbers might be grouped together. A function
+-- like `anarchy.cohort.cohort_shuffle` will randomize an input
+-- number's position within its cohort, such that each number's random
+-- result is in the same cohort it started in, but the ordering of
+-- numbers within each cohort is different (up to the resolution limits
+-- of the RNG).
+-- @section cohort
 
 --- Computes cohort number for the given outer index and cohort size.
--- @paramt number outer An index into a sequence to be chopped into
---     cohorts, starting with the beginning of the first cohort at index 1.
--- @paramt number cohort_size The size of each cohort to divide the
---     sequence into.
--- @returnt number The index of the cohort that the outer index falls
---     into. The first cohort (starting at index 1 of the outer sequence)
---     has index 1.
+-- @tparam number outer An index into a sequence to be chopped into
+--   cohorts, starting with the beginning of the first cohort at index 1.
+-- @tparam number cohort_size The size of each cohort to divide the
+--   sequence into.
+-- @treturn number The index of the cohort that the outer index falls
+--   into. The first cohort (starting at index 1 of the outer sequence)
+--   has index 1.
 --
 -- For example, if outer index is 54 and cohort_size is 10, the return
 -- value will be 6, since 54 falls into the 6th group of 10.
-local cohort = function(outer, cohort_size)
+anarchy.cohort.cohort = function(outer, cohort_size)
     return floor((outer - 1) / cohort_size) + 1
 end
-anarchy.cohort.cohort = cohort
+local cohort = anarchy.cohort.cohort
 
 --- Computes within-cohort index for the given outer index and cohorts of
 -- the given size.
--- @paramt number outer An index into a sequence to be chopped into
---     cohorts, starting with the beginning of the first cohort at index 1.
--- @paramt number cohort_size The size of each cohort to divide the
---     sequence into.
--- @returnt number The index of the given outer index within its cohort,
---     starting from 1 in the first position.
+-- @tparam number outer An index into a sequence to be chopped into
+--   cohorts, starting with the beginning of the first cohort at index 1.
+-- @tparam number cohort_size The size of each cohort to divide the
+--   sequence into.
+-- @treturn number The index of the given outer index within its cohort,
+--   starting from 1 in the first position.
 --
 -- For example, if the outer index is 54 and the cohort_size is 10, the
 -- result will be 4, since 54 falls at index 4 within its group of 10
 -- (starting at index 1 at 51).
-local cohort_inner = function(outer, cohort_size)
+anarchy.cohort.cohort_inner = function(outer, cohort_size)
     return 1 + ((outer - 1) % cohort_size)
 end
-anarchy.cohort.cohort_inner = cohort_inner
+local cohort_inner = anarchy.cohort.cohort_inner
 
 --- Returns two results: the cohort number and inner index for the given
 -- outer index and cohort size.
--- @paramt number outer An index into a sequence to be chopped into cohorts.
--- @paramt number cohort_size The size of each cohort to divide the
---     sequence into.
+-- @tparam number outer An index into a sequence to be chopped into cohorts.
+-- @tparam number cohort_size The size of each cohort to divide the
+--   sequence into.
 -- @return Multiple values: The cohort index (an integer) followed by the
---     inner index within that cohort (also an integer).
+--   inner index within that cohort (also an integer).
 --
 -- For example, if the outer index is 29 and the cohort_size is 10, this will
 -- return 3, 9
-local cohort_and_inner = function(outer, cohort_size)
+anarchy.cohort.cohort_and_inner = function(outer, cohort_size)
     return cohort(outer, cohort_size), cohort_inner(outer, cohort_size)
 end
-anarchy.cohort.cohort_and_inner = cohort_and_inner
+local cohort_and_inner = anarchy.cohort.cohort_and_inner
 
 --- Inverse of cohort_and_inner; computes the outer index from a cohort
 -- number and inner index.
--- @paramt number cohort The cohort index determining which group a position
---     belongs to.
--- @paramt number inner The index of the position within that group.
---     Should be between 1 and the cohort size, inclusive.
--- @paramt number cohort_size The size of each group to divide the total
---     sequence of positions into.
--- @returnt number The index of that position within the total sequence of
---     positions, starting from index 1.
+-- @tparam number cohort The cohort index determining which group a position
+--   belongs to.
+-- @tparam number inner The index of the position within that group.
+--   Should be between 1 and the cohort size, inclusive.
+-- @tparam number cohort_size The size of each group to divide the total
+--   sequence of positions into.
+-- @treturn number The index of that position within the total sequence of
+--   positions, starting from index 1.
 --
 -- For example, if cohort is 3, inner is 1, and cohort_size is 5, then
 -- we're at index 1 (1st item) within the 3th group of 5 things, putting
@@ -491,51 +519,51 @@ anarchy.cohort.cohort_and_inner = cohort_and_inner
 -- Note: Negative cohort and/or inner indices may result in negative
 -- outer indices. The inner index value is not constrained to be smaller
 -- than the cohort size.
-local cohort_outer = function(cohort, inner, cohort_size)
+anarchy.cohort.cohort_outer = function(cohort, inner, cohort_size)
     return cohort_size * (cohort - 1) + inner
 end
-anarchy.cohort.cohort_outer = cohort_outer
+local cohort_outer = anarchy.cohort.cohort_outer
 
 --- Interleaves cohort members by folding the top half into the bottom
 -- half. The bottom half get even indices while the top half are assigned
 -- backwards to the odd indices.
--- @paramt number inner The index of an item within a cohort.
--- @paramt number cohort_size The size of each cohort.
--- @returnt number The new within-cohort index for the same item after
---     interleaving the top and bottom parts of the cohort.
-local cohort_interleave = function(inner, cohort_size)
+-- @tparam number inner The index of an item within a cohort.
+-- @tparam number cohort_size The size of each cohort.
+-- @treturn number The new within-cohort index for the same item after
+--   interleaving the top and bottom parts of the cohort.
+anarchy.cohort.cohort_interleave = function(inner, cohort_size)
     if inner <= floor(cohort_size/2) then
         return inner * 2  -- even and never > cohort_size
     else
         return ((cohort_size - inner) * 2) + 1
     end
 end
-anarchy.cohort.cohort_interleave = cohort_interleave
+local cohort_interleave = anarchy.cohort.cohort_interleave
 
 --- Inverse interleave (see above).
--- @paramt number inner The index of an item within a cohort after
---     interleaving items.
--- @paramt number cohort_size The size of each cohort.
--- @returnt number The original index within that cohort that the item
---     would have been at prior to interleaving things.
-local rev_cohort_interleave = function(inner, cohort_size)
+-- @tparam number inner The index of an item within a cohort after
+--   interleaving items.
+-- @tparam number cohort_size The size of each cohort.
+-- @treturn number The original index within that cohort that the item
+--   would have been at prior to interleaving things.
+anarchy.cohort.rev_cohort_interleave = function(inner, cohort_size)
     if inner % 2 ~= 0 then
         return cohort_size - floor(inner/2)
     else
         return floor(inner / 2)
     end
 end
-anarchy.cohort.rev_cohort_interleave = rev_cohort_interleave
+local rev_cohort_interleave = anarchy.cohort.rev_cohort_interleave
 
 
 --- Folds items past an arbitrary split point (in the second half of the
 -- cohort) into the middle of the cohort. The split will always leave an
 -- odd number at the end.
--- @paramt number inner The index of an item within a cohort.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determines where the fold happens.
--- @returnt number The new index of the item within the cohort after folding.
-local cohort_fold = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determines where the fold happens.
+-- @treturn number The new index of the item within the cohort after folding.
+anarchy.cohort.cohort_fold = function(inner, cohort_size, seed)
     local half = ceil(cohort_size / 2)
     local quarter = ceil(cohort_size / 4)
     local split = half
@@ -556,15 +584,15 @@ local cohort_fold = function(inner, cohort_size, seed)
         return (inner - split) + fold_to - 1
     end
 end
-anarchy.cohort.cohort_fold = cohort_fold
+local cohort_fold = anarchy.cohort.cohort_fold
 
 --- Inverse fold (see above).
--- @paramt number inner The index of an item within a cohort after folding.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determines where the fold happened.
--- @returnt number The original index that would have been folded into
---     the given position if cohort_fold were used with the same seed..
-local rev_cohort_fold = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort after folding.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determines where the fold happened.
+-- @treturn number The original index that would have been folded into
+--   the given position if cohort_fold were used with the same seed..
+anarchy.cohort.rev_cohort_fold = function(inner, cohort_size, seed)
     local half = ceil(cohort_size / 2)
     local quarter = ceil(cohort_size / 4)
     local split = half
@@ -585,38 +613,38 @@ local rev_cohort_fold = function(inner, cohort_size, seed)
         return inner - after
     end
 end
-anarchy.cohort.rev_cohort_fold = rev_cohort_fold
+local rev_cohort_fold = anarchy.cohort.rev_cohort_fold
 
 --- Applies a circular offset
--- @paramt number inner The index of an item within a cohort.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determines how far to spin.
--- @returnt number The index of the item after spinning.
-local cohort_spin = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determines how far to spin.
+-- @treturn number The index of the item after spinning.
+anarchy.cohort.cohort_spin = function(inner, cohort_size, seed)
     return ((inner - 1) + (seed % cohort_size)) % cohort_size + 1
 end
-anarchy.cohort.cohort_spin = cohort_spin
+local cohort_spin = anarchy.cohort.cohort_spin
 
 --- Inverse spin (see above).
--- @paramt number inner The index of an item within a cohort after being spun.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determined how far to spin.
--- @returnt number The original index of the item before spinning.
-local rev_cohort_spin = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort after being spun.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determined how far to spin.
+-- @treturn number The original index of the item before spinning.
+anarchy.cohort.rev_cohort_spin = function(inner, cohort_size, seed)
     return (
         (inner - 1) + (cohort_size - (seed % cohort_size))
     ) % cohort_size + 1
 end
-anarchy.cohort.rev_cohort_spin = rev_cohort_spin
+local rev_cohort_spin = anarchy.cohort.rev_cohort_spin
 
 --- Flops sections (with seeded sizes) with their neighbors.
--- @paramt number inner The index of an item within a cohort.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determines how big each section to
---     flop is.
--- @returnt number The index of the item after flopping with a neighboring
---     sesction.
-local cohort_flop = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determines how big each section to
+--   flop is.
+-- @treturn number The index of the item after flopping with a neighboring
+--   sesction.
+anarchy.cohort.cohort_flop = function(inner, cohort_size, seed)
     local limit = floor(cohort_size / 8)
     if limit < 4 then
         limit = limit + 4
@@ -638,16 +666,16 @@ local cohort_flop = function(inner, cohort_size, seed)
         return result
     end
 end
-anarchy.cohort.cohort_flop = cohort_flop
+local cohort_flop = anarchy.cohort.cohort_flop
 -- flop is its own inverse
 
 --- Applies a spin to even and odd items separately with different seeds.
--- @paramt number inner The index of an item within a cohort.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determines how far to spin evens & odds.
--- @returnt number The index of the item after spinning the even & odd elements
---     among themselves with different (derived) seeds.
-local cohort_mix = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determines how far to spin evens & odds.
+-- @treturn number The index of the item after spinning the even & odd elements
+--   among themselves with different (derived) seeds.
+anarchy.cohort.cohort_mix = function(inner, cohort_size, seed)
     local even = inner - inner % 2
     local target
     if inner % 2 ~= 0 then
@@ -666,15 +694,15 @@ local cohort_mix = function(inner, cohort_size, seed)
         return 2 * target
     end
 end
-anarchy.cohort.cohort_mix = cohort_mix
+local cohort_mix = anarchy.cohort.cohort_mix
 
 --- Inverse mix (see above).
--- @paramt number inner The index of an item within a cohort after mixing.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determined how far to spin evens & odds.
--- @returnt number The index that this index would have been before mixing
---     with the given seed.
-local rev_cohort_mix = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort after mixing.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determined how far to spin evens & odds.
+-- @treturn number The index that this index would have been before mixing
+--   with the given seed.
+anarchy.cohort.rev_cohort_mix = function(inner, cohort_size, seed)
     local even = inner - inner % 2
     local target = 0
     if inner % 2 ~= 0 then
@@ -693,7 +721,7 @@ local rev_cohort_mix = function(inner, cohort_size, seed)
         return 2 * target
     end
 end
-anarchy.cohort.rev_cohort_mix = rev_cohort_mix
+local rev_cohort_mix = anarchy.cohort.rev_cohort_mix
 
 
 -- Constants that limit how regions can be sized in cohort_spread.
@@ -704,12 +732,12 @@ anarchy.cohort.MAX_REGION_COUNT = MAX_REGION_COUNT;
 
 --- Spreads items out between a random number of different regions within
 -- the cohort.
--- @paramt number inner The index of an item within a cohort.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determines how many regions we use.
--- @returnt number The index after spreading out indices between random
---     regions.
-local cohort_spread = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determines how many regions we use.
+-- @treturn number The index after spreading out indices between random
+--   regions.
+anarchy.cohort.cohort_spread = function(inner, cohort_size, seed)
     local min_regions = 2
     if cohort_size < 2 * MIN_REGION_SIZE then
         min_regions = 1
@@ -732,15 +760,15 @@ local cohort_spread = function(inner, cohort_size, seed)
         return (inner - 1) - regions * region_size + 1
     end
 end
-anarchy.cohort.cohort_spread = cohort_spread
+local cohort_spread = anarchy.cohort.cohort_spread
 
 --- Inverse spread (see above).
--- @paramt number inner The index of an item within a cohort after spreading.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determined how many regions we use.
--- @returnt number The index that would have been used to generate the provided
---     index with a spread operation and the given seed.
-local rev_cohort_spread = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort after spreading.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determined how many regions we use.
+-- @treturn number The index that would have been used to generate the provided
+--   index with a spread operation and the given seed.
+anarchy.cohort.rev_cohort_spread = function(inner, cohort_size, seed)
     local min_regions = 2
     if cohort_size < 2 * MIN_REGION_SIZE then
         min_regions = 1
@@ -765,14 +793,14 @@ local rev_cohort_spread = function(inner, cohort_size, seed)
         return region * regions + 1 + index
     end
 end
-anarchy.cohort.rev_cohort_spread = rev_cohort_spread
+local rev_cohort_spread = anarchy.cohort.rev_cohort_spread
 
 --- Reverses ordering within each of several fragments.
--- @paramt number inner The index of an item within a cohort.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determined how many regions we use.
--- @returnt number The index after upending the order of each region.
-local cohort_upend = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determined how many regions we use.
+-- @treturn number The index after upending the order of each region.
+anarchy.cohort.cohort_upend = function(inner, cohort_size, seed)
     local min_regions = 2
     if (cohort_size < 2 * MIN_REGION_SIZE) then
         min_regions = 1
@@ -797,19 +825,19 @@ local cohort_upend = function(inner, cohort_size, seed)
         return inner
     end
 end
-anarchy.cohort.cohort_upend = cohort_upend
+local cohort_upend = anarchy.cohort.cohort_upend
 -- Upend is its own inverse.
 
 --- Compose a bunch of the above functions to perform a nice thorough
 -- shuffle within a cohort.
--- @paramt number inner The index of an item within a cohort.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determines where to shuffle things.
--- @returnt number The position of the index after shuffling the cohort. When
---     shuffling two different indices with the same cohort size and
---     seed, you'll get two different results. Usually not the same as
---     the original index.
-local cohort_shuffle = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determines where to shuffle things.
+-- @treturn number The position of the index after shuffling the cohort. When
+--   shuffling two different indices with the same cohort size and
+--   seed, you'll get two different results. Usually not the same as
+--   the original index.
+anarchy.cohort.cohort_shuffle = function(inner, cohort_size, seed)
     local r = inner
     seed = bxor(seed, cohort_size)
     -- print("\ncs", inner, cohort_size)
@@ -849,15 +877,15 @@ local cohort_shuffle = function(inner, cohort_size, seed)
     -- io.write("\n")
     return r
 end
-anarchy.cohort.cohort_shuffle = cohort_shuffle
+local cohort_shuffle = anarchy.cohort.cohort_shuffle
 
 --- Inverse shuffle (see above).
--- @paramt number inner The index of an item within a cohort after shuffling.
--- @paramt number cohort_size The size of each cohort.
--- @paramt number seed The seed that determined where to shuffle things.
--- @returnt number The original index within the cohort that would have been
---     shuffled into the specified position.
-local rev_cohort_shuffle = function(inner, cohort_size, seed)
+-- @tparam number inner The index of an item within a cohort after shuffling.
+-- @tparam number cohort_size The size of each cohort.
+-- @tparam number seed The seed that determined where to shuffle things.
+-- @treturn number The original index within the cohort that would have been
+--   shuffled into the specified position.
+anarchy.cohort.rev_cohort_shuffle = function(inner, cohort_size, seed)
     local r = inner
     seed = bxor(seed, cohort_size)
     -- print("\nrcs", inner, cohort_size)
@@ -897,8 +925,22 @@ local rev_cohort_shuffle = function(inner, cohort_size, seed)
     -- io.write("\n")
     return r
 end
-anarchy.cohort.rev_cohort_shuffle = rev_cohort_shuffle
+local rev_cohort_shuffle = anarchy.cohort.rev_cohort_shuffle
 
+
+--- Distribution Functions.
+-- These functions all deal with distributing items unevenly between
+-- 'segments', which are a finite number of finite-sized bins. For
+-- example, we might want to distribute 1000 rare items among 1000000
+-- rooms, each of which can hold at most 2 rare items. This section
+-- also includes functions for dealing with 'sumtables' which are
+-- tables that encode a distribution as the cumulative sum of items
+-- assigned to each segment (and all segments before it).
+-- @section distribution
+
+
+-- Forward declaration for recursive function
+local distribution_split_point
 
 --- Implements common distribution functionality: given a total item
 -- count, a segment count and per-segment capacity, and a roughness value
@@ -908,29 +950,28 @@ anarchy.cohort.rev_cohort_shuffle = rev_cohort_shuffle
 -- Note that per the normal Lua convention, indices for both total items
 -- and segments start from 1!
 --
--- @paramt number total The total number of items that will be
---     distributed among segments.
--- @paramt number n_segments The number of segments to distribute the
---     items into.
--- @paramt number segment_capacity The capacity of each segment.
---     n_segments times segment_capacity must be >= total.
--- @paramt number roughness A number between 0 and 1. When roughness is
---     0, items will be split across segments as evenly as possible. When
---     roughness is 1, up to 100% of the items may be placed into the
---     first or second half of the segments while recursively
---     apportioning items. At roughness 0.5 the first or second half of
---     the segments might get as little as 50% of what it would get when
---     roughness is 0.
--- @paramt number seed The seed that determines how the total gets
---     distributed among the segments when roughness allows different
---     distributions.
+-- @tparam number total The total number of items that will be
+--   distributed among segments.
+-- @tparam number n_segments The number of segments to distribute the
+--   items into.
+-- @tparam number segment_capacity The capacity of each segment.
+--   n_segments times segment_capacity must be >= total.
+-- @tparam number roughness A number between 0 and 1. When roughness is
+--   0, items will be split across segments as evenly as possible. When
+--   roughness is 1, up to 100% of the items may be placed into the
+--   first or second half of the segments while recursively
+--   apportioning items. At roughness 0.5 the first or second half of
+--   the segments might get as little as 50% of what it would get when
+--   roughness is 0.
+-- @tparam number seed The seed that determines how the total gets
+--   distributed among the segments when roughness allows different
+--   distributions.
 -- @return Multiple results: two numbers. The first is the split point
---     for the distribution: the number out of the total items which end
---     up in the first half of the segments. The second is the number of
---     segments in that first half of the segments, which is half of
---     n_segments, rounded down.
-local distribution_spilt_point
-distribution_spilt_point = function(
+--   for the distribution: the number out of the total items which end
+--   up in the first half of the segments. The second is the number of
+--   segments in that first half of the segments, which is half of
+--   n_segments, rounded down.
+anarchy.distribution.distribution_split_point = function(
     total,
     n_segments,
     segment_capacity,
@@ -967,8 +1008,11 @@ distribution_spilt_point = function(
 
     return split, first_half
 end
-anarchy.distribution.distribution_spilt_point = distribution_spilt_point
+distribution_split_point = anarchy.distribution.distribution_split_point
 
+
+-- Forward declaration for recursive function
+local distribution_items
 
 --- Given that 'total' items are to be distributed evenly among
 -- 'n_segment' segments each with at most 'segment_capacity' items and
@@ -982,36 +1026,35 @@ anarchy.distribution.distribution_spilt_point = distribution_spilt_point
 --
 -- Note that segment_capacity * n_segments should be > total.
 --
--- @paramt number segment Which segment we want to know the portion for,
---     as an index starting from 1.
--- @paramt number total The total number of items that will be
---     distributed among segments.
--- @paramt number n_segments The number of segments to distribute the
---     items into.
--- @paramt number segment_capacity The capacity of each segment.
---     n_segments times segment_capacity must be >= total.
--- @paramt number roughness A number between 0 and 1. When roughness is
---     0, items will be split across segments as evenly as possible. When
---     roughness is 1, up to 100% of the items may be placed into the
---     first or second half of the segments while recursively
---     apportioning items. At roughness 0.5 the first or second half of
---     the segments might get as little as 50% of what it would get when
---     roughness is 0.
--- @paramt number seed The seed that determines how the total gets
---     distributed among the segments when roughness allows different
---     distributions.
+-- @tparam number segment Which segment we want to know the portion for,
+--   as an index starting from 1.
+-- @tparam number total The total number of items that will be
+--   distributed among segments.
+-- @tparam number n_segments The number of segments to distribute the
+--   items into.
+-- @tparam number segment_capacity The capacity of each segment.
+--   n_segments times segment_capacity must be >= total.
+-- @tparam number roughness A number between 0 and 1. When roughness is
+--   0, items will be split across segments as evenly as possible. When
+--   roughness is 1, up to 100% of the items may be placed into the
+--   first or second half of the segments while recursively
+--   apportioning items. At roughness 0.5 the first or second half of
+--   the segments might get as little as 50% of what it would get when
+--   roughness is 0.
+-- @tparam number seed The seed that determines how the total gets
+--   distributed among the segments when roughness allows different
+--   distributions.
 -- @return Multiple values: the start index (from 1) of the first item in
---     this segment and the number of the total items that get
---     distributed into the specified segment, for the given seed. The
---     number of items May be as low as 0 when roughness is 1; it will be
---     one of the integers adjacent to (total / n_segments) when
---     roughness is 0. If the number of items is 0, then the 'start
---     index' will be the same as the 'start index' for the subsequent
---     segment (and if multiple segments in a row get 0 items they'll all
---     share the same start index with the first segment after them that
---     gets at least 1 item).
-local distribution_items
-distribution_items = function(
+--   this segment and the number of the total items that get
+--   distributed into the specified segment, for the given seed. The
+--   number of items May be as low as 0 when roughness is 1; it will be
+--   one of the integers adjacent to (total / n_segments) when
+--   roughness is 0. If the number of items is 0, then the 'start
+--   index' will be the same as the 'start index' for the subsequent
+--   segment (and if multiple segments in a row get 0 items they'll all
+--   share the same start index with the first segment after them that
+--   gets at least 1 item).
+anarchy.distribution.distribution_items = function(
     segment,
     total,
     n_segments,
@@ -1025,7 +1068,7 @@ distribution_items = function(
     end
 
     -- compute split point:
-    local split, half = distribution_spilt_point(
+    local split, half = distribution_split_point(
         total,
         n_segments,
         segment_capacity,
@@ -1055,36 +1098,39 @@ distribution_items = function(
         return split + start, count
     end
 end
-anarchy.distribution.distribution_items = distribution_items
+distribution_items = anarchy.distribution.distribution_items
+
+
+-- Forward declaration for recursive function
+local distribution_segment
 
 --- Computes the segment number in which a certain item appears (one of
 -- the 'total' items distributed between segments; see distribution_items
 -- above). Requires work proportional to the log of the number of
 -- segments.
 --
--- @paramt number index Which item among the total we want to know the
---     fate of, starting from 1. Must be less than or equal to the total.
--- @paramt number total The total number of items that will be
---     distributed among segments.
--- @paramt number n_segments The number of segments to distribute the
---     items into.
--- @paramt number segment_capacity The capacity of each segment.
---     n_segments times segment_capacity must be >= total.
--- @paramt number roughness A number between 0 and 1. When roughness is
---     0, items will be split across segments as evenly as possible. When
---     roughness is 1, up to 100% of the items may be placed into the
---     first or second half of the segments while recursively
---     apportioning items. At roughness 0.5 the first or second half of
---     the segments might get as little as 50% of what it would get when
---     roughness is 0.
--- @paramt number seed The seed that determines how the total gets
---     distributed among the segments when roughness allows different
---     distributions.
+-- @tparam number index Which item among the total we want to know the
+--   fate of, starting from 1. Must be less than or equal to the total.
+-- @tparam number total The total number of items that will be
+--   distributed among segments.
+-- @tparam number n_segments The number of segments to distribute the
+--   items into.
+-- @tparam number segment_capacity The capacity of each segment.
+--   n_segments times segment_capacity must be >= total.
+-- @tparam number roughness A number between 0 and 1. When roughness is
+--   0, items will be split across segments as evenly as possible. When
+--   roughness is 1, up to 100% of the items may be placed into the
+--   first or second half of the segments while recursively
+--   apportioning items. At roughness 0.5 the first or second half of
+--   the segments might get as little as 50% of what it would get when
+--   roughness is 0.
+-- @tparam number seed The seed that determines how the total gets
+--   distributed among the segments when roughness allows different
+--   distributions.
 -- @return Multiple values: the segment index (starting from 1) within
---     which the indicated item appears, and then the index within that
---     segment (starting from 1) at which it is placed.
-local distribution_segment
-distribution_segment = function(
+--   which the indicated item appears, and then the index within that
+--   segment (starting from 1) at which it is placed.
+anarchy.distribution.distribution_segment = function(
     index,
     total,
     n_segments,
@@ -1098,7 +1144,7 @@ distribution_segment = function(
     end
 
     -- compute split point:
-    local split, half = distribution_spilt_point(
+    local split, half = distribution_split_point(
         total,
         n_segments,
         segment_capacity,
@@ -1128,12 +1174,11 @@ distribution_segment = function(
         return half + segment, within
     end
 end
-anarchy.distribution.distribution_segment = distribution_segment
+distribution_segment = anarchy.distribution.distribution_segment
 
 
 -- Forward declaration as local (see function definition below)
 local fill_sumtable_for_distribution
-
 
 --- Takes distribution parameters and returns a table containing the
 -- cumulative sum of items in each segment (The table indices will start
@@ -1144,19 +1189,19 @@ local fill_sumtable_for_distribution
 -- they're only equal if zero items are assigned to that segment). The
 -- last entry will be equal to the total.
 --
--- @paramt number total The total number of items being distributed.
--- @paramt number n_segments The number of segments to distribute items
---     among.
--- @paramt number segment_capacity The capacity of each segment.
--- @paramt number roughness How rough the distribution should be (0-1).
--- @paramt number seed The seed that determines a specific distribution.
+-- @tparam number total The total number of items being distributed.
+-- @tparam number n_segments The number of segments to distribute items
+--   among.
+-- @tparam number segment_capacity The capacity of each segment.
+-- @tparam number roughness How rough the distribution should be (0-1).
+-- @tparam number seed The seed that determines a specific distribution.
 --
--- @returnt table An array table holding cumulative sums, starting at
---     index 1 with the number of items in the first segment.
+-- @treturn table An array table holding cumulative sums, starting at
+--   index 1 with the number of items in the first segment.
 --
 -- `n_segments` times `segment_capacity` must be >= `total` otherwise an
 -- error will be raised.
-local sumtable_for_distribution = function(
+anarchy.distribution.sumtable_for_distribution = function(
     total,
     n_segments,
     segment_capacity,
@@ -1186,7 +1231,9 @@ local sumtable_for_distribution = function(
     )
     return result
 end
-anarchy.distribution.sumtable_for_distribution = sumtable_for_distribution
+local sumtable_for_distribution = (
+    anarchy.distribution.sumtable_for_distribution
+)
 
 
 --- Recursively fills in the sumtable based on the distribution
@@ -1203,16 +1250,16 @@ anarchy.distribution.sumtable_for_distribution = sumtable_for_distribution
 -- accessible way, so sharing parameters is easier.
 -- Parameters are the same as for `sumtable_for_distribution` but with:
 --
--- @paramt table ledger The table to fill in. Values will be
---     added/overwritten between `start` and `start` + `n_segments` - 1
---     (inclusive).
--- @paramt number start The index at which to start overwriting values
---     (counting from index 1).
--- @paramt number  prior The number of items distributed prior to the start
---     index.
+-- @tparam table ledger The table to fill in. Values will be
+--   added/overwritten between `start` and `start` + `n_segments` - 1
+--   (inclusive).
+-- @tparam number start The index at which to start overwriting values
+--   (counting from index 1).
+-- @tparam number  prior The number of items distributed prior to the start
+--   index.
 --
--- @returnt nil No return (modifies the given ledger).
-fill_sumtable_for_distribution= function(
+-- @treturn nil No return (modifies the given ledger).
+anarchy.distribution.fill_sumtable_for_distribution = function(
     table,
     start,
     prior,
@@ -1228,7 +1275,7 @@ fill_sumtable_for_distribution= function(
     elseif n_segments == 1 then  -- base case: fill in one entry
         table[start] = prior + total
     else  -- recurse into each half of the table
-        local sub_prior, first_half = distribution_spilt_point(
+        local sub_prior, first_half = distribution_split_point(
             total,
             n_segments,
             segment_capacity,
@@ -1259,8 +1306,8 @@ fill_sumtable_for_distribution= function(
         )
     end
 end
-anarchy.distribution.fill_sumtable_for_distribution = (
-    fill_sumtable_for_distribution
+fill_sumtable_for_distribution = (
+    anarchy.distribution.fill_sumtable_for_distribution
 )
 
 --- Returns a sumtable for the same distribution, where entries are the
@@ -1269,13 +1316,13 @@ anarchy.distribution.fill_sumtable_for_distribution = (
 -- `sumtable_segments`, `sumtable_portion`, and `sumtable_segment` to get
 -- information out of the sumtable efficiently.
 --
--- @paramt table portions The array of per-segment item counts, indexed
---     starting at 1.
+-- @tparam table portions The array of per-segment item counts, indexed
+--   starting at 1.
 --
--- @returnt table The sumtable that encodes the same distribution (also
---     indexed from 1, like all normal Lua tables. Hahaha why would we
---     even mention this?).
-local sumtable_from_portions = function(portions)
+-- @treturn table The sumtable that encodes the same distribution (also
+--   indexed from 1, like all normal Lua tables. Hahaha why would we
+--   even mention this?).
+anarchy.distribution.sumtable_from_portions = function(portions)
     sofar = 0
     result = {}
     for i, p in ipairs(portions) do
@@ -1285,33 +1332,33 @@ local sumtable_from_portions = function(portions)
 
     return result
 end
-anarchy.distribution.sumtable_from_portions = sumtable_from_portions
+local sumtable_from_portions = anarchy.distribution.sumtable_from_portions
 
 
 --- Returns the total number of items across all segments in a sumtable,
 -- which is just the last entry in that table.
 --
--- @paramt table sumtable The table of sums describing the distribution
---     in question.
+-- @tparam table sumtable The table of sums describing the distribution
+--   in question.
 --
--- @returnt number The total number of items distributed.
-local sumtable_total = function(sumtable)
+-- @treturn number The total number of items distributed.
+anarchy.distribution.sumtable_total = function(sumtable)
     return sumtable[#sumtable]
 end
-anarchy.distribution.sumtable_total = sumtable_total
+local sumtable_total = anarchy.distribution.sumtable_total
 
 
 --- Returns the number of segments in the given sumtable, which is just
 -- its length.
 --
--- @paramt table sumtable The table of sums describing the distribution
---     in question.
+-- @tparam table sumtable The table of sums describing the distribution
+--   in question.
 --
--- @returnt number The number of segments in the distribution.
-local sumtable_segments = function(sumtable)
+-- @treturn number The number of segments in the distribution.
+anarchy.distribution.sumtable_segments = function(sumtable)
     return #sumtable
 end
-anarchy.distribution.sumtable_segments = sumtable_segments
+local sumtable_segments = anarchy.distribution.sumtable_segments
 
 
 --- Returns the portion of the total items which is distributed into the
@@ -1319,13 +1366,13 @@ anarchy.distribution.sumtable_segments = sumtable_segments
 -- the entry to the left to figure this out. Raises an error if the index
 -- is invalid.
 --
--- @paramt table sumtable The table of sums describing the distribution
---     in question.
--- @paramt number i The segment to compute the portion for (from 1).
+-- @tparam table sumtable The table of sums describing the distribution
+--   in question.
+-- @tparam number i The segment to compute the portion for (from 1).
 --
--- @returnt number The number of items distributed into the specified
---     segment.
-local sumtable_portion = function(sumtable, i)
+-- @treturn number The number of items distributed into the specified
+--   segment.
+anarchy.distribution.sumtable_portion = function(sumtable, i)
     -- First entry has nothing to subtract
     local here = sumtable[i]
     if here == nil then
@@ -1342,20 +1389,20 @@ local sumtable_portion = function(sumtable, i)
         return here - sumtable[i - 1]
     end
 end
-anarchy.distribution.sumtable_portion = sumtable_portion
+local sumtable_portion = anarchy.distribution.sumtable_portion
 
 
 --- Returns a pair containing the index of the first item in the segment 
 -- and then the number of items in that segment, like
 -- `distribution_items`, but for a sumtable. Parameters:
 --
--- @paramt table sumtable The table of sums describing the distribution
---     in question.
--- @paramt number i The segment to compute the portion for (from 1).
+-- @tparam table sumtable The table of sums describing the distribution
+--   in question.
+-- @tparam number i The segment to compute the portion for (from 1).
 --
 -- @return Two numbers: The index of the first item in the segment (from
---     1), then the number o items in the indicated segment.
-local sumtable_items = function(sumtable, i)
+--   1), then the number o items in the indicated segment.
+anarchy.distribution.sumtable_items = function(sumtable, i)
     local portion = sumtable_portion(sumtable, i)  -- error here if bad i
 
     -- Read prior sum directly from adjacent table entry
@@ -1367,7 +1414,7 @@ local sumtable_items = function(sumtable, i)
 
     return prior + 1, portion
 end
-anarchy.distribution.sumtable_items = sumtable_items
+local sumtable_items = anarchy.distribution.sumtable_items
 
 
 --- Uses binary search to find the index of the smallest sum in the given
@@ -1379,14 +1426,14 @@ anarchy.distribution.sumtable_items = sumtable_items
 -- Raises an error if the sumtable is empty, or if the item index is too
 -- large for the sumtable or is zero or negative.
 --
--- @paramt table sumtable The table of sums describing the distribution
---     in question.
--- @paramt number item The item (out of the total distributed, starting
---     from 0) that we want to find the segment for.
+-- @tparam table sumtable The table of sums describing the distribution
+--   in question.
+-- @tparam number item The item (out of the total distributed, starting
+--   from 0) that we want to find the segment for.
 --
--- @returnt number The segment index (starting from 1) for the specified
---     item.
-local sumtable_segment = function(sumtable, item)
+-- @treturn number The segment index (starting from 1) for the specified
+--   item.
+anarchy.distribution.sumtable_segment = function(sumtable, item)
     if #sumtable == 0 then
         error("Empty sumtable in sumtable_segment.")
     elseif item < 1 then
@@ -1441,7 +1488,7 @@ local sumtable_segment = function(sumtable, item)
         return fr
     end
 end
-anarchy.distribution.sumtable_segment = sumtable_segment
+local sumtable_segment = anarchy.distribution.sumtable_segment
 
 
 -- Return module table
