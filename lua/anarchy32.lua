@@ -4,7 +4,7 @@
 --   LuaJIT).
 -- @author Peter Mawhorter
 -- @copyright 2025 Peter Mawhorter
--- @release 1.0-1
+-- @release 1.0-2
 --
 -- This version effectively uses 32-bit integers via the 'bit' or 'bit32'
 -- library, since Lua < 5.3 and LuaJIT don't have bitwise operations, and
@@ -12,11 +12,11 @@
 -- 'anarchy' library instead if you have access to Lua 5.3+.
 --
 -- Note: In LuaJIT, 'bit' is available via 'require' for 32-bit bitwise
--- operations. In Lua 5.1, a backport of the Lua 5.2 bit32 library could
--- be installed as a dependency. In Lua 5.2, 'bit32' is built-in. In Lua
--- 5.3+, 'bit32' is deprecated and we get 64-bit integers plus built-in
--- bitwise operations (you'll need the 'anarchy' module instead, which is
--- the 64-bit version)!
+-- operations, or even without require in some modding contexts. In Lua
+-- 5.1, a backport of the Lua 5.2 bit32 library could be installed as a
+-- dependency. In Lua 5.2, 'bit32' is built-in. In Lua 5.3+, 'bit32' is
+-- deprecated and we get 64-bit integers plus built-in bitwise operations
+-- (you'll need the 'anarchy' module instead, which is the 64-bit version)!
 --
 -- It might make sense to depend on Lua 5.3+ and use the built-ins, but
 -- many modding situations have older Lua versions tied into engines. So
@@ -26,7 +26,7 @@
 -- file](https://cs.wellesley.edu/~pmwh/anarchy/lua/).
 
 -- Decide what to do about bitwise operators depending on the version
-local bit
+local mybit
 local succeeded
 
 -- How to map bitwise operations
@@ -35,73 +35,78 @@ local mappings = nil
 local tobit, band, bor, bnot, bxor, lshift, rshift, arshift, rol, ror
 
 if _VERSION == "Lua 5.1" then
-    -- Try to require 'bit' first in case of LuaJIT
-    succeeded, bit = pcall(require, "bit")
-    if not succeeded then
-        -- Try to look for bit32 backport?
-        succeeded, bit = pcall(require, "bit32")
-        if not succeeded then
-            print(
-                "Neither 'bit' nor 'bit32' is available and Lua version"
-             .. " reports 5.1."
-            )
-            os.exit(1)
+    -- First look for built-in global 'bit' that LuaJIT might have even if
+    -- require is banned due to e.g., a sandboxed mod context.
+    if bit ~= nil then
+        -- Try to see if band is correct
+        mappings = "bit"
+        mybit = bit
+    else
+        -- Try to require 'bit' first in case of LuaJIT
+        succeeded, mybit = pcall(require, "bit")
+        if succeeded then
+            -- Versions from LuaJIT 'bit' library
+            mappings = "bit"
         else
+            -- Try to look for bit32 backport?
+            succeeded, mybit = pcall(require, "bit32")
+            assert(
+                succeeded,
+                (
+                    "Neither 'bit' nor 'bit32' is available and Lua version"
+                 .. " reports 5.1."
+                )
+            )
             mappings = "bit32"
         end
-    else
-        -- Versions from LuaJIT 'bit' library
-        mappings = "bit"
     end
 elseif _VERSION == "Lua 5.2" then
     -- This version should have 'bit32' built-in
     mappings = "bit32"
-    bit = bit32
-    if bit == nil then
-        print(
+    mybit = bit32
+    assert(
+        mybit ~= nil,
+        (
             "'bit32' built-in is not available even though version"
          .. " reports 5.2."
         )
-        os.exit(1)
-    end
+    )
 else
     -- Need to use the 'anarchy' library for newer versions.
-    print(
+    error(
         "Lua reports version '" .. _VERSION .. ", which is not compatible"
      .. " with this module. This module should work with Lua 5.1, Lua"
      .. "5.2, and LuaJIT (reports itself as 5.1). Get the 'anarchy'"
      .. " library (without the '32' suffix) if you need to work with"
      .. " versions 5.3+."
     )
-    os.exit(1)
 end
 
 if mappings == "bit32" then
     -- Versions from backported bit32 library
-    tobit = function(x) return bit.bor(x, 0) end
-    band = bit.band
-    bor = bit.bor
-    bnot = bit.bnot
-    bxor = bit.bxor
-    lshift = bit.lshift
-    rshift = bit.rshift
-    arshift = bit.arshift
-    rol = bit.lrotate
-    ror = bit.rrotate
+    tobit = function(x) return mybit.bor(x, 0) end
+    band = mybit.band
+    bor = mybit.bor
+    bnot = mybit.bnot
+    bxor = mybit.bxor
+    lshift = mybit.lshift
+    rshift = mybit.rshift
+    arshift = mybit.arshift
+    rol = mybit.lrotate
+    ror = mybit.rrotate
 elseif mappings == "bit" then
-    tobit = bit.tobit
-    band = bit.band
-    bor = bit.bor
-    bnot = bit.bnot
-    bxor = bit.bxor
-    lshift = bit.lshift
-    rshift = bit.rshift
-    arshift = bit.arshift
-    rol = bit.rol
-    ror = bit.ror
+    tobit = mybit.tobit
+    band = mybit.band
+    bor = mybit.bor
+    bnot = mybit.bnot
+    bxor = mybit.bxor
+    lshift = mybit.lshift
+    rshift = mybit.rshift
+    arshift = mybit.arshift
+    rol = mybit.rol
+    ror = mybit.ror
 else
-    print("No workable mappings for 'bit' library.")
-    os.exit(2)
+    error("No workable mappings for 'bit' library.")
 end
 
 -- Local refs for math functions
@@ -1401,7 +1406,7 @@ local sumtable_portion = anarchy.distribution.sumtable_portion
 -- @tparam number i The segment to compute the portion for (from 1).
 --
 -- @return Two numbers: The index of the first item in the segment (from
---   1), then the number o items in the indicated segment.
+--   1), then the number of items in the indicated segment.
 anarchy.distribution.sumtable_items = function(sumtable, i)
     local portion = sumtable_portion(sumtable, i)  -- error here if bad i
 
@@ -1436,9 +1441,9 @@ local sumtable_items = anarchy.distribution.sumtable_items
 anarchy.distribution.sumtable_segment = function(sumtable, item)
     if #sumtable == 0 then
         error("Empty sumtable in sumtable_segment.")
-    elseif item < 1 then
+    elseif item < 0 then
         error(
-            "Zero or negative item index " .. item .. " not permitted in"
+            "Item index less than 0 (" .. item .. ") not permitted in"
          .. " sumtable_segment."
         )
     elseif item > sumtable[#sumtable] then

@@ -1392,9 +1392,8 @@ local sumtable_portion = anarchy.distribution.sumtable_portion
 --   in question.
 -- @tparam number i The segment to compute the portion for (from 1).
 --
--- @treturn multiple Two numbers: The index of the first item in the
---   segment (from index 1), then the number o items in the indicated
---   segment.
+-- @return Two numbers: The index of the first item in the segment (from
+--   index 1), then the number of items in the indicated segment.
 anarchy.distribution.sumtable_items = function(sumtable, i)
     local portion = sumtable_portion(sumtable, i)  -- error here if bad i
 
@@ -1429,9 +1428,9 @@ local sumtable_items = anarchy.distribution.sumtable_items
 anarchy.distribution.sumtable_segment = function(sumtable, item)
     if #sumtable == 0 then
         error("Empty sumtable in sumtable_segment.")
-    elseif item < 1 then
+    elseif item < 0 then
         error(
-            "Zero or negative item index " .. item .. " not permitted in"
+            "Item index less than 0 (" .. item .. ") not permitted in"
          .. " sumtable_segment."
         )
     elseif item > sumtable[#sumtable] then

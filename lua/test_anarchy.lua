@@ -645,7 +645,7 @@ function test_distributions()
     for _, setup in ipairs(dist_setups) do
         local total, segments, capacity = table.unpack(setup)
         for _, seed in ipairs({8349, 0, 1029104024}) do
-            local split, half = distribution.distribution_spilt_point(
+            local split, half = distribution.distribution_split_point(
                 total,
                 segments,
                 capacity,
@@ -706,7 +706,7 @@ function test_distributions()
         end
         for i = 0,1000 do
             local seed = 74932 + i * 398
-            split, half = distribution.distribution_spilt_point(
+            split, half = distribution.distribution_split_point(
                 total,
                 segments,
                 capacity,
@@ -1038,6 +1038,7 @@ function test_sumtables()
 
     -- Sumtables from portions for a few different hand-crafted examples
     for _, pair in ipairs({
+        {{1}, {1}},
         {{3, 1, 0, 2, 4, 2}, {3, 4, 4, 6, 10, 12}},
         {{100, 900, 9000, 1}, {100, 1000, 10000, 10001}},
         {{3, 0, 0, 0}, {3, 3, 3, 3}},

@@ -64,3 +64,10 @@ version](https://cs.wellesley.edu/~pmwh/anarchy/lua/docs32/index.html)
 and [documentation for the `anarchy`
 version](https://cs.wellesley.edu/~pmwh/anarchy/lua/docs/index.html)
 are available.
+
+## Changelog
+
+- Release 1.0-2 of anarchy32.lua avoids use of os.exit in version-detection
+    checks and makes one earlier attempt to work with built-in 'bit'
+    library where 'require' is not allowed (like sandboxed modding
+    environments).

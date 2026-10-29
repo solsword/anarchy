@@ -1587,7 +1587,7 @@ function test_distributions()
     for _, setup in ipairs(dist_setups) do
         local total, segments, capacity = unpack(setup)
         for _, seed in ipairs({8349, 0, 1029104024}) do
-            local split, half = distribution.distribution_spilt_point(
+            local split, half = distribution.distribution_split_point(
                 total,
                 segments,
                 capacity,
@@ -1648,7 +1648,7 @@ function test_distributions()
         end
         for i = 0,1000 do
             local seed = 74932 + i * 398
-            split, half = distribution.distribution_spilt_point(
+            split, half = distribution.distribution_split_point(
                 total,
                 segments,
                 capacity,
