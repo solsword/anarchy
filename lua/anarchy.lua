@@ -3,7 +3,7 @@
 -- Reversible chaos library (version for Lua 5.3+).
 -- @author Peter Mawhorter
 -- @copyright 2025 Peter Mawhorter
--- @release 1.0-1
+-- @release 1.0-2
 --
 -- This version uses the native integers available in Lua versions 5.3+,
 -- which are 64-bit integers by default or 32-bit integers if your Lua
@@ -958,11 +958,11 @@ local distribution_split_point
 -- @tparam number seed The seed that determines how the total gets
 --   distributed among the segments when roughness allows different
 --   distributions.
--- @treturn multiple Multiple results: two numbers. The first is the
---   split point for the distribution: the number out of the total
---   items which end up in the first half of the segments. The second
---   is the number of segments in that first half of the segments,
---   which is half of n_segments, rounded down.
+-- @return Multiple results: two numbers. The first is the split point
+--   for the distribution: the number out of the total items which end
+--   up in the first half of the segments. The second is the number of
+--   segments in that first half of the segments, which is half of
+--   n_segments, rounded down.
 anarchy.distribution.distribution_split_point = function(
     total,
     n_segments,
@@ -1036,11 +1036,11 @@ local distribution_items
 -- @tparam number seed The seed that determines how the total gets
 --   distributed among the segments when roughness allows different
 --   distributions.
--- @treturn multiple Multiple values: the start index (from 1) of the
---   first item in this segment and the number of the total items that
---   get distributed into the specified segment, for the given seed.
---   The number of items May be as low as 0 when roughness is 1; it
---   will be one of the integers adjacent to (total / n_segments) when
+-- @return Multiple values: the start index (from 1) of the first item in
+--   this segment and the number of the total items that get
+--   distributed into the specified segment, for the given seed. The
+--   number of items May be as low as 0 when roughness is 1; it will be
+--   one of the integers adjacent to (total / n_segments) when
 --   roughness is 0. If the number of items is 0, then the 'start
 --   index' will be the same as the 'start index' for the subsequent
 --   segment (and if multiple segments in a row get 0 items they'll all
@@ -1119,9 +1119,9 @@ local distribution_segment
 -- @tparam number seed The seed that determines how the total gets
 --   distributed among the segments when roughness allows different
 --   distributions.
--- @treturn multiple Multiple values: the segment index (starting from
---   1) within which the indicated item appears, and then the index
---   within that segment (starting from 1) at which it is placed.
+-- @return Multiple values: the segment index (starting from 1) within
+--   which the indicated item appears, and then the index within that
+--   segment (starting from 1) at which it is placed.
 anarchy.distribution.distribution_segment = function(
     index,
     total,
@@ -1210,7 +1210,7 @@ anarchy.distribution.sumtable_for_distribution = function(
     end
 
     -- No need to pre-populate table
-    result = {}
+    local result = {}
     fill_sumtable_for_distribution(
         result,
         1,
@@ -1315,8 +1315,8 @@ fill_sumtable_for_distribution = (
 --   indexed from 1, like all normal Lua tables. Hahaha why would we
 --   even mention this?).
 anarchy.distribution.sumtable_from_portions = function(portions)
-    sofar = 0
-    result = {}
+    local sofar = 0
+    local result = {}
     for i, p in ipairs(portions) do
         sofar = sofar + p
         result[#result + 1] = sofar
@@ -1398,6 +1398,7 @@ anarchy.distribution.sumtable_items = function(sumtable, i)
     local portion = sumtable_portion(sumtable, i)  -- error here if bad i
 
     -- Read prior sum directly from adjacent table entry
+    local prior
     if i == 1 then
         prior = 0
     else

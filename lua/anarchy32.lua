@@ -4,7 +4,7 @@
 --   LuaJIT).
 -- @author Peter Mawhorter
 -- @copyright 2025 Peter Mawhorter
--- @release 1.0-2
+-- @release 1.0-3
 --
 -- This version effectively uses 32-bit integers via the 'bit' or 'bit32'
 -- library, since Lua < 5.3 and LuaJIT don't have bitwise operations, and
@@ -149,7 +149,7 @@ anarchy.util.ror = ror
 
 
 --- Modulus that's always positive
--- Use % operator instead in Lua since it has the same behavior
+-- Use % operator instead in Lua since it has the same behavior.
 -- Included for compatibility with anarchy implementations in other
 -- languages.
 -- @tparam number num The number to compute the modulus of.
@@ -172,7 +172,7 @@ anarchy.util.hash_string = function(s)
         return hash
     end
     for i = 1,#s do
-        chr = s.byte(i)
+        chr = s:byte(i)
         hash = (hash * 31) + chr
     end
     return hash
@@ -248,6 +248,7 @@ local fold = anarchy.rng.fold
 
 local FLOP_MASK = 0xf0f0f0f0
 anarchy.rng.FLOP_MASK = FLOP_MASK
+
 
 --- Flops each 1/2 byte with the adjacent 1/2 byte.
 -- flop is its own inverse.
@@ -1223,7 +1224,7 @@ anarchy.distribution.sumtable_for_distribution = function(
     end
 
     -- No need to pre-populate table
-    result = {}
+    local result = {}
     fill_sumtable_for_distribution(
         result,
         1,
@@ -1328,8 +1329,8 @@ fill_sumtable_for_distribution = (
 --   indexed from 1, like all normal Lua tables. Hahaha why would we
 --   even mention this?).
 anarchy.distribution.sumtable_from_portions = function(portions)
-    sofar = 0
-    result = {}
+    local sofar = 0
+    local result = {}
     for i, p in ipairs(portions) do
         sofar = sofar + p
         result[#result + 1] = sofar
@@ -1406,11 +1407,12 @@ local sumtable_portion = anarchy.distribution.sumtable_portion
 -- @tparam number i The segment to compute the portion for (from 1).
 --
 -- @return Two numbers: The index of the first item in the segment (from
---   1), then the number of items in the indicated segment.
+--   index 1), then the number of items in the indicated segment.
 anarchy.distribution.sumtable_items = function(sumtable, i)
     local portion = sumtable_portion(sumtable, i)  -- error here if bad i
 
     -- Read prior sum directly from adjacent table entry
+    local prior
     if i == 1 then
         prior = 0
     else

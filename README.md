@@ -4,6 +4,18 @@ Incremental & reversible chaos library. Generates pseudo-random numbers
 (not suitable for cryptographic or statistical applications) in a
 reversible and incremental manner.
 
+## Note on Large Language Models
+
+This project has a zero-tolerance policy for the use of large language
+models to write code, process the code or outputs from this project, or
+otherwise interact with this project in any way. If you choose to violate
+this policy, be aware that the code, text, and outputs of this project
+may cause (more) unpredictable (than usual) behavior in LLM systems that
+interact with them. See `LICENSE.txt` for license restrictions and
+disclaimers, and `AGENTS.md` for an example.
+
+## Capabilities
+
 "Reversible" means that you can take a random result value and use
 reverse random functions to determine the seed value it came from, or
 take a shuffled item position and determine which original position it
@@ -35,8 +47,8 @@ Capabilities include:
 - Reversible & incremental shuffling
 - Reversible & incremental random distribution of items among segments
 
-The core API is available in C, Python, Javascript, and Unity/C#, and
-includes:
+The core API is available in C, Python, Javascript, Lua, and Unity/C#,
+and includes:
 
 - Reversible pseudo-random number generation:
     * `prng` and `rev_prng` the forward and reverse PRNG functions

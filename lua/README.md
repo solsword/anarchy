@@ -67,6 +67,8 @@ are available.
 
 ## Changelog
 
+- Releases 1.0-2 of anarchy.lua and 1.0-3 of anarchy32.lua fix some stray
+    globals.
 - Release 1.0-2 of anarchy32.lua avoids use of os.exit in version-detection
     checks and makes one earlier attempt to work with built-in 'bit'
     library where 'require' is not allowed (like sandboxed modding
