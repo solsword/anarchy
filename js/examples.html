@@ -91,11 +91,11 @@
   <link rel="stylesheet" href="examples.css" />
   <!-- scripts -->
   <script type="module" src="js/anarchy.mjs"></script>
-  <script nomodule type="text/javascript">
+  <script type="text/javascript">
   // silly one-shot stub for require.js
   function define(reqs, module) { anarchy = module(reqs); }
   </script>
-  <script nomodule src="js/anarchy.js"></script>
+  <script src="js/anarchy.js"></script>
 </head>
 <body>
 <header id="title-block-header">
@@ -151,75 +151,77 @@ re-shuffle.</p>
 <summary>
 Full code for the demo
 </summary>
-<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Grab the div that we want to work with</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> div <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&quot;shuffle_demo&quot;</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co">// Create 26 divs each containing a single capital letter:</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> items <span class="op">=</span> []<span class="op">;</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> letters <span class="op">=</span> <span class="st">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;</span><span class="op">;</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">let</span> i <span class="kw">in</span> letters) {</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> item <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">createElement</span>(<span class="st">&quot;div&quot;</span>)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  item<span class="op">.</span><span class="at">innerText</span> <span class="op">=</span> letters[i]<span class="op">;</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  items<span class="op">.</span><span class="fu">push</span>(item)<span class="op">;</span></span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="co">// Add our divs to the grid in order:</span></span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">let</span> i <span class="kw">in</span> items) {</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  div<span class="op">.</span><span class="fu">appendChild</span>(items[i])<span class="op">;</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co">// Function for setting the CSS grid-location properties of an item via</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="co">// anarchy.</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">do_shuffle</span>(seed) {</span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> i <span class="kw">in</span> items) {</span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> it <span class="op">=</span> items[i]<span class="op">;</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Use anarchy to get a shuffled index for just this item:</span></span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> position <span class="op">=</span> anarchy<span class="op">.</span><span class="fu">cohort_shuffle</span>(i<span class="op">,</span> items<span class="op">.</span><span class="at">length</span><span class="op">,</span> seed)<span class="op">;</span></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">//let y = position % 4;</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="co">//let x = Math.floor(position / 4);</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> x <span class="op">=</span> position <span class="op">%</span> <span class="dv">7</span><span class="op">;</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> y <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(position <span class="op">/</span> <span class="dv">7</span>)<span class="op">;</span></span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    it<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">gridColumnStart</span> <span class="op">=</span> <span class="st">&quot;&quot;</span> <span class="op">+</span> (x <span class="op">+</span> <span class="dv">1</span>)<span class="op">;</span></span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    it<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">gridColumnEnd</span> <span class="op">=</span> <span class="st">&quot;&quot;</span> <span class="op">+</span> (x <span class="op">+</span> <span class="dv">2</span>)<span class="op">;</span></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    it<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">gridRowStart</span> <span class="op">=</span> <span class="st">&quot;&quot;</span> <span class="op">+</span> (y <span class="op">+</span> <span class="dv">1</span>)<span class="op">;</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    it<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">gridRowEnd</span> <span class="op">=</span> <span class="st">&quot;&quot;</span> <span class="op">+</span> (y <span class="op">+</span> <span class="dv">2</span>)<span class="op">;</span></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="co">// Function for picking up seed from input</span></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">get_seed</span>() {</span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> seed_input <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&quot;shuffle_demo_seed&quot;</span>)<span class="op">;</span></span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> s <span class="op">=</span> <span class="pp">parseInt</span>(seed_input<span class="op">.</span><span class="at">value</span>)<span class="op">;</span></span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (s <span class="op">==</span> <span class="kw">undefined</span>) {</span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>    seed_input<span class="op">.</span><span class="at">value</span> <span class="op">=</span> s<span class="op">;</span></span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>  }</span>
-<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> s<span class="op">;</span></span>
-<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a><span class="co">// Function for updating seed input</span></span>
-<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">set_seed</span>(x) {</span>
-<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> seed_input <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&quot;shuffle_demo_seed&quot;</span>)<span class="op">;</span></span>
-<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a>  seed_input<span class="op">.</span><span class="at">value</span> <span class="op">=</span> x<span class="op">;</span></span>
-<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a><span class="co">// Do an initial shuffle</span></span>
-<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a><span class="fu">do_shuffle</span>(<span class="fu">get_seed</span>())<span class="op">;</span></span>
-<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="co">// Set up shuffle button to use current seed:</span></span>
-<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> shuffle_button <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&quot;shuffle_demo_shuffle&quot;</span>)</span>
-<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a>shuffle_button<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> <span class="kw">function</span> () {</span>
-<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a>  <span class="fu">do_shuffle</span>(<span class="fu">get_seed</span>())<span class="op">;</span></span>
-<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
-<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a><span class="co">// Set up next button to increment and shuffle:</span></span>
-<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> next_button <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&quot;shuffle_demo_next&quot;</span>)</span>
-<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a>next_button<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> <span class="kw">function</span> () {</span>
-<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> seed <span class="op">=</span> <span class="fu">get_seed</span>()<span class="op">;</span></span>
-<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>  seed <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span></span>
-<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_seed</span>(seed)<span class="op">;</span></span>
-<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>  <span class="fu">do_shuffle</span>(seed)<span class="op">;</span></span>
-<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode js"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>anarchy <span class="op">=</span> <span class="pp">require</span>(<span class="st">&#39;anarchy&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">// Grab the div that we want to work with</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> div <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&quot;shuffle_demo&quot;</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co">// Create 26 divs each containing a single capital letter:</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> items <span class="op">=</span> []<span class="op">;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> letters <span class="op">=</span> <span class="st">&quot;ABCDEFGHIJKLMNOPQRSTUVWXYZ&quot;</span><span class="op">;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">let</span> i <span class="kw">in</span> letters) {</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> item <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">createElement</span>(<span class="st">&quot;div&quot;</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  item<span class="op">.</span><span class="at">innerText</span> <span class="op">=</span> letters[i]<span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  items<span class="op">.</span><span class="fu">push</span>(item)<span class="op">;</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co">// Add our divs to the grid in order:</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (<span class="kw">let</span> i <span class="kw">in</span> items) {</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  div<span class="op">.</span><span class="fu">appendChild</span>(items[i])<span class="op">;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a><span class="co">// Function for setting the CSS grid-location properties of an item via</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co">// anarchy.</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">do_shuffle</span>(seed) {</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (<span class="kw">let</span> i <span class="kw">in</span> items) {</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> it <span class="op">=</span> items[i]<span class="op">;</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Use anarchy to get a shuffled index for just this item:</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> position <span class="op">=</span> anarchy<span class="op">.</span><span class="fu">cohort_shuffle</span>(i<span class="op">,</span> items<span class="op">.</span><span class="at">length</span><span class="op">,</span> seed)<span class="op">;</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="co">//let y = position % 4;</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="co">//let x = Math.floor(position / 4);</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> x <span class="op">=</span> position <span class="op">%</span> <span class="dv">7</span><span class="op">;</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>    <span class="kw">let</span> y <span class="op">=</span> <span class="bu">Math</span><span class="op">.</span><span class="fu">floor</span>(position <span class="op">/</span> <span class="dv">7</span>)<span class="op">;</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>    it<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">gridColumnStart</span> <span class="op">=</span> <span class="st">&quot;&quot;</span> <span class="op">+</span> (x <span class="op">+</span> <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>    it<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">gridColumnEnd</span> <span class="op">=</span> <span class="st">&quot;&quot;</span> <span class="op">+</span> (x <span class="op">+</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>    it<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">gridRowStart</span> <span class="op">=</span> <span class="st">&quot;&quot;</span> <span class="op">+</span> (y <span class="op">+</span> <span class="dv">1</span>)<span class="op">;</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>    it<span class="op">.</span><span class="at">style</span><span class="op">.</span><span class="at">gridRowEnd</span> <span class="op">=</span> <span class="st">&quot;&quot;</span> <span class="op">+</span> (y <span class="op">+</span> <span class="dv">2</span>)<span class="op">;</span></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a><span class="co">// Function for picking up seed from input</span></span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">get_seed</span>() {</span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> seed_input <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&quot;shuffle_demo_seed&quot;</span>)<span class="op">;</span></span>
+<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> s <span class="op">=</span> <span class="pp">parseInt</span>(seed_input<span class="op">.</span><span class="at">value</span>)<span class="op">;</span></span>
+<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (s <span class="op">==</span> <span class="kw">undefined</span>) {</span>
+<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a>    seed_input<span class="op">.</span><span class="at">value</span> <span class="op">=</span> s<span class="op">;</span></span>
+<span id="cb2-45"><a href="#cb2-45" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-46"><a href="#cb2-46" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> s<span class="op">;</span></span>
+<span id="cb2-47"><a href="#cb2-47" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-48"><a href="#cb2-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-49"><a href="#cb2-49" aria-hidden="true" tabindex="-1"></a><span class="co">// Function for updating seed input</span></span>
+<span id="cb2-50"><a href="#cb2-50" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">set_seed</span>(x) {</span>
+<span id="cb2-51"><a href="#cb2-51" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> seed_input <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&quot;shuffle_demo_seed&quot;</span>)<span class="op">;</span></span>
+<span id="cb2-52"><a href="#cb2-52" aria-hidden="true" tabindex="-1"></a>  seed_input<span class="op">.</span><span class="at">value</span> <span class="op">=</span> x<span class="op">;</span></span>
+<span id="cb2-53"><a href="#cb2-53" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb2-54"><a href="#cb2-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-55"><a href="#cb2-55" aria-hidden="true" tabindex="-1"></a><span class="co">// Do an initial shuffle</span></span>
+<span id="cb2-56"><a href="#cb2-56" aria-hidden="true" tabindex="-1"></a><span class="fu">do_shuffle</span>(<span class="fu">get_seed</span>())<span class="op">;</span></span>
+<span id="cb2-57"><a href="#cb2-57" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-58"><a href="#cb2-58" aria-hidden="true" tabindex="-1"></a><span class="co">// Set up shuffle button to use current seed:</span></span>
+<span id="cb2-59"><a href="#cb2-59" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> shuffle_button <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&quot;shuffle_demo_shuffle&quot;</span>)</span>
+<span id="cb2-60"><a href="#cb2-60" aria-hidden="true" tabindex="-1"></a>shuffle_button<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> <span class="kw">function</span> () {</span>
+<span id="cb2-61"><a href="#cb2-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">do_shuffle</span>(<span class="fu">get_seed</span>())<span class="op">;</span></span>
+<span id="cb2-62"><a href="#cb2-62" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span>
+<span id="cb2-63"><a href="#cb2-63" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-64"><a href="#cb2-64" aria-hidden="true" tabindex="-1"></a><span class="co">// Set up next button to increment and shuffle:</span></span>
+<span id="cb2-65"><a href="#cb2-65" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> next_button <span class="op">=</span> <span class="bu">document</span><span class="op">.</span><span class="fu">getElementById</span>(<span class="st">&quot;shuffle_demo_next&quot;</span>)</span>
+<span id="cb2-66"><a href="#cb2-66" aria-hidden="true" tabindex="-1"></a>next_button<span class="op">.</span><span class="fu">addEventListener</span>(<span class="st">&quot;click&quot;</span><span class="op">,</span> <span class="kw">function</span> () {</span>
+<span id="cb2-67"><a href="#cb2-67" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> seed <span class="op">=</span> <span class="fu">get_seed</span>()<span class="op">;</span></span>
+<span id="cb2-68"><a href="#cb2-68" aria-hidden="true" tabindex="-1"></a>  seed <span class="op">+=</span> <span class="dv">1</span><span class="op">;</span></span>
+<span id="cb2-69"><a href="#cb2-69" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_seed</span>(seed)<span class="op">;</span></span>
+<span id="cb2-70"><a href="#cb2-70" aria-hidden="true" tabindex="-1"></a>  <span class="fu">do_shuffle</span>(seed)<span class="op">;</span></span>
+<span id="cb2-71"><a href="#cb2-71" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
 </details>
 <style>
 #shuffle_demo {
@@ -240,7 +242,7 @@ Full code for the demo
 }
 
 </style>
-<script type="text/javascript">
+<script defer type="text/javascript">
 // Grab the div that we want to work with
 let div = document.getElementById("shuffle_demo")
 
@@ -498,7 +500,7 @@ Full code for the demo
 <span id="cb4-127"><a href="#cb4-127" aria-hidden="true" tabindex="-1"></a><span class="co">// Run all this stuff:</span></span>
 <span id="cb4-128"><a href="#cb4-128" aria-hidden="true" tabindex="-1"></a><span class="fu">enable_compare_demo</span>()<span class="op">;</span></span></code></pre></div>
 </details>
-<script>
+<script defer type="text/javascript">
 
 function enable_compare_demo() {
   // Grab the div that we want to work with
@@ -733,7 +735,7 @@ Tree Enumeration Code
 <span id="cb5-66"><a href="#cb5-66" aria-hidden="true" tabindex="-1"></a><span class="fu">draw_tree</span>(canvas<span class="op">,</span> [<span class="dv">400</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">2</span>)<span class="op">;</span></span>
 <span id="cb5-67"><a href="#cb5-67" aria-hidden="true" tabindex="-1"></a><span class="fu">draw_tree</span>(canvas<span class="op">,</span> [<span class="dv">550</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> <span class="dv">3</span>)<span class="op">;</span></span></code></pre></div>
 </details>
-<script type="text/javascript">
+<script defer type="text/javascript">
 // Draws a line between the given pair of coordinates on the given canvas
 function draw_line(canvas, fr, to) {
   ctx = canvas.getContext("2d");
@@ -824,7 +826,7 @@ Code Using Shuffling
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="fu">draw_tree</span>(s_canvas<span class="op">,</span> [<span class="dv">400</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> anarchy<span class="op">.</span><span class="fu">cohort_shuffle</span>(<span class="dv">2</span><span class="op">,</span> N<span class="op">,</span> seed))<span class="op">;</span></span>
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="fu">draw_tree</span>(s_canvas<span class="op">,</span> [<span class="dv">550</span><span class="op">,</span> <span class="dv">200</span>]<span class="op">,</span> <span class="dv">50</span><span class="op">,</span> anarchy<span class="op">.</span><span class="fu">cohort_shuffle</span>(<span class="dv">3</span><span class="op">,</span> N<span class="op">,</span> seed))<span class="op">;</span></span></code></pre></div>
 </details>
-<script type="text/javascript">
+<script defer type="text/javascript">
 // Grab the canvas and draw the trees corresponding to the first four seeds,
 // but shuffled:
 let s_canvas = document.getElementById("shuffled_enumeration_demo");
@@ -848,7 +850,7 @@ space of trees (the end of the space is at 268435452).</p>
 <input type="button" value=">" id="enumeration_demo_next"></p>
 <canvas width="650" height="600" id="interactive_enumeration_demo">
 </canvas>
-<script type="text/javascript">
+<script defer type="text/javascript">
 let pr = document.getElementById("enumeration_demo_previous");
 let hr = document.getElementById("enumeration_demo_here");
 let nx = document.getElementById("enumeration_demo_next");
@@ -1309,7 +1311,7 @@ filter&gt;</option> <option value="plums">plums</option>
   padding: 4pt;
 }
 </style>
-<script type="text/javascript">
+<script defer type="text/javascript">
 let grammar = {
   "root": "{title}<br/><br/>{graf1}<br/>{graf2}<br/>{graf3}",
   "title": [ "This Is Just To Say", "Re: Your Inquiry" ],
@@ -1420,7 +1422,7 @@ function generate_poem(grammar, seed) {
   return sofar;
 }
 </script>
-<script type="text/javascript">
+<script defer type="text/javascript">
 // Get handles for each of our interface elements:
 let p_pr = document.getElementById("poetry_demo_previous");
 let p_hr = document.getElementById("poetry_demo_here");
@@ -1627,7 +1629,7 @@ p_sn.addEventListener("click", p_cycle_nseed);
 <div id="complex_grammar_demo">
 
 </div>
-<script type=text/javascript>
+<script defer type="text/javascript">
 let grammar2 = {
   "root": "{start}",
   "start": [

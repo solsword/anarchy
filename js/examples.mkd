@@ -60,6 +60,8 @@ function do_shuffle(seed) {
 <details>
 <summary>Full code for the demo</summary>
 ```js
+anarchy = require('anarchy');
+
 // Grab the div that we want to work with
 let div = document.getElementById("shuffle_demo")
 
@@ -151,7 +153,7 @@ next_button.addEventListener("click", function () {
 }
 
 </style>
-<script type="text/javascript">
+<script defer type="text/javascript">
 // Grab the div that we want to work with
 let div = document.getElementById("shuffle_demo")
 
@@ -419,7 +421,7 @@ enable_compare_demo();
 ```
 </details>
 
-<script>
+<script defer type="text/javascript">
 
 function enable_compare_demo() {
   // Grab the div that we want to work with
@@ -641,7 +643,7 @@ draw_tree(canvas, [550, 200], 50, 3);
 ```
 </details>
 
-<script type="text/javascript">
+<script defer type="text/javascript">
 // Draws a line between the given pair of coordinates on the given canvas
 function draw_line(canvas, fr, to) {
   ctx = canvas.getContext("2d");
@@ -737,7 +739,7 @@ draw_tree(s_canvas, [550, 200], 50, anarchy.cohort_shuffle(3, N, seed));
 ```
 </details>
 
-<script type="text/javascript">
+<script defer type="text/javascript">
 // Grab the canvas and draw the trees corresponding to the first four seeds,
 // but shuffled:
 let s_canvas = document.getElementById("shuffled_enumeration_demo");
@@ -762,7 +764,7 @@ The canvas below shows unshuffled trees on the top row and shuffled ones on the 
 <canvas width=650 height=600 id="interactive_enumeration_demo">
 </canvas>
 
-<script type="text/javascript">
+<script defer type="text/javascript">
 let pr = document.getElementById("enumeration_demo_previous");
 let hr = document.getElementById("enumeration_demo_here");
 let nx = document.getElementById("enumeration_demo_next");
@@ -1231,7 +1233,7 @@ seed:
 }
 </style>
 
-<script type="text/javascript">
+<script defer type="text/javascript">
 let grammar = {
   "root": "{title}<br/><br/>{graf1}<br/>{graf2}<br/>{graf3}",
   "title": [ "This Is Just To Say", "Re: Your Inquiry" ],
@@ -1343,7 +1345,7 @@ function generate_poem(grammar, seed) {
 }
 </script>
 
-<script type="text/javascript">
+<script defer type="text/javascript">
 // Get handles for each of our interface elements:
 let p_pr = document.getElementById("poetry_demo_previous");
 let p_hr = document.getElementById("poetry_demo_here");
@@ -1553,7 +1555,7 @@ Potion ingredients:
 <div id="complex_grammar_demo">
 </div>
 
-<script type=text/javascript>
+<script defer type="text/javascript">
 let grammar2 = {
   "root": "{start}",
   "start": [
