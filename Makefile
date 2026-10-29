@@ -3,3 +3,8 @@ index.html: README.md
 
 lua/index.html: lua/README.md 
 	pandoc --standalone --css ../js/examples.css $< -o $@
+
+.PHONY: visible
+
+visible:
+	chmod -R o+r .
